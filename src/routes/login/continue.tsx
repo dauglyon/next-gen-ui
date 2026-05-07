@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { Alert, Button, Frame, Loader } from '@kbase/design-system';
 
 import {
+  MfaRequiredError,
   authErrorMessage,
   getLoginChoice,
   parseSafeRedirect,
@@ -98,6 +99,9 @@ export const Route = createFileRoute('/login/continue')({
       return { kind: 'error', message: 'No login choice available.' };
     } catch (err) {
       if (isRedirect(err)) throw err;
+      if (err instanceof MfaRequiredError) {
+        throw redirect({ to: '/login', search: { error: 'mfa-required' } });
+      }
       return { kind: 'error', message: authErrorMessage(err, { context: 'signin' }) };
     }
   },
@@ -176,6 +180,10 @@ function LoginChooser({ entries, nextRequest }: { entries: PickEntry[]; nextRequ
         replace: true,
       });
     } catch (err) {
+      if (err instanceof MfaRequiredError) {
+        await navigate({ to: '/login', search: { error: 'mfa-required' }, replace: true });
+        return;
+      }
       setPendingId(null);
       setError(authErrorMessage(err, { context: 'signin' }));
     }

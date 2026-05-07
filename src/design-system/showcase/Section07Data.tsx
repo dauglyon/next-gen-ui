@@ -9,12 +9,7 @@ import { CodeBlock } from '../components/CodeBlock';
 import { Table, Thead, Tbody, Tr, Th, Td } from '../components/Table';
 import { Pagination } from '../components/Pagination';
 import { VizContainer } from '../components/VizContainer';
-import {
-  ArrowsCounterClockwise,
-  Bell,
-  Warning,
-  ChartBar,
-} from '@phosphor-icons/react';
+import { ArrowsCounterClockwise, Bell, Warning, ChartBar } from '@phosphor-icons/react';
 
 export function Section07Data() {
   return (
@@ -29,8 +24,8 @@ export function Section07Data() {
       <div className={s.sub}>Data-type marker (TypeBadge preset)</div>
       <p className={s.note}>
         A 28px square Avatar in <code>tint</code> variant, not a separate primitive. Use inside
-        tables, data panels, and object lists. Pass a one or two character abbreviation (or a
-        small icon) as children.
+        tables, data panels, and object lists. Pass a one or two character abbreviation (or a small
+        icon) as children.
       </p>
       <div className={s.row}>
         <TypeBadge color="red">Gn</TypeBadge>

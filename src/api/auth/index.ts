@@ -7,6 +7,7 @@ export type {
   LoginPickInput,
   LoginPickResult,
   SessionToken,
+  TokenInfo,
 } from './schemas';
 
 export {
@@ -17,6 +18,7 @@ export {
   getLoginChoice,
   postLoginPick,
   getAllSessions,
+  getTokenInfo,
   revokeSession,
   logout,
 } from './client';
@@ -26,12 +28,14 @@ export { COOKIE_NAME, getToken, setToken, clearToken } from './cookie';
 export {
   authMeOptions,
   authSessionsOptions,
+  tokenInfoOptions,
   primeAuthCache,
   clearAuthCache,
   clearAuthSession,
   installCrossTabAuthSync,
   installAuthFailureInterceptor,
   installAuthExpiryWatcher,
+  MfaRequiredError,
 } from './queries';
 
 export { safeRedirect, parseSafeRedirect } from './redirect';

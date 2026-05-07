@@ -138,10 +138,7 @@ export function Section04Forms() {
         A layout pattern, not a component. Frame + textarea + border + action footer. For open-ended
         input: AI assist, natural language, chat (see appendix E).
       </p>
-      <Frame
-        className={css.promptInput}
-        style={{ padding: 'var(--s-5) var(--s-6)' }}
-      >
+      <Frame className={css.promptInput} style={{ padding: 'var(--s-5) var(--s-6)' }}>
         <textarea
           rows={2}
           placeholder="Describe the analysis you want to run, or search for data…"

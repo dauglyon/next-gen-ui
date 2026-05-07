@@ -285,9 +285,7 @@ function IdentitySection({ me }: { me: Me }) {
             disabled={update.isPending && activeField === 'name'}
           />
           <FieldStatusLine status={activeField === 'name' ? status : null} />
-          <Field.Description>
-            Shown on your profile and on content you author.
-          </Field.Description>
+          <Field.Description>Shown on your profile and on content you author.</Field.Description>
         </Field.Root>
 
         <Field.Root invalid={activeField === 'email' && status?.kind === 'error'}>
@@ -300,9 +298,7 @@ function IdentitySection({ me }: { me: Me }) {
             disabled={update.isPending && activeField === 'email'}
           />
           <FieldStatusLine status={activeField === 'email' ? status : null} />
-          <Field.Description>
-            Used for KBase notifications and account recovery.
-          </Field.Description>
+          <Field.Description>Used for KBase notifications and account recovery.</Field.Description>
         </Field.Root>
       </div>
     </section>
@@ -401,10 +397,14 @@ function SessionSection() {
             <Dialog.Description>
               Your current session will be revoked and you'll return to the sign-in page.
             </Dialog.Description>
-            <div
-              style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s-3)' }}
-            >
-              <Dialog.Close render={<Button type="button" variant="ghost">Cancel</Button>} />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s-3)' }}>
+              <Dialog.Close
+                render={
+                  <Button type="button" variant="ghost">
+                    Cancel
+                  </Button>
+                }
+              />
               <Dialog.Close
                 render={
                   <Button

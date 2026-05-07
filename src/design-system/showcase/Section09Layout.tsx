@@ -43,9 +43,9 @@ export function Section09Layout() {
 
       <div className={s.sub}>Avatar</div>
       <p className={s.note}>
-        Sizes: 20 (dense metadata), 24 (inline), 28 (table rows), 32 (default), 40 (profile),
-        64 / 80 (hero cards). Optional <code>color</code> prop for multi-participant contexts:
-        primary (default), teal, ocean, green, purple, orange, red.
+        Sizes: 20 (dense metadata), 24 (inline), 28 (table rows), 32 (default), 40 (profile), 64 /
+        80 (hero cards). Optional <code>color</code> prop for multi-participant contexts: primary
+        (default), teal, ocean, green, purple, orange, red.
       </p>
       <div className={s.row} style={{ alignItems: 'center', marginBottom: 'var(--s-7)' }}>
         <Avatar size={20} initials="JD" />
@@ -85,9 +85,9 @@ export function Section09Layout() {
       <div className={s.sub}>Variants: solid vs tint</div>
       <p className={s.note}>
         <code>solid</code> (default) is saturated background + white text + sans, for people and
-        identity. <code>tint</code> is washed background + tint-contrast text + mono, for
-        data-type abbreviations. TypeBadge is the canonical preset; reach for it before
-        building a new tint Avatar.
+        identity. <code>tint</code> is washed background + tint-contrast text + mono, for data-type
+        abbreviations. TypeBadge is the canonical preset; reach for it before building a new tint
+        Avatar.
       </p>
       <div className={s.row} style={{ alignItems: 'center' }}>
         <Avatar variant="solid" size={32} initials="JD" color="primary" />

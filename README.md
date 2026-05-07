@@ -25,19 +25,19 @@ to add hosts.
 
 ## Scripts
 
-| Script                        | What it does                                                          |
-| ----------------------------- | --------------------------------------------------------------------- |
-| `npm run dev`                 | Vite dev server, port 3000, HMR.                                      |
-| `npm run build`               | Type-check route tree, bundle to `dist/`.                             |
+| Script                        | What it does                                                       |
+| ----------------------------- | ------------------------------------------------------------------ |
+| `npm run dev`                 | Vite dev server, port 3000, HMR.                                   |
+| `npm run build`               | Type-check route tree, bundle to `dist/`.                          |
 | `npm run build:design-system` | Build the `@kbase/design-system` package to `dist-design-system/`. |
-| `npm run preview`             | Serve the built `dist/` locally (smoke-test the prod bundle).         |
-| `npm run typecheck`           | `tsc --noEmit`.                                                       |
-| `npm run lint`                | ESLint (flat config in `eslint.config.js`).                           |
-| `npm run lint:fix`            | ESLint with autofix.                                                  |
-| `npm run format`              | Prettier write.                                                       |
-| `npm run format:check`        | Prettier check (CI uses this).                                        |
-| `npm test`                    | Vitest, single run (CI uses this).                                    |
-| `npm run test:watch`          | Vitest watch mode.                                                    |
+| `npm run preview`             | Serve the built `dist/` locally (smoke-test the prod bundle).      |
+| `npm run typecheck`           | `tsc --noEmit`.                                                    |
+| `npm run lint`                | ESLint (flat config in `eslint.config.js`).                        |
+| `npm run lint:fix`            | ESLint with autofix.                                               |
+| `npm run format`              | Prettier write.                                                    |
+| `npm run format:check`        | Prettier check (CI uses this).                                     |
+| `npm test`                    | Vitest, single run (CI uses this).                                 |
+| `npm run test:watch`          | Vitest watch mode.                                                 |
 
 CI runs lint → format:check → build → route-tree drift check →
 typecheck → test. The route tree (`src/routeTree.gen.ts`) is
@@ -122,10 +122,10 @@ All client-side env vars are prefixed `VITE_` (Vite's convention)
 so they're embedded at build time. Server-side runtime config
 doesn't exist; this is a static SPA.
 
-| Var                      | Default (in code)  | Notes                                                                             |
-| ------------------------ | ------------------ | --------------------------------------------------------------------------------- |
-| `VITE_AUTH_ORIGIN`       | `https://kbase.us` | Auth service origin. Production `--build-arg` baked into bundle and nginx CSP.    |
-| `VITE_COOKIE_DOMAIN`     | unset              | Optional. `.kbase.us` for prod-like deploys; leave unset locally.                 |
+| Var                      | Default (in code)  | Notes                                                                                   |
+| ------------------------ | ------------------ | --------------------------------------------------------------------------------------- |
+| `VITE_AUTH_ORIGIN`       | `https://kbase.us` | Auth service origin. Production `--build-arg` baked into bundle and nginx CSP.          |
+| `VITE_COOKIE_DOMAIN`     | unset              | Optional. `.kbase.us` for prod-like deploys; leave unset locally.                       |
 | `VITE_DEV_ALLOWED_HOSTS` | unset              | Comma-separated; leading dot is Vite's subdomain wildcard. For non-localhost dev hosts. |
 
 `.env.example` is the documentation; `.env.development` overrides

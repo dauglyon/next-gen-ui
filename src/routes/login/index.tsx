@@ -18,6 +18,7 @@ import orcidIdUrl from '../../assets/orcid-id.svg';
 
 const SearchSchema = z.object({
   redirect: z.string().optional(),
+  error: z.literal('mfa-required').optional(),
 });
 
 export const Route = createFileRoute('/login/')({
@@ -38,12 +39,13 @@ export const Route = createFileRoute('/login/')({
 });
 
 function LoginPage() {
-  const { redirect: redirectParam } = Route.useSearch();
+  const { redirect: redirectParam, error } = Route.useSearch();
   const nextRequest = safeRedirect(redirectParam);
   const me = useMaybeMe();
   const signOut = useSignOut();
 
   const isSignedIn = me !== null;
+  const mfaRequired = error === 'mfa-required';
 
   const continueUrl = useMemo(() => {
     const url = new URL(`${window.location.origin}/login/continue`);
@@ -76,6 +78,15 @@ function LoginPage() {
         >
           <img src="/kbase-logo-ref.png" alt="KBase" height={44} />
         </div>
+
+        {mfaRequired && (
+          <div style={{ marginBottom: 'var(--s-7)' }}>
+            <Alert color="red">
+              <strong>Two-factor authentication required.</strong> KBase only accepts ORCID sessions
+              authenticated with 2FA. Enable 2FA on your ORCID account, then sign in again.
+            </Alert>
+          </div>
+        )}
 
         {isSignedIn && me && (
           <div style={{ marginBottom: 'var(--s-7)' }}>

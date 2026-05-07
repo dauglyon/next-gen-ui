@@ -8,9 +8,11 @@ import { setupServer } from 'msw/node';
 // resolved VITE_AUTH_ORIGIN at test time. `idents`, `created`,
 // `lastlogin` are deliberately omitted to exercise MeSchema defaults.
 export const defaultMeBody = { user: 'tester', display: 'Tester' };
+export const defaultTokenInfoBody = { id: 'session-1', user: 'tester', mfa: 'Used' as const };
 
 export const handlers = [
   http.get('*/services/auth/api/V2/me', () => HttpResponse.json(defaultMeBody)),
+  http.get('*/services/auth/api/V2/token', () => HttpResponse.json(defaultTokenInfoBody)),
 ];
 
 export const server = setupServer(...handlers);

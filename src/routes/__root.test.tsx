@@ -98,6 +98,7 @@ describe('root gate', () => {
       defaultOptions: { queries: { retry: false } },
     });
     queryClient.setQueryData(['auth', 'me'], { user: 't', display: 'T' });
+    queryClient.setQueryData(['auth', 'tokenInfo'], { id: 'session-1', user: 't', mfa: 'Used' });
     const router = createRouter({
       routeTree,
       context: { queryClient },

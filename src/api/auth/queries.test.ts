@@ -1,10 +1,29 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient } from '@tanstack/react-query';
 
-import { clearAuthCache, installCrossTabAuthSync, primeAuthCache } from './queries';
+import {
+  MfaRequiredError,
+  clearAuthCache,
+  installCrossTabAuthSync,
+  primeAuthCache,
+} from './queries';
 import { AUTH_SIGNAL_KEY, clearToken, getToken } from './cookie';
 
 const fetchMock = vi.fn<typeof fetch>();
+
+function meRes(body: object = { user: 't', display: 'T' }) {
+  return new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+function tokenInfoRes(mfa: 'Used' | 'NotUsed' | 'Unknown' | undefined = 'Used') {
+  return new Response(JSON.stringify({ id: 'session-1', user: 't', mfa }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
 
 beforeEach(() => {
   fetchMock.mockReset();
@@ -19,12 +38,7 @@ afterEach(() => {
 
 describe('primeAuthCache', () => {
   it('writes cookie and primes cache on success', async () => {
-    fetchMock.mockResolvedValue(
-      new Response(JSON.stringify({ user: 't', display: 'T' }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }),
-    );
+    fetchMock.mockResolvedValueOnce(meRes()).mockResolvedValueOnce(tokenInfoRes('Used'));
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
     const me = await primeAuthCache(qc, {
@@ -35,6 +49,23 @@ describe('primeAuthCache', () => {
     expect(me).toMatchObject({ user: 't', display: 'T' });
     expect(getToken()).toBe('tok-abc');
     expect(qc.getQueryData(['auth', 'me'])).toMatchObject({ user: 't' });
+    expect(qc.getQueryData(['auth', 'tokenInfo'])).toMatchObject({ mfa: 'Used' });
+  });
+
+  it('rejects without writing the cookie when the session lacks MFA', async () => {
+    fetchMock.mockResolvedValueOnce(meRes()).mockResolvedValueOnce(tokenInfoRes('NotUsed'));
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    await expect(
+      primeAuthCache(qc, {
+        token: 'tok-abc',
+        expiresAt: new Date(Date.now() + 60_000),
+      }),
+    ).rejects.toBeInstanceOf(MfaRequiredError);
+
+    expect(getToken()).toBeNull();
+    expect(qc.getQueryData(['auth', 'me'])).toBeUndefined();
+    expect(qc.getQueryData(['auth', 'tokenInfo'])).toBeUndefined();
   });
 
   it('does not write the cookie when /api/V2/me rejects the token (401)', async () => {
@@ -86,12 +117,7 @@ describe('primeAuthCache', () => {
   });
 
   it('forwards the AbortSignal to validateToken', async () => {
-    fetchMock.mockResolvedValue(
-      new Response(JSON.stringify({ user: 't', display: 'T' }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }),
-    );
+    fetchMock.mockResolvedValueOnce(meRes()).mockResolvedValueOnce(tokenInfoRes('Used'));
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const ac = new AbortController();
 
@@ -183,9 +209,7 @@ describe('installCrossTabAuthSync', () => {
     const unsubscribe = installCrossTabAuthSync(qc);
     unsubscribe();
 
-    window.dispatchEvent(
-      new StorageEvent('storage', { key: AUTH_SIGNAL_KEY, newValue: 'set:99' }),
-    );
+    window.dispatchEvent(new StorageEvent('storage', { key: AUTH_SIGNAL_KEY, newValue: 'set:99' }));
 
     expect(spy).not.toHaveBeenCalled();
   });

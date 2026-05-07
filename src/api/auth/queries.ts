@@ -1,11 +1,21 @@
 import { queryOptions, type QueryClient } from '@tanstack/react-query';
-import { getAllSessions, setAuthFailureHandler, validateToken } from './client';
+import { getAllSessions, getTokenInfo, setAuthFailureHandler, validateToken } from './client';
 import { AUTH_SIGNAL_KEY, clearToken, getExpiry, getToken, setToken } from './cookie';
-import type { AllSessions, Me } from './schemas';
+import type { AllSessions, Me, TokenInfo } from './schemas';
 
 const AUTH_ROOT_KEY = ['auth'] as const;
 const ME_KEY = ['auth', 'me'] as const;
 const SESSIONS_KEY = ['auth', 'sessions'] as const;
+const TOKEN_INFO_KEY = ['auth', 'tokenInfo'] as const;
+
+// Sign-in flows through ORCID, so 2FA happens at the IdP; the token's
+// `mfa` field reports whether ORCID's flow used it.
+export class MfaRequiredError extends Error {
+  constructor() {
+    super('Two-factor authentication is required.');
+    this.name = 'MfaRequiredError';
+  }
+}
 
 export function authMeOptions() {
   return queryOptions({
@@ -30,16 +40,32 @@ export function authSessionsOptions() {
   });
 }
 
-// Validate against /api/V2/me BEFORE writing the cookie or seeding the
-// cache: a rejected token then leaves no trace.
+export function tokenInfoOptions() {
+  return queryOptions<TokenInfo>({
+    queryKey: TOKEN_INFO_KEY,
+    queryFn: ({ signal }) => {
+      const token = getToken();
+      if (!token) throw new Error('Not authenticated');
+      return getTokenInfo(token, { signal });
+    },
+    staleTime: Infinity,
+    retry: false,
+  });
+}
+
+// Validate against /api/V2/me and /api/V2/token BEFORE writing the
+// cookie or seeding the cache: a rejected token leaves no trace.
 export async function primeAuthCache(
   qc: QueryClient,
   args: { token: string; expiresAt: Date; signal?: AbortSignal },
 ): Promise<Me> {
   const me = await validateToken(args.token, { signal: args.signal });
   if (!me) throw new Error('Token was not accepted by /api/V2/me');
+  const tokenInfo = await getTokenInfo(args.token, { signal: args.signal });
+  if (tokenInfo.mfa !== 'Used') throw new MfaRequiredError();
   setToken(args.token, args.expiresAt);
   qc.setQueryData(ME_KEY, me);
+  qc.setQueryData(TOKEN_INFO_KEY, tokenInfo);
   scheduleAuthExpiry(qc, args.expiresAt.getTime());
   return me;
 }

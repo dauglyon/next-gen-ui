@@ -32,7 +32,13 @@ export function Section08Overlays({ onShowToast }: Section08OverlaysProps) {
       <div className={s.sub}>Tooltip</div>
       <p className={s.note}>Hover-triggered. Keep content short, one or two sentences.</p>
       <Tooltip.Root>
-        <Tooltip.Trigger render={<Button variant="outline"><Info size={14} /> Hover me</Button>} />
+        <Tooltip.Trigger
+          render={
+            <Button variant="outline">
+              <Info size={14} /> Hover me
+            </Button>
+          }
+        />
         <Tooltip.Popup>
           Runs MEGAHIT + Prokka on your paired-end reads. Estimated time: 15 min.
         </Tooltip.Popup>
@@ -51,7 +57,11 @@ export function Section08Overlays({ onShowToast }: Section08OverlaysProps) {
       </p>
       <Popover.Root>
         <Popover.Trigger
-          render={<Button variant="outline"><Eye size={14} /> Assembly quality</Button>}
+          render={
+            <Button variant="outline">
+              <Eye size={14} /> Assembly quality
+            </Button>
+          }
         />
         <Popover.Popup>
           <Popover.Title>Assembly quality</Popover.Title>
@@ -129,7 +139,11 @@ toasts.add({
       </p>
       <Dialog.Root>
         <Dialog.Trigger
-          render={<Button variant="danger"><Trash size={14} /> Delete project</Button>}
+          render={
+            <Button variant="danger">
+              <Trash size={14} /> Delete project
+            </Button>
+          }
         />
         <Dialog.Popup>
           <Dialog.Title>Delete project?</Dialog.Title>
@@ -140,7 +154,11 @@ toasts.add({
           <div className={s.row} style={{ justifyContent: 'flex-end' }}>
             <Dialog.Close render={<Button variant="ghost">Cancel</Button>} />
             <Dialog.Close
-              render={<Button variant="danger"><Trash size={14} /> Delete</Button>}
+              render={
+                <Button variant="danger">
+                  <Trash size={14} /> Delete
+                </Button>
+              }
             />
           </div>
         </Dialog.Popup>

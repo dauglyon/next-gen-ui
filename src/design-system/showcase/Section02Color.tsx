@@ -22,8 +22,8 @@ export function Section02Color() {
       </p>
       <p className={s.note}>
         Do not add, remove, or modify colors without re-verifying under both deuteranopia and
-        protanopia. The specific hex values were selected to maintain separation; changing a
-        single hue can break the spread and make two colors indistinguishable.
+        protanopia. The specific hex values were selected to maintain separation; changing a single
+        hue can break the spread and make two colors indistinguishable.
       </p>
       <p className={s.note}>
         Every color has a tint system with four tokens. Use <code>bg-*</code> on the cream page
@@ -33,9 +33,9 @@ export function Section02Color() {
         looks washed out.
       </p>
       <p className={s.note}>
-        When color conveys status, always pair it with a unique icon shape. Each status gets its
-        own (CheckCircle for success, XCircle for error, Warning for warning, Clock for queued, Play
-        for running). Shape is the discriminator, color is reinforcement.
+        When color conveys status, always pair it with a unique icon shape. Each status gets its own
+        (CheckCircle for success, XCircle for error, Warning for warning, Clock for queued, Play for
+        running). Shape is the discriminator, color is reinforcement.
       </p>
 
       <div className={s.sub}>Full palette</div>
@@ -146,12 +146,12 @@ export function Section02Color() {
         normal workflow that teaches rather than does.
       </p>
       <p className={s.note}>
-        Teal reads as a calm version of green. Use it for completed stepper steps, confirmed
-        states, or passive "done" indicators where green feels like a victory lap.
+        Teal reads as a calm version of green. Use it for completed stepper steps, confirmed states,
+        or passive "done" indicators where green feels like a victory lap.
       </p>
       <p className={s.note}>
-        Ocean and orange appear primarily in data type badges: ocean for models and derived
-        objects, orange for reads and raw sequencing data. They tie back to the logo's three circles
+        Ocean and orange appear primarily in data type badges: ocean for models and derived objects,
+        orange for reads and raw sequencing data. They tie back to the logo's three circles
         (microbes, plants, communities).
       </p>
 

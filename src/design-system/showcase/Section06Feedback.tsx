@@ -108,9 +108,7 @@ export function Section06Feedback({ cvd }: Section06FeedbackProps) {
             <span className="mono-secondary">68%</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-5)' }}>
-            <span className={`note ${s.stageLabel}`}>
-              Upload
-            </span>
+            <span className={`note ${s.stageLabel}`}>Upload</span>
             <div style={{ flex: 1 }}>
               <Progress value={0} />
             </div>

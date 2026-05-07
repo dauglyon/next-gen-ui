@@ -12,7 +12,14 @@ import type { QueryClient } from '@tanstack/react-query';
 import { Alert, Avatar, Button, Frame, Loader, NavIcon, Tooltip } from '@kbase/design-system';
 import { MapTrifold } from '@phosphor-icons/react';
 
-import { AuthApiError, authMeOptions, safeRedirect, useMaybeMe } from '../api/auth';
+import {
+  AuthApiError,
+  authMeOptions,
+  clearAuthCache,
+  safeRedirect,
+  tokenInfoOptions,
+  useMaybeMe,
+} from '../api/auth';
 
 declare module '@tanstack/react-router' {
   interface StaticDataRouteOption {
@@ -39,6 +46,12 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         to: '/login',
         search: { redirect: safeRedirect(location.href) },
       });
+    }
+    // Catches cookies pre-dating the MFA requirement.
+    const tokenInfo = await context.queryClient.ensureQueryData(tokenInfoOptions());
+    if (tokenInfo.mfa !== 'Used') {
+      clearAuthCache(context.queryClient);
+      throw redirect({ to: '/login', search: { error: 'mfa-required' } });
     }
   },
   component: RootLayout,

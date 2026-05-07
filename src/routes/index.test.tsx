@@ -16,6 +16,11 @@ describe('Home route', () => {
       user: 'tester',
       display: 'Tester',
     });
+    queryClient.setQueryData(['auth', 'tokenInfo'], {
+      id: 'session-1',
+      user: 'tester',
+      mfa: 'Used',
+    });
 
     const router = createRouter({
       routeTree,

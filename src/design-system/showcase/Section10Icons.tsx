@@ -26,8 +26,8 @@ export function Section10Icons() {
       <div className={s.sNum}>10</div>
       <div className={s.sTitle}>Icons</div>
       <p className={s.sDesc}>
-        Phosphor icons, six weights. Weight carries meaning: regular for chrome, bold for
-        emphasis, fill for active state.
+        Phosphor icons, six weights. Weight carries meaning: regular for chrome, bold for emphasis,
+        fill for active state.
       </p>
 
       <div className={s.sub}>Weight as state</div>
