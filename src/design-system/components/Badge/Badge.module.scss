@@ -1,0 +1,32 @@
+.root {
+  position: relative;
+  display: inline-flex;
+}
+
+.badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: var(--r-full);
+  font-size: var(--fs-3);
+  font-weight: 700;
+  font-family: var(--f-mono);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--s-2);
+  line-height: 1;
+}
+
+.primary {
+  background: var(--c-primary);
+}
+.red {
+  background: var(--c-red);
+}
+.green {
+  background: var(--c-green);
+}

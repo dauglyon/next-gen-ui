@@ -1,0 +1,48 @@
+.root {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.btn {
+  min-width: 28px;
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--c-ink3);
+  font-size: var(--fs-4);
+  font-family: var(--f-mono);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--s-3);
+
+  &:hover:not(:disabled):not(.active) {
+    background: var(--c-raised);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--c-glow);
+  }
+
+  &:disabled {
+    color: var(--c-ink5);
+    cursor: not-allowed;
+    border-style: dashed;
+  }
+}
+
+.active {
+  background: var(--c-primary);
+  border-color: var(--c-primary);
+  color: white;
+}
+
+.ellipsis {
+  font-size: var(--fs-4);
+  color: var(--c-ink4);
+  padding: 0 var(--s-1);
+}

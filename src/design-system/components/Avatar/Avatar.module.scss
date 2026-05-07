@@ -1,0 +1,143 @@
+.root {
+  border-radius: var(--r-full);
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.square {
+  border-radius: var(--r-sm);
+}
+
+.size20 {
+  width: 20px;
+  height: 20px;
+}
+.size24 {
+  width: 24px;
+  height: 24px;
+}
+.size28 {
+  width: 28px;
+  height: 28px;
+}
+.size32 {
+  width: 32px;
+  height: 32px;
+}
+.size40 {
+  width: 40px;
+  height: 40px;
+}
+.size64 {
+  width: 64px;
+  height: 64px;
+}
+.size80 {
+  width: 80px;
+  height: 80px;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: var(--fs-4);
+  /* Tie the line box to the glyph and trim font ascender/descender
+     padding so cap-only initials sit on the geometric center, not
+     1-2px above it (default font metrics put the cap in the upper
+     portion of the em-box). Falls back to plain line-height: 1 in
+     browsers without text-box-trim support. */
+  line-height: 1;
+  text-box-trim: trim-both;
+  text-box-edge: cap alphabetic;
+
+  .size20 & {
+    font-size: var(--fs-1);
+  }
+  .size24 & {
+    font-size: var(--fs-2);
+  }
+  .size28 & {
+    font-size: var(--fs-3);
+  }
+  .size40 & {
+    font-size: var(--fs-7);
+  }
+  .size64 & {
+    font-size: var(--fs-10);
+  }
+  .size80 & {
+    font-size: var(--fs-11);
+  }
+}
+
+/* Solid: saturated bg + white text + sans (people, identity). */
+.solid .fallback {
+  background: var(--c-primary);
+  color: white;
+}
+.solid.teal .fallback {
+  background: var(--c-teal);
+}
+.solid.ocean .fallback {
+  background: var(--c-ocean);
+  /* Ocean is a low-contrast aux color; white text falls below WCAG
+     AA on this background. Use the ct-ocean ink instead. */
+  color: var(--ct-ocean);
+}
+.solid.green .fallback {
+  background: var(--c-green);
+}
+.solid.purple .fallback {
+  background: var(--c-purple);
+}
+.solid.orange .fallback {
+  background: var(--c-orange);
+}
+.solid.red .fallback {
+  background: var(--c-red);
+}
+
+/* Tint: washed bg + tint-contrast text + mono (data-type markers). */
+.tint .fallback {
+  background: var(--bgw-primary);
+  color: var(--ct-primary);
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+}
+.tint.teal .fallback {
+  background: var(--bgw-teal);
+  color: var(--ct-teal);
+}
+.tint.ocean .fallback {
+  background: var(--bgw-ocean);
+  color: var(--ct-ocean);
+}
+.tint.green .fallback {
+  background: var(--bgw-green);
+  color: var(--ct-green);
+}
+.tint.purple .fallback {
+  background: var(--bgw-purple);
+  color: var(--ct-purple);
+}
+.tint.orange .fallback {
+  background: var(--bgw-orange);
+  color: var(--ct-orange);
+}
+.tint.red .fallback {
+  background: var(--bgw-red);
+  color: var(--ct-red);
+}

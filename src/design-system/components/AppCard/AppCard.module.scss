@@ -1,0 +1,154 @@
+/* AppCard composes Frame and TypeBadge. */
+
+.root {
+  transition: background 0.1s;
+
+  &:hover {
+    background: var(--c-raised);
+  }
+}
+
+.inner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-6);
+  padding: var(--s-6) var(--s-7);
+}
+
+/* The card's main click target. Rendered as a real <button> when
+   AppCard has onClick, otherwise as a passive <div> so the favorite
+   button isn't nested in an interactive ancestor. */
+.clickable {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-6);
+  /* button reset */
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  appearance: none;
+}
+
+button.clickable {
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--c-glow);
+    border-radius: var(--r-sm);
+  }
+}
+
+.icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-md);
+  background: var(--c-raised);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--c-ink3);
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+.titleRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+}
+
+.name {
+  font-size: var(--fs-6);
+  font-weight: 600;
+  color: var(--c-ink);
+}
+
+.version {
+  font-family: var(--f-mono);
+  font-size: var(--fs-3);
+  color: var(--c-ink4);
+}
+
+.authors {
+  font-size: var(--fs-5);
+  color: var(--c-ink);
+  margin-top: 1px;
+}
+
+.desc {
+  font-size: var(--fs-5);
+  color: var(--c-ink3);
+  line-height: 1.45;
+  margin-top: var(--s-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* I/O types */
+.types {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-top: var(--s-3);
+}
+
+.typeStack {
+  display: inline-grid;
+  margin-right: var(--s-1);
+
+  > * {
+    grid-area: 1 / 1;
+  }
+
+  > :first-child {
+    position: relative;
+    z-index: 1;
+  }
+
+  > :last-child {
+    transform: translate(3px, 3px);
+    opacity: 0.45;
+  }
+}
+
+.arrow {
+  font-size: var(--fs-3);
+  color: var(--c-ink5);
+}
+
+.fav {
+  all: unset;
+  cursor: pointer;
+  color: var(--c-ink5);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  margin-top: 1px;
+
+  &:hover {
+    color: var(--c-yellow);
+  }
+
+  &[aria-label='Remove favorite'] {
+    color: var(--c-yellow);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--c-glow);
+    border-radius: var(--r-sm);
+  }
+}

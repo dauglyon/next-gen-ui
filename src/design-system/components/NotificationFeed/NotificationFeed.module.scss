@@ -1,0 +1,119 @@
+/* Composes Frame and Row; this file is layout-glue only. */
+
+.root {
+  /* Frame supplies border, radius, background, overflow. */
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s-5) var(--s-7);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.headerTitle {
+  font-size: var(--fs-6);
+  font-weight: 600;
+  color: var(--c-ink);
+}
+
+.clearBtn {
+  all: unset;
+  font-family: var(--f-sans);
+  font-size: var(--fs-4);
+  font-weight: 600;
+  color: var(--c-ink4);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--c-ink);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--c-glow);
+    border-radius: var(--r-sm);
+  }
+}
+
+.groupLabel {
+  font-family: var(--f-mono);
+  font-size: var(--fs-3);
+  color: var(--c-ink5);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: var(--s-4) var(--s-7) var(--s-2);
+}
+
+/* item wrapper: positions dismiss button over Row */
+.itemWrap {
+  position: relative;
+
+  &:hover .dismiss {
+    opacity: 1;
+  }
+}
+
+.unread {
+  border-left: 2px solid var(--c-primary);
+}
+
+/* action link below meta text: follows Alert actions pattern */
+.actionLink {
+  all: unset;
+  font-family: var(--f-sans);
+  font-size: var(--fs-4);
+  font-weight: 600;
+  color: var(--c-primary);
+  cursor: pointer;
+  display: block;
+  margin-top: var(--s-1);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover {
+    text-decoration-thickness: 2px;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--c-glow);
+    border-radius: var(--r-sm);
+  }
+}
+
+/* dismiss: appears on hover, positioned top-right of Row */
+.dismiss {
+  all: unset;
+  position: absolute;
+  top: var(--s-5);
+  right: var(--s-6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--r-sm);
+  color: var(--c-ink5);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.1s;
+
+  &:hover {
+    color: var(--c-ink3);
+  }
+
+  &:focus-visible {
+    opacity: 1;
+    outline: none;
+    box-shadow: 0 0 0 2px var(--c-glow);
+  }
+}
+
+.empty {
+  padding: var(--s-8) var(--s-7);
+  text-align: center;
+  font-size: var(--fs-4);
+  color: var(--c-ink5);
+}

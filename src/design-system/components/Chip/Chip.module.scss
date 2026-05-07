@@ -1,0 +1,102 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  font-size: var(--fs-3);
+  font-weight: 600;
+  padding: 1px var(--s-3);
+  border-radius: var(--r-sm);
+  border: 1px solid;
+  white-space: nowrap;
+
+  i {
+    font-size: var(--fs-2);
+  }
+  svg {
+    display: block;
+    flex-shrink: 0;
+  }
+}
+
+.dismiss {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  opacity: 0.6;
+  margin-left: 1px;
+
+  &:hover {
+    opacity: 1;
+  }
+  svg {
+    display: block;
+  }
+}
+
+.primary {
+  background: var(--bg-primary);
+  border-color: var(--bo-primary);
+  color: var(--ct-primary);
+}
+.teal {
+  background: var(--bg-teal);
+  border-color: var(--bo-teal);
+  color: var(--ct-teal);
+}
+.ocean {
+  background: var(--bg-ocean);
+  border-color: var(--bo-ocean);
+  color: var(--ct-ocean);
+}
+.green {
+  background: var(--bg-green);
+  border-color: var(--bo-green);
+  color: var(--ct-green);
+}
+.yellow {
+  background: var(--bg-yellow);
+  border-color: var(--bo-yellow);
+  color: var(--ct-yellow);
+}
+.orange {
+  background: var(--bg-orange);
+  border-color: var(--bo-orange);
+  color: var(--ct-orange);
+}
+.red {
+  background: var(--bg-red);
+  border-color: var(--bo-red);
+  color: var(--ct-red);
+}
+.purple {
+  background: var(--bg-purple);
+  border-color: var(--bo-purple);
+  color: var(--ct-purple);
+}
+
+/* on-white variants use bgw-* inside cards/frames */
+.primary.onWhite {
+  background: var(--bgw-primary);
+}
+.teal.onWhite {
+  background: var(--bgw-teal);
+}
+.ocean.onWhite {
+  background: var(--bgw-ocean);
+}
+.green.onWhite {
+  background: var(--bgw-green);
+}
+.yellow.onWhite {
+  background: var(--bgw-yellow);
+}
+.orange.onWhite {
+  background: var(--bgw-orange);
+}
+.red.onWhite {
+  background: var(--bgw-red);
+}
+.purple.onWhite {
+  background: var(--bgw-purple);
+}

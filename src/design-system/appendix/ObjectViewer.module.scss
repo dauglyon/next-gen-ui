@@ -1,0 +1,81 @@
+/* ObjectViewer composes Frame, TypeBadge, Avatar, Breadcrumbs, Tabs, Table. */
+
+.root {
+}
+
+.breadcrumbs {
+  margin-bottom: var(--s-4);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-5);
+  padding: var(--s-7);
+}
+
+.headerContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.titleRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+}
+
+.name {
+  font-size: var(--fs-9);
+  font-weight: 700;
+  color: var(--c-ink);
+}
+
+.version {
+  font-family: var(--f-mono);
+  font-size: var(--fs-3);
+  color: var(--c-ink4);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  margin-top: var(--s-2);
+}
+
+.owner {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: var(--fs-5);
+  color: var(--c-ink);
+}
+
+.timestamp {
+  font-size: var(--fs-4);
+  color: var(--c-ink4);
+  font-variant-numeric: tabular-nums;
+}
+
+.tabBar {
+  padding: 0 var(--s-7);
+  border-top: 1px solid var(--c-border);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.tabContent {
+  padding: var(--s-7);
+}
+
+.metaKey {
+  font-family: var(--f-mono);
+  font-size: var(--fs-4);
+  color: var(--c-ink3);
+}
+
+.metaVal {
+  font-family: var(--f-mono);
+  font-size: var(--fs-4);
+  color: var(--c-ink2);
+}

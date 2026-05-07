@@ -1,0 +1,37 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s-10) var(--s-7);
+  text-align: center;
+}
+
+.icon {
+  color: var(--c-ink5);
+  margin-bottom: var(--s-6);
+
+  svg {
+    display: block;
+  }
+}
+
+.title {
+  font-family: var(--f-sans);
+  font-size: var(--fs-6);
+  font-weight: 600;
+  color: var(--c-ink3);
+}
+
+.desc {
+  font-family: var(--f-sans);
+  font-size: var(--fs-5);
+  color: var(--c-ink4);
+  margin-top: var(--s-2);
+  max-width: 280px;
+  line-height: 1.5;
+}
+
+.action {
+  margin-top: var(--s-6);
+}

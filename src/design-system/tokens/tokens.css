@@ -1,0 +1,123 @@
+/* ================================================================
+   KBASE DESIGN TOKENS
+   Everything visual is defined here. Nothing else uses a raw color.
+   Tints: OKLAB hue from brand at fixed C/L. Yellow hand-tuned.
+   Text-on-tint: OKLAB L-axis darkened for WCAG AA 4.5:1.
+   ================================================================ */
+:root {
+  /* fonts */
+  --f-sans: 'Oxygen', system-ui, sans-serif;
+  --f-mono: 'Fira Code', 'SF Mono', ui-monospace, monospace;
+
+  /* base (warm neutrals) */
+  --c-bg: #f5f2ee;
+  --c-raised: #fafaf8;
+  --c-surface: #ffffff;
+  --c-border: rgba(62, 56, 50, 0.09);
+  --c-border2: rgba(62, 56, 50, 0.16);
+  --c-ink: #1a1714;
+  --c-ink2: #3e3832;
+  --c-ink3: #6a6158;
+  --c-ink4: #776d64; /* OKLAB: 4.53:1 on cream */
+  --c-ink5: #9d9389; /* decorative only */
+  /* Warm-neutral mid-scale, used in showcase swatches; not for ink. */
+  --c-warm-200: #ded5cb;
+  --c-warm-300: #c4b9ad;
+
+  /* semantic colors. 4 colors, distinguishable under deuteranopia + protanopia. */
+  --c-primary: #007dc3; /* freshwater blue, official brand guide */
+  --c-green: #5e9732;
+  --c-yellow: #ffd200;
+  --c-red: #d2232a;
+
+  /* auxiliary colors (always paired with text, icon, or abbreviation) */
+  --c-purple: #66489d; /* collides with primary under protanopia */
+  --c-teal: #009688;
+  --c-ocean: #72ccd2;
+  --c-orange: #f78e1e;
+  --c-grellow: #c1cd23;
+  --c-frost: #c7dbee;
+
+  /* text on tint (OKLAB L-axis darkened for 4.5:1) */
+  --ct-primary: #006eac; /* darkened freshwater for 4.9:1 on cream */
+  --ct-green: #3c6e08;
+  --ct-yellow: #8c5200;
+  --ct-red: #ce1d27;
+  --ct-purple: #66489d;
+  --ct-teal: #00776b; /* aux */
+  --ct-ocean: #03757c; /* aux */
+  --ct-orange: #af4b00; /* aux */
+
+  /* tint bgs on cream (OKLAB hue, C=0.015, L=0.935; yellow hand-tuned) */
+  --bg-primary: #e1ebf3;
+  --bg-green: #e5ece2;
+  --bg-yellow: #eeead2;
+  --bg-red: #f3e6e4;
+  --bg-purple: #eae8f3;
+  --bg-teal: #dfedea;
+  --bg-ocean: #dfedee;
+  --bg-orange: #f1e7e0; /* aux */
+
+  /* tint borders on cream (OKLAB hue, C=0.035, L=0.895; yellow hand-tuned) */
+  --bo-primary: #cae0f2;
+  --bo-green: #d3e2cb;
+  --bo-yellow: #ecdda4;
+  --bo-red: #f3d4d0;
+  --bo-purple: #ded8f1;
+  --bo-teal: #c4e4df;
+  --bo-ocean: #c3e4e6;
+  --bo-orange: #efd8c6; /* aux */
+
+  /* tint bgs on white (for elements inside cards/frames) */
+  --bgw-primary: #dfebf6;
+  --bgw-green: #e4eddf;
+  --bgw-yellow: #f8f0d4;
+  --bgw-red: #f7e5e3;
+  --bgw-purple: #ebe7f6;
+  --bgw-teal: #dceeeb;
+  --bgw-ocean: #dbeeef;
+  --bgw-orange: #f4e7dd; /* aux */
+
+  /* interactive */
+  --c-primary-dim: #005889; /* hover: 70% of freshwater */
+  --c-teal-btn: #008578;
+  --c-teal-dim: #007368; /* hover: teal button darkened */
+  --c-purple-btn: #66489d; /* same as base; purple is already button-weight */
+  --c-purple-dim: #49297c; /* OKLAB L×0.778, same ratio as primary to primary-dim */
+  --c-glow: rgba(0, 125, 195, 0.08);
+
+  /* spacing */
+  --s-1: 4px; /* micro: chip icon gap, border offsets */
+  --s-2: 6px; /* tight: chip padding, swatch gap, icon margins */
+  --s-3: 8px; /* compact: note margin, small gaps */
+  --s-4: 10px; /* base: alert gap, button gap, flex gaps */
+  --s-5: 12px; /* row padding, alert padding */
+  --s-6: 14px; /* tab padding, frame inner */
+  --s-7: 18px; /* standard: row padding-x, frame padding */
+  --s-8: 22px; /* section inner padding */
+  --s-9: 26px; /* large: section gap, header margin */
+  --s-10: 34px; /* page padding-top */
+  --s-11: 38px; /* section margin-bottom */
+  --s-12: 50px; /* extra large: footer margin */
+
+  /* font sizes (sequential index, smallest to largest) */
+  --fs-1: 10px;
+  --fs-2: 11px;
+  --fs-3: 12px;
+  --fs-4: 13px;
+  --fs-5: 14px;
+  --fs-6: 15px;
+  --fs-7: 16px;
+  --fs-8: 17px;
+  --fs-9: 18px;
+  --fs-10: 19px;
+  --fs-11: 22px;
+  --fs-hero: clamp(24px, 3.5vw, 30px);
+
+  /* radii (concentric: inner = outer - padding) */
+  --r-sm: 4px; /* chips, badges, inner pills */
+  --r-button: 7px; /* button-shaped controls. A touch tighter than --r-md so they don't read as oversized chips. */
+  --r-md: 8px; /* inputs, alerts, content cards' inner */
+  --r-lg: 12px; /* frames, cards, code blocks */
+  --r-full: 999px;
+}

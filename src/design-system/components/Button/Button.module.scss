@@ -1,0 +1,119 @@
+.btn {
+  font-family: var(--f-sans);
+  font-weight: 600;
+  /* Transparent border on the base so primary/teal/purple/ghost sit
+     at the same height as outline/danger (which add a real color).
+     Otherwise variants without a border are 2px shorter. */
+  border: 1px solid transparent;
+  border-radius: var(--r-button);
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &:active,
+  &[data-pressed] {
+    transform: scale(0.97);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--c-glow);
+  }
+
+  &[data-disabled] {
+    color: var(--c-ink5);
+    background: var(--c-raised);
+    border-color: var(--c-border);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  svg {
+    display: block;
+    flex-shrink: 0;
+  }
+}
+
+.primary {
+  background: var(--c-primary);
+  color: white;
+
+  &:hover:not([data-disabled]) {
+    background: var(--c-primary-dim);
+  }
+}
+
+.teal {
+  background: var(--c-teal-btn);
+  color: white;
+
+  &:hover:not([data-disabled]) {
+    background: var(--c-teal-dim);
+  }
+}
+
+.purple {
+  background: var(--c-purple-btn);
+  color: white;
+
+  &:hover:not([data-disabled]) {
+    background: var(--c-purple-dim);
+  }
+}
+
+.outline {
+  background: transparent;
+  color: var(--c-ink2);
+  border-color: var(--c-border2);
+
+  &:hover:not([data-disabled]) {
+    background: var(--c-raised);
+  }
+}
+
+.ghost {
+  background: transparent;
+  color: var(--c-ink3);
+
+  &:hover:not([data-disabled]) {
+    background: var(--c-border);
+  }
+}
+
+.danger {
+  background: transparent;
+  color: var(--ct-red);
+  border-color: var(--bo-red);
+
+  &:hover:not([data-disabled]) {
+    background: var(--bg-red);
+  }
+}
+
+/* Sizes own padding, font-size, gap. Variants own color/border only;
+   no padding overrides, so a primary md and a ghost md sit identically
+   in space. All sizes share --r-button radius for visual consistency
+   (no per-size radius drift). */
+.md {
+  padding: var(--s-4) var(--s-7);
+  font-size: var(--fs-6);
+  gap: var(--s-2);
+}
+
+.sm {
+  padding: var(--s-3) var(--s-6);
+  font-size: var(--fs-5);
+  gap: var(--s-2);
+}
+
+.xs {
+  padding: var(--s-2) var(--s-5);
+  font-size: var(--fs-4);
+  gap: var(--s-1);
+}

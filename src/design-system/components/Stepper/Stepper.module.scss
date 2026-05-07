@@ -1,0 +1,129 @@
+.root {
+  font-family: var(--f-sans);
+}
+
+.steps {
+  display: flex;
+}
+
+.horizontal .steps {
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.horizontal .step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  position: relative;
+}
+
+.horizontal .connector {
+  position: absolute;
+  top: 9px;
+  left: calc(50% + var(--s-6));
+  right: calc(-50% + var(--s-6));
+  height: 1px;
+  background: var(--c-border);
+}
+
+.horizontal .completed .connector {
+  background: var(--c-teal);
+}
+
+.horizontal .labelGroup {
+  text-align: center;
+  margin-top: var(--s-3);
+}
+
+.vertical .steps {
+  flex-direction: column;
+  gap: 0;
+}
+
+.vertical .step {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  position: relative;
+  padding-bottom: var(--s-8);
+}
+
+.vertical .connector {
+  position: absolute;
+  top: var(--s-9);
+  left: 9px;
+  width: 1px;
+  bottom: 0;
+  background: var(--c-border);
+}
+
+.vertical .completed .connector {
+  background: var(--c-teal);
+}
+
+.vertical .labelGroup {
+  margin-left: var(--s-5);
+  padding-top: 1px;
+}
+
+.dot {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--r-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-3);
+  font-weight: 600;
+  flex-shrink: 0;
+  border: 1.5px solid var(--c-border);
+  color: var(--c-ink5);
+  background: var(--c-bg);
+  position: relative;
+  z-index: 1;
+}
+
+.completed .dot {
+  background: var(--c-teal);
+  border-color: var(--c-teal);
+  color: var(--c-bg);
+}
+
+.active .dot {
+  background: var(--c-primary);
+  border-color: var(--c-primary);
+  color: white;
+  box-shadow: 0 0 0 3px var(--c-glow);
+}
+
+.label {
+  font-size: var(--fs-5);
+  font-weight: 600;
+  color: var(--c-ink2);
+  display: block;
+}
+
+.active .label {
+  color: var(--c-ink);
+}
+
+.upcoming .label {
+  color: var(--c-ink4);
+}
+
+.desc {
+  font-size: var(--fs-4);
+  color: var(--c-ink4);
+  display: block;
+  margin-top: 1px;
+}
+
+.content {
+  margin-top: var(--s-7);
+  padding: var(--s-7);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--c-surface);
+}

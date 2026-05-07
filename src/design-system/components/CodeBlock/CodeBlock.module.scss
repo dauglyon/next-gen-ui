@@ -1,0 +1,33 @@
+.card {
+  margin: var(--s-5) 0;
+  padding: 0 var(--s-6);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  background: var(--c-raised);
+  /* Clip the code section's full-bleed corners to the card's rounded
+     shape. Without this, the section's square bottom corners would
+     overlap the card's rounded ones. */
+  overflow: hidden;
+}
+
+/* The code area: a band that runs edge-to-edge across the card,
+   separated from the trigger by a top divider. The pre inside drops
+   its own border/radius/bg so the area reads as a section of the
+   card, not a nested card. */
+.codeSection {
+  /* Side bleeds match .card's horizontal padding (--s-6). Card has 0
+     vertical padding, so no negative bottom margin is needed. */
+  margin: 0 calc(-1 * var(--s-6));
+  border-top: 1px solid var(--c-border);
+
+  pre[class*='language-'] {
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    background: var(--c-surface);
+    padding: var(--s-5) var(--s-7);
+    /* Long code lines scroll horizontally inside the code block
+       instead of pushing the page layout wider than the viewport. */
+    overflow-x: auto;
+  }
+}

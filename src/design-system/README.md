@@ -1,0 +1,145 @@
+# `@kbase/design-system`
+
+KBase design system: components, tokens, and styles. Source at
+`src/design-system/`. Published to GitHub Packages npm.
+
+---
+
+## Install
+
+```bash
+echo "@kbase:registry=https://npm.pkg.github.com" >> ~/.npmrc
+echo "//npm.pkg.github.com/:_authToken=<GHCR_PAT>" >> ~/.npmrc
+
+npm install @kbase/design-system
+```
+
+PAT scope: `read:packages`.
+
+Peer dependencies: `react`, `react-dom`, `@base-ui/react`,
+`@phosphor-icons/react`, `prismjs`. Required versions are recorded in
+the published `package.json` and tracked from the host repo's
+dependency versions at build time. `@phosphor-icons/react` is a hard
+peer dependency: every icon-using component imports from it.
+
+## Use
+
+```tsx
+import { Button, Alert } from '@kbase/design-system';
+import '@kbase/design-system/style.css';
+```
+
+`style.css` is the all-in-one bundle: tokens, utilities, resets, and
+component styles in correct order. Granular entries are available
+for opt-in: `components.css`, `global.css`,
+`tokens/{fonts,tokens,prism-kbase,utilities}.css`. See
+[Layering](#layering).
+
+---
+
+## Layout
+
+```
+src/design-system/
+  index.ts                  Public surface. Anything not re-exported here is private.
+  components/<Name>/        Component.tsx, Component.module.scss, index.ts
+  tokens/                   fonts.css, tokens.css, prism-kbase.css, utilities.css
+  global.css                Element resets and globals.
+  util/cx.ts                Class-name helper.
+  showcase/, appendix/      In-app demo content. Not in the published package.
+```
+
+Component slots in `index.ts` define the package surface. Adding a
+new component:
+
+1. Create `components/<Name>/{<Name>.tsx,<Name>.module.scss,index.ts}`.
+2. Re-export from `src/design-system/index.ts`.
+3. Optional: add to the showcase tour at `/design-system`.
+4. New external dependency? See [Externals](#externals).
+
+---
+
+## In-repo usage
+
+The host app imports from source via the `@kbase/design-system` alias
+(declared in `vite.config.ts` and `tsconfig.json`'s `paths`). No build
+step needed; Vite and `tsc` resolve straight to `src/design-system/`.
+
+---
+
+## Build
+
+```bash
+npm run build:design-system
+```
+
+Output: `dist-design-system/`.
+
+| File             | Contents                                                                     |
+| ---------------- | ---------------------------------------------------------------------------- |
+| `index.js`       | ESM bundle of the public surface.                                            |
+| `index.js.map`   | Source map.                                                                  |
+| `style.css`      | All-in-one: tokens + utilities + resets + component styles.                  |
+| `components.css` | Component styles only (no tokens, no resets).                                |
+| `global.css`     | Element resets, mirrored from `src/design-system/global.css`.                |
+| `tokens/*.css`   | Tokens, mirrored from `src/design-system/tokens/*.css`.                      |
+| `types/`         | `.d.ts` declarations emitted by `tsc`.                                       |
+| `package.json`   | Generated. Version from `DS_VERSION` env or root `package.json` as fallback. |
+
+Inspect the would-be tarball: `cd dist-design-system && npm pack --dry-run`.
+
+### Externals
+
+Not bundled into `index.js`:
+
+- `react`, `react/jsx-runtime`, `react-dom` (and submodules)
+- `@base-ui/react/*`
+- `@phosphor-icons/react`
+- `prismjs` (and submodules)
+
+When adding a new external, update both:
+
+- `vite.config.designsystem.ts` → `rollupOptions.external`
+- `scripts/build-design-system.mjs` → `peerDependencies`
+
+---
+
+## Release
+
+A `ds-vX.Y.Z` GitHub release publishes `@kbase/design-system`
+at version `X.Y.Z`. The version is derived from the tag; the workflow
+sets `DS_VERSION=X.Y.Z` and feeds it to the build. No `package.json`
+bump required.
+
+```bash
+gh release create ds-v0.2.0 --title "Design system v0.2.0" --notes "..."
+```
+
+The `publish` job in `.github/workflows/design-system.yml` then:
+
+1. Extracts the version from the tag.
+2. Runs `npm run build:design-system`.
+3. `npm publish` to `https://npm.pkg.github.com`.
+4. Attaches the `.tgz` as a release asset.
+
+App releases (`vX.Y.Z`) and design-system releases (`ds-vX.Y.Z`) are
+independent triggers. The Docker workflow (`docker.yml`) is unaffected
+by `ds-v*` tags.
+
+PR builds and main-branch pushes run only the `build` job: no publish.
+The artifact's version label falls back to root `package.json`.
+
+---
+
+## Layering
+
+The combined `style.css` concatenates the layers in this order. Use
+the granular entries instead if a specific layer needs to be skipped
+or replaced.
+
+1. `tokens/fonts.css`: Google Fonts `@import`
+2. `tokens/tokens.css`: design tokens (`--c-*`, `--s-*`, `--r-*`, …)
+3. `tokens/prism-kbase.css`: Prism syntax theme
+4. `tokens/utilities.css`: `.h1` / `.h2` / `.body` / `.caption` / `.note`
+5. `global.css`: element resets and globals
+6. `components.css`: bundled component styles

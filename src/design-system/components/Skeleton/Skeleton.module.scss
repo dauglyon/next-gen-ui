@@ -1,0 +1,32 @@
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.skeleton {
+  background: var(--c-border2);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.text {
+  height: 12px;
+  border-radius: var(--r-sm);
+  width: 100%;
+}
+
+.circular {
+  border-radius: var(--r-full);
+  width: 32px;
+  height: 32px;
+}
+
+.rectangular {
+  border-radius: var(--r-sm);
+  width: 100%;
+  height: 80px;
+}

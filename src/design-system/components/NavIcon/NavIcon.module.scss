@@ -1,0 +1,35 @@
+.navIcon {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-button);
+  border: none;
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--c-ink4);
+  font-size: var(--fs-10);
+  transition:
+    background 0.1s,
+    color 0.1s;
+
+  &:hover {
+    background: var(--bg-primary);
+    color: var(--ct-primary);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--c-glow);
+  }
+}
+
+.active {
+  background: var(--bg-primary);
+  color: var(--c-primary);
+
+  &:hover {
+    background: var(--bg-primary);
+  }
+}

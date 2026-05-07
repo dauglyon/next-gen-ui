@@ -1,0 +1,32 @@
+.root {
+  width: 100%;
+}
+
+.track {
+  height: 4px;
+  border-radius: var(--r-full);
+  background: var(--c-border);
+  overflow: hidden;
+}
+
+.indicator {
+  height: 100%;
+  border-radius: var(--r-full);
+  transition: width 0.3s;
+}
+
+.primary {
+  background: var(--c-primary);
+}
+.green {
+  background: var(--c-green);
+}
+.yellow {
+  background: var(--c-yellow);
+}
+.red {
+  background: var(--c-red);
+}
+.purple {
+  background: var(--c-purple);
+}

@@ -1,0 +1,102 @@
+.wrapper {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  /* `auto` (not `hidden`): tables wider than their container scroll
+     horizontally inside the card instead of clipping the right
+     columns. Y still clips so the rounded corners are preserved. */
+  overflow: auto;
+}
+
+.compact {
+  border: none;
+  border-radius: 0;
+  background: none;
+
+  .table {
+    font-size: var(--fs-4);
+  }
+  .th {
+    padding: var(--s-2) var(--s-3);
+    font-size: var(--fs-3);
+  }
+  .td {
+    padding: var(--s-2) var(--s-3);
+    font-size: var(--fs-4);
+  }
+}
+
+.table {
+  width: 100%;
+  /* Table keeps its natural column widths; if that's wider than the
+     wrapper, the wrapper's `overflow: auto` scrolls horizontally
+     instead of squeezing cells into multi-line wraps. */
+  min-width: max-content;
+  border-collapse: collapse;
+  font-size: var(--fs-5);
+}
+
+.thead {
+  background: var(--c-raised);
+}
+
+.th {
+  font-size: var(--fs-3);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--c-ink4);
+  text-align: left;
+  padding: var(--s-3) var(--s-5);
+  border-bottom: 1px solid var(--c-border);
+  white-space: nowrap;
+}
+
+.tr {
+  border-bottom: 1px solid var(--c-border);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  tbody &:hover {
+    background: var(--c-raised);
+  }
+}
+
+.thSortable {
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    color: var(--c-ink2);
+
+    .sortIcon {
+      opacity: 0.4;
+    }
+  }
+}
+
+.sortIcon {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: var(--s-1);
+  color: var(--c-ink5);
+  opacity: 0;
+  transition: opacity 0.1s;
+
+  svg {
+    display: block;
+  }
+}
+
+.sortActive {
+  opacity: 1;
+  color: var(--c-primary);
+}
+
+.td {
+  padding: var(--s-3) var(--s-5);
+  color: var(--c-ink2);
+  vertical-align: middle;
+}

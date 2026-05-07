@@ -1,0 +1,9 @@
+node_modules
+dist
+dist-design-system
+build
+coverage
+package-lock.json
+src/routeTree.gen.ts
+.claude
+submodule

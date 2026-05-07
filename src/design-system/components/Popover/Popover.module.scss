@@ -1,0 +1,29 @@
+.popup {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: var(--s-7);
+  min-width: 200px;
+  max-width: 320px;
+  box-shadow:
+    0 1px 2px rgba(26, 23, 20, 0.04),
+    0 4px 12px rgba(26, 23, 20, 0.08),
+    0 12px 32px rgba(26, 23, 20, 0.06);
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+.title {
+  font-size: var(--fs-6);
+  font-weight: 700;
+  color: var(--c-ink);
+  margin-bottom: var(--s-2);
+}
+
+.description {
+  font-size: var(--fs-5);
+  color: var(--c-ink3);
+  line-height: 1.55;
+}

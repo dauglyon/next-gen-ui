@@ -1,0 +1,63 @@
+.root {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--c-border2);
+  background: var(--c-surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+
+  &[data-checked],
+  &[data-indeterminate] {
+    background: var(--c-primary);
+    border-color: var(--c-primary);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--c-glow);
+  }
+
+  &[data-disabled] {
+    background: var(--c-border);
+    border-color: var(--c-border);
+    border-style: dashed;
+    cursor: not-allowed;
+
+    &[data-checked],
+    &[data-indeterminate] {
+      background: var(--c-ink5);
+      border-color: var(--c-ink5);
+      border-style: solid;
+    }
+  }
+}
+
+.indicator {
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Toggle icons via the Base UI root's data-state. Works for both
+   controlled and uncontrolled (`defaultIndeterminate`). */
+.iconMinus {
+  display: none;
+}
+
+.root[data-indeterminate] {
+  .iconCheck {
+    display: none;
+  }
+
+  .iconMinus {
+    display: inline-flex;
+  }
+}

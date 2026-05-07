@@ -1,0 +1,50 @@
+export type {
+  AllSessions,
+  Ident,
+  Me,
+  MeUpdate,
+  LoginChoice,
+  LoginPickInput,
+  LoginPickResult,
+  SessionToken,
+} from './schemas';
+
+export {
+  AUTH_ORIGIN,
+  AuthApiError,
+  validateToken,
+  setMe,
+  getLoginChoice,
+  postLoginPick,
+  getAllSessions,
+  revokeSession,
+  logout,
+} from './client';
+
+export { COOKIE_NAME, getToken, setToken, clearToken } from './cookie';
+
+export {
+  authMeOptions,
+  authSessionsOptions,
+  primeAuthCache,
+  clearAuthCache,
+  clearAuthSession,
+  installCrossTabAuthSync,
+  installAuthFailureInterceptor,
+  installAuthExpiryWatcher,
+} from './queries';
+
+export { safeRedirect, parseSafeRedirect } from './redirect';
+export type { SafeRedirectParts } from './redirect';
+
+export { authErrorMessage } from './errors';
+export type { AuthErrorMessageOptions } from './errors';
+
+export {
+  useMe,
+  useMaybeMe,
+  useSessions,
+  useSignOut,
+  useUpdateMe,
+  useRevokeOtherSession,
+} from './hooks';

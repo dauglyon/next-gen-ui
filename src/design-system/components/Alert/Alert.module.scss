@@ -1,0 +1,163 @@
+// Column container so the optional trace can sit as a full-bleed band of
+// the same card (same recipe as CodeBlock's "Show code" expansion, but
+// the alert itself is the card).
+.alert {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--r-md);
+  font-size: var(--fs-5);
+  color: var(--c-ink2);
+  border: 1px solid;
+  overflow: hidden;
+}
+
+.alertHeader {
+  display: flex;
+  gap: var(--s-5);
+  padding: var(--s-5) var(--s-6);
+  align-items: flex-start;
+}
+
+.icon {
+  font-size: var(--fs-8);
+  flex-shrink: 0;
+  margin-top: 1px;
+  display: flex;
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.green {
+  background: var(--bg-green);
+  border-color: var(--bo-green);
+  .icon,
+  :global(strong) {
+    color: var(--ct-green);
+  }
+}
+
+.primary {
+  background: var(--bg-primary);
+  border-color: var(--bo-primary);
+  .icon,
+  :global(strong) {
+    color: var(--ct-primary);
+  }
+}
+
+.yellow {
+  background: var(--bg-yellow);
+  border-color: var(--bo-yellow);
+  .icon,
+  :global(strong) {
+    color: var(--ct-yellow);
+  }
+}
+
+.red {
+  background: var(--bg-red);
+  border-color: var(--bo-red);
+  .icon,
+  :global(strong) {
+    color: var(--ct-red);
+  }
+}
+
+// Disclosure trigger sits inside .actions and inherits underline-link
+// styling from there. Auto-margin pushes it right (Retry left, Details right).
+.disclose {
+  margin-left: auto;
+}
+
+.chevron {
+  transition: transform 0.12s;
+}
+[data-panel-open] .chevron {
+  transform: rotate(180deg);
+}
+
+// Expanded trace renders as a full-bleed code section on the alert card.
+// Sibling of .alertHeader (not nested) so it spans the full width including
+// the icon column. Matches the CodeBlock "Show code" expansion pattern.
+.tracePanel {
+  /* base-ui Collapsible.Panel wrapper; nothing to do here. */
+}
+
+.tracePre {
+  font-family: var(--f-mono);
+  font-size: var(--fs-3);
+  line-height: 1.5;
+  color: var(--c-ink2);
+  margin: 0;
+  padding: var(--s-5) var(--s-7);
+  background: var(--c-surface);
+  border-top: 1px solid var(--c-border);
+  border-radius: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-x: auto;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-6);
+  margin-top: var(--s-5);
+
+  // Style buttons/links inside .actions as severity-colored inline links.
+  // Targeted resets only; `all: unset` would force re-declaring inherited
+  // text-decoration, and on iOS Safari it also strips font-size (links then
+  // render at iOS's default button size next to surrounding text).
+  button,
+  a {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    font-family: var(--f-sans);
+    font-size: var(--fs-4);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+
+    svg {
+      display: block;
+      flex-shrink: 0;
+    }
+    &:hover {
+      text-decoration-thickness: 2px;
+    }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px var(--c-glow);
+      border-radius: var(--r-sm);
+    }
+  }
+}
+
+.green .actions button,
+.green .actions a {
+  color: var(--ct-green);
+}
+.primary .actions button,
+.primary .actions a {
+  color: var(--ct-primary);
+}
+.yellow .actions button,
+.yellow .actions a {
+  color: var(--ct-yellow);
+}
+.red .actions button,
+.red .actions a {
+  color: var(--ct-red);
+}

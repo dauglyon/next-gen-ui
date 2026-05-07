@@ -1,0 +1,211 @@
+/* App shell modeled on kbase-ui Section00InContext: 44px left nav rail,
+   header bar, content body. All values reference design tokens. */
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+.app-shell {
+  /* Shared header height. Sidebar's brand band and the topbar align
+     to the same Y baselines so the sidebar buttons start exactly
+     where the topbar ends. */
+  --shell-header-h: 52px;
+  display: flex;
+  /* dvh keeps the shell sized to the *visible* viewport on iOS
+     Safari (where 100vh = largest possible viewport, including the
+     area covered by the dynamic URL bar). */
+  min-height: 100dvh;
+  background: var(--c-surface);
+}
+
+
+/* Sidebar */
+
+/* The outer sidebar tube fills the full document height so its
+   background and border extend down to the very bottom of the page,
+   no matter how long the content is. The actual nav controls live in
+   `__sidebar-inner`, which is sticky to the visible viewport. */
+.app-shell__sidebar {
+  width: 44px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--c-border);
+  background: var(--c-bg);
+}
+
+.app-shell__sidebar-inner {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-shell__sidebar-header {
+  height: var(--shell-header-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.app-shell__sidebar-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-1);
+  padding: 0 0 var(--s-4);
+}
+
+.app-shell__brand {
+  display: block;
+}
+
+.app-shell__spacer {
+  flex: 1;
+}
+
+/* Wraps the sidebar Avatar (a person, so circular per the system).
+   Avatar provides the visual; the link owns the halo and click
+   target. border-radius matches the round Avatar so the halo
+   conforms. */
+.app-shell__avatar-link {
+  display: inline-flex;
+  border-radius: var(--r-full);
+  cursor: pointer;
+  transition: box-shadow 0.12s ease;
+  text-decoration: none;
+}
+.app-shell__avatar-link:hover {
+  box-shadow: 0 0 0 3px var(--bg-primary);
+}
+.app-shell__avatar-link:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--c-glow);
+}
+/* Active = the user is on /account. "Glow not outline": cream gap
+   to separate the marker from the avatar fill, a tinted (not solid)
+   ring for legibility, and a soft diffuse glow on the outside. */
+.app-shell__avatar-link--active,
+.app-shell__avatar-link--active:hover {
+  box-shadow:
+    0 0 0 2px var(--c-bg),
+    0 0 0 4px var(--bo-primary),
+    0 0 12px 4px var(--c-glow);
+}
+
+/* Main column */
+
+.app-shell__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-shell__header {
+  min-height: var(--shell-header-h);
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: 0 var(--s-7);
+  border-bottom: 1px solid var(--c-border);
+  background: var(--c-surface);
+  /* Stays at the top of the viewport while the page below it scrolls.
+     Sits at the same vertical position as the sticky sidebar. */
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.app-shell__header-spacer {
+  flex: 1;
+}
+
+.app-shell__body {
+  padding: var(--s-7);
+  background: var(--c-surface);
+  /* Force the document to be at least as tall as the visible viewport
+     plus a buffer, so even short pages overflow and scroll. iOS Safari
+     uses page scroll to decide when to collapse its address bar; if
+     the document fits exactly in the viewport, it never collapses and
+     the chrome feels too tall. The buffer also gives the bottom of
+     content room to breathe past any home-indicator / safe area. */
+  min-height: calc(100dvh + var(--s-12));
+  padding-bottom: max(var(--s-12), env(safe-area-inset-bottom));
+}
+
+.app-shell__body-inner {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+/* App-level link utility. Mirrors the inline styles the design system
+   applies to anchors inside Alert / JobPanel / NotificationFeed
+   (color: --ct-primary; underline w/ 2px offset; weight 600; thicker
+   underline on hover). */
+.link {
+  /* iOS Safari uses a smaller default font for <button>; force
+     inherit so a button styled as a link sits at body size next to
+     real anchors in the same paragraph. */
+  font: inherit;
+  color: var(--ct-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 600;
+}
+.link:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* Login footer: quiet utility links that sit below the auth card.
+   Smaller than body copy; muted ink-4 by default; underline only on
+   hover. The visual weight should never compete with the primary
+   sign-in action. */
+.login__footer {
+  display: flex;
+  justify-content: center;
+  gap: var(--s-9);
+  font-size: var(--fs-5);
+}
+.login__footer a {
+  color: var(--c-ink4);
+  text-decoration: none;
+  transition: color 0.12s ease;
+}
+.login__footer a:hover {
+  color: var(--c-ink2);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Dev-only sign-in section inside the auth Frame. Visually subordinate
+   to the primary action via a thin separator above. Stripped from
+   production bundles (gated on import.meta.env.DEV in the route). */
+.login__dev {
+  margin-top: var(--s-7);
+  padding-top: var(--s-7);
+  border-top: 1px solid var(--c-border);
+}
+
+/* Page hero. Mirrors the design-system showcase hero so the
+   home page reads as part of the same visual language. */
+.page-hero {
+  padding: var(--s-10) 0;
+}
+
+.page-hero__headline {
+  font-size: var(--fs-hero);
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--c-ink);
+  margin-bottom: var(--s-5);
+  max-width: 500px;
+}
+
+.page-hero__tagline {
+  font-size: var(--fs-6);
+  color: var(--c-ink3);
+  max-width: 60ch;
+  line-height: 1.6;
+}

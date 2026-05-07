@@ -1,0 +1,28 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./src/design-system",
+    "outDir": "./dist-design-system/types",
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "noEmit": false,
+    "allowImportingTsExtensions": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "types": ["vite/client"]
+  },
+  "include": [
+    "src/design-system/index.ts",
+    "src/design-system/components/**/*.ts",
+    "src/design-system/components/**/*.tsx",
+    "src/design-system/util/**/*.ts"
+  ],
+  "exclude": [
+    "src/design-system/showcase",
+    "src/design-system/appendix",
+    "src/design-system/Showcase.tsx",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ]
+}

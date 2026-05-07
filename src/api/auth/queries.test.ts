@@ -1,0 +1,192 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { QueryClient } from '@tanstack/react-query';
+
+import { clearAuthCache, installCrossTabAuthSync, primeAuthCache } from './queries';
+import { AUTH_SIGNAL_KEY, clearToken, getToken } from './cookie';
+
+const fetchMock = vi.fn<typeof fetch>();
+
+beforeEach(() => {
+  fetchMock.mockReset();
+  vi.stubGlobal('fetch', fetchMock);
+  clearToken();
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  clearToken();
+});
+
+describe('primeAuthCache', () => {
+  it('writes cookie and primes cache on success', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ user: 't', display: 'T' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    const me = await primeAuthCache(qc, {
+      token: 'tok-abc',
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+
+    expect(me).toMatchObject({ user: 't', display: 'T' });
+    expect(getToken()).toBe('tok-abc');
+    expect(qc.getQueryData(['auth', 'me'])).toMatchObject({ user: 't' });
+  });
+
+  it('does not write the cookie when /api/V2/me rejects the token (401)', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 401 }));
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    await expect(
+      primeAuthCache(qc, {
+        token: 'bad-tok',
+        expiresAt: new Date(Date.now() + 60_000),
+      }),
+    ).rejects.toThrow();
+
+    expect(getToken()).toBeNull();
+    expect(qc.getQueryData(['auth', 'me'])).toBeUndefined();
+  });
+
+  it('does not write the cookie when /api/V2/me errors (5xx)', async () => {
+    fetchMock.mockResolvedValue(new Response('boom', { status: 500 }));
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    await expect(
+      primeAuthCache(qc, {
+        token: 'oops',
+        expiresAt: new Date(Date.now() + 60_000),
+      }),
+    ).rejects.toThrow();
+
+    expect(getToken()).toBeNull();
+  });
+
+  it('does not overwrite a pre-existing cookie when validation rejects the candidate', async () => {
+    // primeAuthCache must not write its (bad) candidate token to the
+    // cookie. A pre-existing cookie is browser-level shared state
+    // across tabs / subdomains and is not ours to clear here; doing
+    // so would log out other tabs unexpectedly.
+    document.cookie = `kbase_session=stale-prev; path=/`;
+    fetchMock.mockResolvedValue(new Response(null, { status: 401 }));
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    await expect(
+      primeAuthCache(qc, {
+        token: 'bad-tok',
+        expiresAt: new Date(Date.now() + 60_000),
+      }),
+    ).rejects.toThrow();
+
+    expect(getToken()).toBe('stale-prev');
+  });
+
+  it('forwards the AbortSignal to validateToken', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ user: 't', display: 'T' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const ac = new AbortController();
+
+    await primeAuthCache(qc, {
+      token: 'tok-x',
+      expiresAt: new Date(Date.now() + 60_000),
+      signal: ac.signal,
+    });
+
+    const [, init] = fetchMock.mock.calls[0]!;
+    expect(init?.signal).toBe(ac.signal);
+  });
+});
+
+describe('clearAuthCache', () => {
+  it('drops the cookie and removes every auth-namespaced query', () => {
+    document.cookie = `kbase_session=tok-zzz; path=/`;
+    const qc = new QueryClient();
+    qc.setQueryData(['auth', 'me'], { user: 't', display: 'T' });
+    qc.setQueryData(['auth', 'sessions'], [{ id: 1 }]);
+    qc.setQueryData(['other'], 'untouched');
+
+    clearAuthCache(qc);
+
+    expect(getToken()).toBeNull();
+    expect(qc.getQueryData(['auth', 'me'])).toBeUndefined();
+    expect(qc.getQueryData(['auth', 'sessions'])).toBeUndefined();
+    expect(qc.getQueryData(['other'])).toBe('untouched');
+  });
+});
+
+describe('installCrossTabAuthSync', () => {
+  it('on `cleared:<ts>` sets me to null and removes sessions without refetching', () => {
+    const qc = new QueryClient();
+    qc.setQueryData(['auth', 'me'], { user: 'u', display: 'U' });
+    qc.setQueryData(['auth', 'sessions'], [{ id: 'a' }]);
+    const invalidate = vi.spyOn(qc, 'invalidateQueries');
+    const unsubscribe = installCrossTabAuthSync(qc);
+
+    window.dispatchEvent(
+      new StorageEvent('storage', { key: AUTH_SIGNAL_KEY, newValue: 'cleared:12345' }),
+    );
+
+    expect(qc.getQueryData(['auth', 'me'])).toBeNull();
+    expect(qc.getQueryData(['auth', 'sessions'])).toBeUndefined();
+    expect(invalidate).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+    unsubscribe();
+  });
+
+  it('on `set:<ts>` invalidates ["auth"] so the gate refetches', () => {
+    const qc = new QueryClient();
+    const spy = vi.spyOn(qc, 'invalidateQueries');
+    const unsubscribe = installCrossTabAuthSync(qc);
+
+    window.dispatchEvent(
+      new StorageEvent('storage', { key: AUTH_SIGNAL_KEY, newValue: 'set:67890' }),
+    );
+
+    expect(spy).toHaveBeenCalledWith({ queryKey: ['auth'] });
+    unsubscribe();
+  });
+
+  it('falls back to invalidate on unknown signal values', () => {
+    const qc = new QueryClient();
+    const spy = vi.spyOn(qc, 'invalidateQueries');
+    const unsubscribe = installCrossTabAuthSync(qc);
+
+    window.dispatchEvent(new StorageEvent('storage', { key: AUTH_SIGNAL_KEY, newValue: '12345' }));
+
+    expect(spy).toHaveBeenCalledWith({ queryKey: ['auth'] });
+    unsubscribe();
+  });
+
+  it('ignores storage events for other keys', () => {
+    const qc = new QueryClient();
+    const spy = vi.spyOn(qc, 'invalidateQueries');
+    const unsubscribe = installCrossTabAuthSync(qc);
+
+    window.dispatchEvent(new StorageEvent('storage', { key: 'unrelated', newValue: 'foo' }));
+
+    expect(spy).not.toHaveBeenCalled();
+    unsubscribe();
+  });
+
+  it('returns an unsubscribe function that detaches the listener', () => {
+    const qc = new QueryClient();
+    const spy = vi.spyOn(qc, 'invalidateQueries');
+    const unsubscribe = installCrossTabAuthSync(qc);
+    unsubscribe();
+
+    window.dispatchEvent(
+      new StorageEvent('storage', { key: AUTH_SIGNAL_KEY, newValue: 'set:99' }),
+    );
+
+    expect(spy).not.toHaveBeenCalled();
+  });
+});

@@ -1,0 +1,22 @@
+.textarea {
+  font-family: var(--f-sans);
+  font-size: var(--fs-6);
+  border: none;
+  outline: none;
+  width: 100%;
+  resize: none;
+  color: var(--c-ink);
+  background: transparent;
+  line-height: 1.55;
+}
+
+/* Prompt input layout. Two-column grid (textarea + run button) so
+   the textarea owns its row and the action sits at the end without
+   reserved-padding hacks. align-items: end keeps the button on the
+   bottom edge as the textarea height grows. */
+.promptInput {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: var(--s-3);
+}

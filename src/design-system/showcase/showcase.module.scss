@@ -1,0 +1,175 @@
+/* Shared styles used across all showcase sections */
+
+.section {
+  margin-bottom: var(--s-11);
+}
+
+.sNum {
+  font-family: var(--f-mono);
+  font-size: var(--fs-3);
+  color: var(--c-ink4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: var(--s-1);
+}
+
+.sTitle {
+  font-size: var(--fs-9);
+  font-weight: 700;
+  color: var(--c-ink);
+  margin-bottom: var(--s-1);
+}
+
+/* Matches the global `.body` utility: same font/color/leading,
+   plus a section-bottom margin. */
+.sDesc {
+  font-size: var(--fs-6);
+  color: var(--c-ink2);
+  line-height: 1.55;
+  margin-bottom: var(--s-7);
+}
+
+.sub {
+  font-size: var(--fs-4);
+  font-weight: 600;
+  color: var(--c-ink3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: var(--s-7) 0 var(--s-5);
+
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
+.row {
+  display: flex;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: var(--s-2);
+}
+
+/* Mirrors the global `.note` utility (fs-4, muted ink, 1.55 line-height)
+   and adds vertical breathing room: `.note` paragraphs are prose
+   separators here, so they need bottom margin too, not just top. */
+.note {
+  font-size: var(--fs-4);
+  color: var(--c-ink4);
+  line-height: 1.55;
+  margin: var(--s-2) 0 var(--s-5);
+
+  code {
+    font-family: var(--f-mono);
+    font-size: var(--fs-4);
+  }
+}
+
+.mono {
+  font-family: var(--f-mono);
+  font-size: var(--fs-3);
+  color: var(--c-ink4);
+}
+
+/* Loader demo cells */
+.cell {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cellDark {
+  background: var(--c-ink);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.cellInline {
+  composes: cell;
+  width: auto;
+  height: auto;
+  padding: var(--s-3) var(--s-6);
+  gap: var(--s-3);
+  flex-direction: row;
+}
+
+.inlineLabel {
+  font-size: var(--fs-5);
+  color: var(--c-ink3);
+}
+
+/* Wraps the typescale table so it scrolls horizontally on narrow
+   viewports instead of clipping the rightmost columns. */
+.typeScaleWrap {
+  overflow-x: auto;
+}
+
+/* Typography scale table (used in 01 + 03) */
+.typeScale {
+  font-size: var(--fs-4);
+  border-collapse: collapse;
+  width: 100%;
+  /* Keep natural column widths; the wrapping `.typeScaleWrap` scrolls
+     horizontally instead of squeezing the role-example column. */
+  min-width: max-content;
+
+  tr {
+    border-bottom: 1px solid var(--c-border);
+  }
+  tr:last-child {
+    border-bottom: none;
+  }
+  td {
+    padding: var(--s-2) 0;
+  }
+}
+
+.typeSize {
+  color: var(--c-ink4);
+  width: 80px;
+  font-family: var(--f-mono);
+  /* Token column must never wrap -- on narrow viewports `--fs-11`
+     would line-break inside the cell and throw row vertical-align
+     off so each cell's small text sits under the next row's large
+     example. */
+  white-space: nowrap;
+}
+
+.typeUse {
+  padding-left: var(--s-3);
+  color: var(--c-ink4);
+  font-family: var(--f-mono);
+  font-size: var(--fs-3);
+}
+
+/* Fixed-width stage label so progress bars in Section06's pipeline
+   demo line up across rows. */
+.stageLabel {
+  flex-shrink: 0;
+  width: 80px;
+}
+
+.controlLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: var(--fs-6);
+  color: var(--c-ink2);
+  cursor: pointer;
+
+  &:has([data-disabled]) {
+    color: var(--c-ink5);
+    cursor: not-allowed;
+  }
+}
+
+/* Data row (section 07) */
+.dataRow {
+  padding: var(--s-3) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  border-bottom: 1px solid var(--c-border);
+}

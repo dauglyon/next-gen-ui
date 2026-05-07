@@ -1,0 +1,49 @@
+.root {
+  display: inline-flex;
+  border: 1px solid var(--c-border2);
+  border-radius: var(--r-button);
+  overflow: hidden;
+}
+
+.btn {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 var(--s-4);
+  color: var(--c-ink4);
+  background: var(--c-surface);
+  font-family: var(--f-sans);
+  font-size: var(--fs-4);
+  font-weight: 600;
+
+  &:hover {
+    color: var(--c-ink2);
+    background: var(--c-raised);
+  }
+
+  &:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--c-glow);
+  }
+
+  & + & {
+    border-left: 1px solid var(--c-border);
+  }
+
+  svg {
+    display: block;
+  }
+}
+
+.active {
+  background: var(--c-primary);
+  color: white;
+
+  &:hover {
+    background: var(--c-primary-dim);
+    color: white;
+  }
+}

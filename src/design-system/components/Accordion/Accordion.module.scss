@@ -1,0 +1,59 @@
+.root {
+  border-bottom: 1px solid var(--c-border);
+
+  /* The bottom border forms the divider between stacked accordions.
+     When this is the last (or only) item in its container, the
+     container's edge already supplies that line. */
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s-5) 0;
+  border: none;
+  background: none;
+  font-family: var(--f-sans);
+  font-size: var(--fs-6);
+  font-weight: 600;
+  color: var(--c-ink);
+  cursor: pointer;
+  text-align: left;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--c-glow);
+    border-radius: var(--r-sm);
+  }
+}
+
+.titleRow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.icon {
+  display: inline-flex;
+  color: var(--c-ink3);
+}
+
+.chevron {
+  color: var(--c-ink4);
+  transition: transform 0.15s;
+
+  .trigger[data-panel-open] & {
+    transform: rotate(180deg);
+  }
+}
+
+.panel {
+  padding-bottom: var(--s-6);
+  font-size: var(--fs-6);
+  color: var(--c-ink2);
+  line-height: 1.55;
+}

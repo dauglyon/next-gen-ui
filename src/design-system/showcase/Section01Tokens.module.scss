@@ -1,0 +1,72 @@
+.spacingRuler {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.spacingStep {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  height: var(--s-7);
+}
+
+.spacingBar {
+  height: var(--s-3);
+  background: var(--c-primary);
+  border-radius: 2px;
+  opacity: 0.6;
+  min-width: 2px;
+}
+
+.spacingLabel {
+  font-family: var(--f-mono);
+  font-size: var(--fs-2);
+  color: var(--c-ink3);
+  width: 28px;
+}
+
+.spacingVal {
+  font-family: var(--f-mono);
+  font-size: var(--fs-2);
+  color: var(--c-ink4);
+}
+
+.radiusDemo {
+  max-width: 400px;
+}
+
+.radiusOuter {
+  border: 1px solid var(--c-border2);
+  border-radius: var(--r-lg);
+  padding: var(--s-7);
+  background: var(--c-surface);
+}
+
+.radiusInner {
+  border: 1px solid var(--c-border2);
+  border-radius: var(--r-sm);
+  padding: var(--s-5);
+  background: var(--c-raised);
+}
+
+.radiusLabel {
+  font-family: var(--f-mono);
+  font-size: var(--fs-2);
+  color: var(--c-ink4);
+  display: block;
+  margin-bottom: var(--s-1);
+}
+
+.radiusSample {
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--c-border2);
+  background: var(--c-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--f-mono);
+  font-size: var(--fs-1);
+  color: var(--c-ink4);
+}

@@ -1,0 +1,25 @@
+.root {
+  font-size: var(--fs-5);
+  display: flex;
+  align-items: center;
+}
+
+.separator {
+  color: var(--c-ink5);
+  margin: 0 6px;
+}
+
+.link {
+  color: var(--c-ink4);
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--c-primary);
+  }
+}
+
+.current {
+  color: var(--c-ink2);
+  font-weight: 600;
+}

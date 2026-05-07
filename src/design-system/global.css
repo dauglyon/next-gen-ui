@@ -1,0 +1,40 @@
+/* Reset & base */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+html {
+  font-size: var(--fs-9);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* iOS Safari auto-boosts text it deems "main content", and the
+     heuristic re-fires on rotation, so font sizes shift unevenly when
+     you turn the device. Pin to 100% so CSS sizes are honored. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body {
+  font-family: var(--f-sans);
+  color: var(--c-ink);
+  background: var(--c-bg);
+  line-height: 1.6;
+  font-synthesis: none;
+}
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+/* Reduced motion: animation: none so elements keep their static CSS fills */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}

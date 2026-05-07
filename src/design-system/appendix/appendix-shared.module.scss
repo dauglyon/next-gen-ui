@@ -1,0 +1,120 @@
+.root {
+  padding-top: var(--s-10);
+}
+
+.num {
+  font-family: var(--f-mono);
+  font-size: var(--fs-3);
+  color: var(--c-ink5);
+  letter-spacing: 0.1em;
+}
+
+.title {
+  font-size: var(--fs-11);
+  font-weight: 700;
+  color: var(--c-ink);
+  margin-bottom: var(--s-1);
+}
+
+.desc {
+  font-size: var(--fs-6);
+  color: var(--c-ink3);
+  margin-bottom: var(--s-1);
+}
+
+.note {
+  font-size: var(--fs-4);
+  color: var(--c-ink4);
+  line-height: 1.55;
+  margin-bottom: var(--s-7);
+}
+
+.layout {
+  display: flex;
+  gap: var(--s-7);
+  align-items: flex-start;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    /* In column mode the cross-axis is horizontal; flex-start would
+       leave children at their content-natural width and let the
+       data-explorer table push the page wider than the viewport.
+       Stretch fills the parent width so internal scroll containers
+       (Table .wrapper, .typeScaleWrap, pre) actually have a width to
+       constrain against. */
+    align-items: stretch;
+  }
+}
+
+.sidebar {
+  width: 200px;
+  flex-shrink: 0;
+
+  @media (max-width: 640px) {
+    width: 100%;
+  }
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+}
+
+.facetOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.facetOption {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-1) 0;
+  cursor: pointer;
+  font-size: var(--fs-5);
+}
+
+.facetLabel {
+  flex: 1;
+  color: var(--c-ink2);
+}
+
+.facetCount {
+  font-family: var(--f-mono);
+  font-size: var(--fs-3);
+  color: var(--c-ink5);
+}
+
+.activeFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1);
+  margin-bottom: var(--s-3);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-bottom: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.resultCount {
+  font-family: var(--f-mono);
+  font-size: var(--fs-4);
+  color: var(--c-ink4);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.mono {
+  font-family: var(--f-mono);
+  font-size: var(--fs-4);
+}
+
+.paginationWrap {
+  padding: var(--s-3) 0;
+}

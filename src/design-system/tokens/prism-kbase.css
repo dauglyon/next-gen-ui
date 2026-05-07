@@ -1,0 +1,97 @@
+/* ================================================================
+   PRISM THEME: KBase Everforest-inspired
+   Warm, muted syntax. Everforest Light mapped to KBase tokens.
+   Base text is ink3 (warm grey-brown).
+   ================================================================ */
+pre[class*='language-'],
+code[class*='language-'] {
+  font-family: var(--f-mono);
+  font-size: var(--fs-5);
+  line-height: 1.7;
+  color: var(--c-ink3);
+  font-variant-numeric: tabular-nums slashed-zero;
+  text-shadow: none;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  tab-size: 2;
+  hyphens: none;
+}
+
+pre[class*='language-'] {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: 16px 20px;
+  margin: 12px 0;
+  overflow-x: auto;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: var(--c-ink4);
+  font-style: italic;
+}
+
+.token.punctuation {
+  color: var(--c-ink4);
+}
+.token.operator {
+  color: var(--c-ink3);
+}
+
+.token.keyword,
+.token.tag,
+.token.boolean {
+  color: var(--ct-red);
+}
+
+.token.builtin,
+.token.constant {
+  color: var(--ct-teal);
+}
+
+.token.function {
+  color: var(--c-primary);
+}
+.token.class-name {
+  color: var(--ct-purple);
+}
+
+.token.string,
+.token.char,
+.token.attr-value,
+.token.template-string {
+  color: var(--ct-green);
+}
+
+.token.number {
+  color: var(--ct-orange);
+}
+
+.token.decorator,
+.token.annotation,
+.token.attr-name {
+  color: var(--ct-yellow);
+}
+
+.token.property {
+  color: var(--c-ink2);
+}
+.token.variable {
+  color: var(--c-ink2);
+}
+.token.symbol {
+  color: var(--ct-orange);
+}
+
+.token.important,
+.token.bold {
+  font-weight: 700;
+}
+
+.token.italic {
+  font-style: italic;
+}
