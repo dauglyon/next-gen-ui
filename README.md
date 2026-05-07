@@ -1,3 +1,5 @@
+![next-gen-ui home page](https://github.com/kbase/next-gen-ui/releases/download/v0.1.0/next-gen-ui-home.png)
+
 # next-gen-ui
 
 KBase / KBERDL web app. Vite + React 19 + TypeScript, file-based
