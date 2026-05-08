@@ -23,7 +23,7 @@ import {
   Section10Icons,
   Section11Implementation,
   Section12Navigation,
-} from './showcase';
+} from './sections';
 
 type CvdMode = 'off' | 'deutan' | 'protan';
 const CVD_ID = 'kbase-cvd-root';

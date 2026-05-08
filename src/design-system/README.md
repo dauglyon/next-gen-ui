@@ -46,7 +46,7 @@ src/design-system/
   tokens/                   fonts.css, tokens.css, prism-kbase.css, utilities.css
   global.css                Element resets and globals.
   util/cx.ts                Class-name helper.
-  showcase/, appendix/      In-app demo content. Not in the published package.
+  sections/, appendix/      In-app demo content. Not in the published package.
 ```
 
 Component slots in `index.ts` define the package surface. Adding a
