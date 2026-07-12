@@ -10,7 +10,7 @@ import { loadPlugin, registerPlugin } from '../plugins/host';
 // uses; unmatched paths land here too, making it the not-found page.
 export const Route = createFileRoute('/$pluginId/$')({
   loader: async ({ context, params }) => {
-    const plugins = await context.queryClient.ensureQueryData(pluginsOptions('global'));
+    const plugins = await context.queryClient.ensureQueryData(pluginsOptions());
     const entry = plugins.find((p) => p.id === params.pluginId);
     if (!entry) return { plugin: null };
     registerPlugin(entry);

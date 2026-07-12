@@ -4,8 +4,8 @@ Runtime plugin host. The app loads plugin UIs as [Module
 Federation](https://module-federation.io) remotes listed by a registry —
 no rebuild, no per-plugin server.
 
-- `registry.ts` — `pluginsOptions(scope)`: the plugins the registry lists
-  (`GET {VITE_PLUGIN_REGISTRY_URL}/plugins?scope=`), Zod-validated.
+- `registry.ts` — `pluginsOptions()`: the plugins the registry lists
+  (`GET {VITE_PLUGIN_REGISTRY_URL}/plugins`), Zod-validated.
 - `host.ts` — the `spa` Module Federation instance: `registerPlugin`
   (point it at a remote) and `loadPlugin` (load a remote's `./Plugin`).
 - `sdk/` — the plugin authoring surface and the single source of truth for
@@ -32,7 +32,5 @@ the app's shared history, so it routes in clean local paths
 `npm run build:example-plugin`, or `npm run dev:example-plugin` to run it
 standalone.
 
-**Scope: global plugins only.** Per-pod plugins (project/pod state) wait on
-a project concept. The registry service is stubbed via MSW;
-`@kbase/design-system` sharing, remote-asset CSP, and publishing the SDK
-are follow-ups.
+The registry endpoint is stubbed via MSW; `@kbase/design-system` sharing,
+remote-asset CSP, and publishing the SDK are follow-ups.

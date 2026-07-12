@@ -49,13 +49,13 @@ function renderAt(path: string) {
 
 describe('plugin host route', () => {
   it('mounts a registered plugin and passes its basepath', async () => {
-    listPlugins([{ id: 'hello', manifestUrl: 'x', scope: 'global' }]);
+    listPlugins([{ id: 'hello', manifestUrl: 'x' }]);
     renderAt('/hello');
     expect(await screen.findByText('plugin at /hello')).toBeInTheDocument();
   });
 
   it('gives the plugin the app router (app-level navigation works)', async () => {
-    listPlugins([{ id: 'hello', manifestUrl: 'x', scope: 'global' }]);
+    listPlugins([{ id: 'hello', manifestUrl: 'x' }]);
     const router = renderAt('/hello');
     await userEvent.click(await screen.findByRole('button', { name: 'leave' }));
     await waitFor(() => expect(router.state.location.pathname).toBe('/'));
