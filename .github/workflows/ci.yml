@@ -42,23 +42,3 @@ jobs:
 
       - name: Test
         run: npm test
-
-  e2e:
-    name: Browser e2e (plugin shares host React)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-
-      - run: npm ci
-
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
-
-      - name: Build + run the shared-React browser proof
-        run: npm run test:e2e

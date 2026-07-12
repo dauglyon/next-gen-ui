@@ -32,10 +32,6 @@ The host hands each plugin the app's TanStack Router (whole API) plus its
 the app's shared history, so it routes in clean local paths
 (`<Link to="/detail">` → `/{id}/detail`) with native back/forward.
 
-`examples/example-plugin/` is a working plugin built with the SDK —
-`npm run build:example-plugin`, or `npm run dev:example-plugin` to run it
-standalone.
-
 Plugin assets load same-origin: nginx reverse-proxies the registry under
 `/plugin-registry/` (see `nginx.conf`), so the CSP keeps `script-src 'self'`.
 The registry endpoint is stubbed via MSW in dev/test. `@kbase/design-system`

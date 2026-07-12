@@ -18,10 +18,8 @@ coverage
 npm-debug.log*
 *.tsbuildinfo
 
-# Playwright output + screenshots & MCP artifacts (local debug only)
+# Playwright screenshots & MCP artifacts (local debug only)
 .playwright-mcp
-test-results
-playwright-report
 *.png
 !public/**/*.png
 !src/assets/**/*.png

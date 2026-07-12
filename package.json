@@ -10,9 +10,6 @@
     "dev": "vite",
     "build": "vite build",
     "build:design-system": "vite build --config vite.config.designsystem.ts && tsc -p tsconfig.designsystem.json && node scripts/build-design-system.mjs",
-    "build:example-plugin": "vite build --config examples/example-plugin/vite.config.ts",
-    "dev:example-plugin": "vite --config examples/example-plugin/vite.config.ts",
-    "typecheck:example-plugin": "tsc --noEmit -p examples/example-plugin/tsconfig.json",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings=0",
@@ -20,8 +17,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "test:e2e": "npm run build:example-plugin && VITE_EXPOSE_REACT=1 vite build && node e2e/prepare.mjs && playwright test"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -37,7 +33,6 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@module-federation/vite": "^1.16.16",
-    "@playwright/test": "^1.61.1",
     "@tanstack/react-query-devtools": "^5.100.6",
     "@tanstack/react-router-devtools": "^1.166.13",
     "@tanstack/router-plugin": "^1.167.28",
