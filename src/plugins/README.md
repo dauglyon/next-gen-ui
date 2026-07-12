@@ -36,5 +36,7 @@ the app's shared history, so it routes in clean local paths
 `npm run build:example-plugin`, or `npm run dev:example-plugin` to run it
 standalone.
 
-The registry endpoint is stubbed via MSW; `@kbase/design-system` sharing,
-remote-asset CSP, and publishing the SDK are follow-ups.
+Plugin assets load same-origin: nginx reverse-proxies the registry under
+`/plugin-registry/` (see `nginx.conf`), so the CSP keeps `script-src 'self'`.
+The registry endpoint is stubbed via MSW in dev/test. `@kbase/design-system`
+sharing and publishing the SDK are follow-ups.
