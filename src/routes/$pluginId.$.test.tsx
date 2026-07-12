@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { server } from '../test/setup';
 import { routeTree } from '../routeTree.gen';
+import { loadPlugin } from '../plugins/host';
 import type { PluginProps } from '../plugins/sdk';
 
 // Stub the federation host so tests never fetch a real remote; the stub
@@ -65,5 +66,29 @@ describe('plugin host route', () => {
     listPlugins([]);
     renderAt('/nope');
     expect(await screen.findByText(/page not found/i)).toBeInTheDocument();
+  });
+
+  it('offers Retry when the load fails, and recovers on retry', async () => {
+    listPlugins([{ id: 'hello', manifestUrl: 'x' }]);
+    vi.mocked(loadPlugin).mockRejectedValueOnce(new Error('network down')); // next call uses the default (success)
+    renderAt('/hello');
+
+    await screen.findByText(/failed to load/i);
+    await userEvent.click(screen.getByRole('button', { name: /retry/i }));
+    expect(await screen.findByText('plugin at /hello')).toBeInTheDocument();
+  });
+
+  it('contains a plugin render crash instead of blanking the app', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {}); // silence boundary noise
+    listPlugins([{ id: 'boom', manifestUrl: 'x' }]);
+    vi.mocked(loadPlugin).mockResolvedValueOnce({
+      contractVersion: '1',
+      Component: () => {
+        throw new Error('render crash');
+      },
+    });
+    renderAt('/boom');
+    expect(await screen.findByText(/this plugin crashed/i)).toBeInTheDocument();
+    spy.mockRestore();
   });
 });
