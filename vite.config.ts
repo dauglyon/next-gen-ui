@@ -5,6 +5,8 @@ import react from '@vitejs/plugin-react';
 import { tanstackRouter } from '@tanstack/router-plugin/vite';
 import { federation } from '@module-federation/vite';
 
+import { SHARED_SINGLETONS } from './src/plugins/sdk/shared';
+
 // `@kbase/design-system` is the public name; the canonical source
 // lives in this repo at `src/design-system/`. Keep this alias in
 // sync with `tsconfig.json`'s `paths` so bundler and typecheck
@@ -18,23 +20,13 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
     plugins: [
-      // Module Federation host. Plugin UIs (remotes) are loaded at
-      // runtime from the registry — none are declared here. `shared`
-      // makes plugins reuse the app's React, Query client, and Router; a
-      // second copy of any would break hooks and shared context.
+      // Module Federation host: plugin remotes are registered at runtime
+      // from the registry, so none are declared here. The shared contract
+      // lives in the SDK (src/plugins/sdk/shared.ts).
       //
-      // @kbase/design-system is not shared: it resolves via a source
+      // @kbase/design-system is not shared — it resolves via a source
       // alias, not a package, so MF can't wire it into the share scope.
-      federation({
-        name: 'spa',
-        remotes: {},
-        shared: {
-          react: { singleton: true, requiredVersion: '^19.2.5' },
-          'react-dom': { singleton: true, requiredVersion: '^19.2.5' },
-          '@tanstack/react-query': { singleton: true, requiredVersion: '^5.100.6' },
-          '@tanstack/react-router': { singleton: true, requiredVersion: '^1.168.25' },
-        },
-      }),
+      federation({ name: 'spa', remotes: {}, shared: SHARED_SINGLETONS }),
       tanstackRouter({
         target: 'react',
         autoCodeSplitting: true,

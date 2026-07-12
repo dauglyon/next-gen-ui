@@ -1,26 +1,7 @@
 import { createInstance } from '@module-federation/runtime';
-import type { ComponentType } from 'react';
-import type { AnyRouter } from '@tanstack/react-router';
 
 import type { PluginEntry } from './registry';
-
-/**
- * What the host passes to a plugin. `router` is the app's router (for
- * app-level navigation); `basepath` is the plugin's mount, `/{id}`. A
- * plugin builds its own router over the app's shared history to route in
- * local paths:
- *
- *   createRouter({ routeTree, history: router.history, basepath })
- */
-export interface PluginProps {
-  router: AnyRouter;
-  basepath: string;
-}
-
-/** A plugin's `./Plugin` module default-exports this. */
-export interface Plugin {
-  Component: ComponentType<PluginProps>;
-}
+import type { Plugin } from './sdk';
 
 // Remotes are registered at runtime from the registry, not at build time.
 const federation = createInstance({ name: 'spa', remotes: [] });

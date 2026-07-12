@@ -35,6 +35,14 @@ export default tseslint.config(
     },
   },
   {
+    // The example plugin is a Module Federation remote, not part of the
+    // app's fast-refresh surface, so the react-refresh check doesn't apply.
+    files: ['examples/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  {
     files: ['**/*.mjs'],
     extends: [js.configs.recommended],
     languageOptions: {
