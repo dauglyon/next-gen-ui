@@ -1,10 +1,27 @@
-// The one shared copy of each dependency the host and every plugin agree on —
-// a second React or Router would break hooks and shared context. Single source
-// of truth: the host's vite config and every plugin's import this, so their
-// versions can't drift apart.
+import pkg from '../../../package.json';
+
+// WHICH dependencies must resolve to a single shared instance across the host
+// and every plugin — a second React or Router would break hooks and shared
+// context. This file owns only that membership list; the version RANGE for
+// each is read straight from the host's package.json, so the shared config can
+// never drift from what the app actually installs. (Build-time only: this is
+// consumed by vite.config and the plugin federation preset, never at runtime.)
+const deps: Record<string, string> = pkg.dependencies;
+
+function shared(name: string) {
+  const requiredVersion = deps[name];
+  if (!requiredVersion) {
+    throw new Error(
+      `SHARED_SINGLETONS names "${name}", but it is not in package.json ` +
+        `dependencies — add it there or remove it from the shared list.`,
+    );
+  }
+  return { singleton: true, requiredVersion };
+}
+
 export const SHARED_SINGLETONS = {
-  react: { singleton: true, requiredVersion: '^19.2.5' },
-  'react-dom': { singleton: true, requiredVersion: '^19.2.5' },
-  '@tanstack/react-query': { singleton: true, requiredVersion: '^5.100.6' },
-  '@tanstack/react-router': { singleton: true, requiredVersion: '^1.168.25' },
+  react: shared('react'),
+  'react-dom': shared('react-dom'),
+  '@tanstack/react-query': shared('@tanstack/react-query'),
+  '@tanstack/react-router': shared('@tanstack/react-router'),
 };
