@@ -3,6 +3,7 @@ import { loadEnv } from 'vite';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { tanstackRouter } from '@tanstack/router-plugin/vite';
+import { federation } from '@module-federation/vite';
 
 // `@kbase/design-system` is the public name; the canonical source
 // lives in this repo at `src/design-system/`. Keep this alias in
@@ -17,6 +18,23 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
     plugins: [
+      // Module Federation host. Plugin UIs (remotes) are loaded at
+      // runtime from the registry — none are declared here. `shared`
+      // makes plugins reuse the app's React, Query client, and Router; a
+      // second copy of any would break hooks and shared context.
+      //
+      // @kbase/design-system is not shared: it resolves via a source
+      // alias, not a package, so MF can't wire it into the share scope.
+      federation({
+        name: 'spa',
+        remotes: {},
+        shared: {
+          react: { singleton: true, requiredVersion: '^19.2.5' },
+          'react-dom': { singleton: true, requiredVersion: '^19.2.5' },
+          '@tanstack/react-query': { singleton: true, requiredVersion: '^5.100.6' },
+          '@tanstack/react-router': { singleton: true, requiredVersion: '^1.168.25' },
+        },
+      }),
       tanstackRouter({
         target: 'react',
         autoCodeSplitting: true,
@@ -24,6 +42,8 @@ export default defineConfig(({ mode }) => {
       }),
       react(),
     ],
+    // Module Federation emits top-level await; needs a modern target.
+    build: { target: 'esnext' },
     resolve: {
       alias: {
         '@kbase/design-system': designSystemSrc,
