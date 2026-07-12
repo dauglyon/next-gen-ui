@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { loadEnv } from 'vite';
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { tanstackRouter } from '@tanstack/router-plugin/vite';
 import { federation } from '@module-federation/vite';
@@ -91,6 +91,8 @@ export default defineConfig(({ mode }) => {
       environment: 'jsdom',
       setupFiles: ['./src/test/setup.ts'],
       css: true,
+      // e2e/ holds Playwright specs (run via `test:e2e`), not vitest.
+      exclude: [...configDefaults.exclude, 'e2e/**'],
     },
   };
 });

@@ -1,6 +1,11 @@
+import * as PluginReact from 'react';
 import { Link, Outlet, createRootRoute, createRoute } from '@tanstack/react-router';
 
 import { definePlugin } from '../../../src/plugins/sdk';
+
+// E2E sentinel: expose this remote's React so the browser test can assert it is
+// the host's instance (shared singleton), not a second bundled copy.
+(globalThis as unknown as { __pluginReact?: unknown }).__pluginReact = PluginReact;
 
 const rootRoute = createRootRoute({ component: Layout });
 

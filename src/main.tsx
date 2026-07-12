@@ -1,3 +1,4 @@
+import * as HostReact from 'react';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider, createRouter } from '@tanstack/react-router';
@@ -44,6 +45,13 @@ declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router;
   }
+}
+
+// E2E-only: expose the host's React so the browser test can prove a loaded
+// plugin reuses this exact instance (shared singleton) rather than bundling a
+// second copy. Off in normal builds (gated on a build-time env flag).
+if (import.meta.env.VITE_EXPOSE_REACT) {
+  (globalThis as unknown as { __hostReact?: unknown }).__hostReact = HostReact;
 }
 
 const rootEl = document.getElementById('root');

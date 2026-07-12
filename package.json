@@ -20,7 +20,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "npm run build:example-plugin && VITE_EXPOSE_REACT=1 vite build && node e2e/prepare.mjs && playwright test"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -36,6 +37,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@module-federation/vite": "^1.16.16",
+    "@playwright/test": "^1.61.1",
     "@tanstack/react-query-devtools": "^5.100.6",
     "@tanstack/react-router-devtools": "^1.166.13",
     "@tanstack/router-plugin": "^1.167.28",
