@@ -5,10 +5,9 @@ import { Alert, Button, Loader } from '@kbase/design-system';
 import { pluginsOptions } from '../plugins/registry';
 import { loadPlugin, registerPlugin } from '../plugins/host';
 
-// Plugins mount at the top level: /{id} and below. Static routes match before
-// this dynamic segment, so a plugin claims only ids no real route uses. NOTE:
-// a future top-level app route can shadow an existing plugin id — the registry
-// enforces a reserved-id denylist to avoid that.
+// Plugins mount at /{id} and below. Static routes match first, so a plugin only
+// claims an unused id; a future app route could shadow one — guarded by the
+// registry's reserved-id denylist.
 export const Route = createFileRoute('/$pluginId/$')({
   loader: async ({ context, params }) => {
     const plugins = await context.queryClient.ensureQueryData(pluginsOptions());

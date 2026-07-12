@@ -1,10 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-// The headline guarantee: a plugin loaded through the host's Module Federation
-// runtime reuses the host's React instance instead of bundling its own. This
-// loads the real example remote through the real host loader in a real browser
-// and asserts React identity — the only faithful proof (jsdom can't run MF's
-// script-injection loader).
+// The headline guarantee: a plugin loaded through the host reuses the host's
+// React, not its own copy. Loads the real remote in a real browser and asserts
+// React identity — jsdom can't run MF's script-injection loader.
 test('a loaded plugin shares the host React instance', async ({ page, context }) => {
   // Satisfy the auth gate: a session cookie plus mocked KBase token/me.
   await context.addCookies([

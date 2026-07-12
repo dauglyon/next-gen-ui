@@ -1,9 +1,7 @@
-// Guards a load-bearing assumption: a plugin runs its OWN TanStack router with
-// basepath '/{id}' over the app's shared history. That is safe only because
-// TanStack #6064 (a nested router responding to out-of-basepath history events)
-// requires a *persistent* container — and a plugin router, mounted inside the
-// /$pluginId/$ route, unmounts on cross-navigation, so the precondition never
-// holds. If a TanStack upgrade changes this, these tests fail.
+// A plugin runs its own basepath-scoped router over the app's shared history.
+// That's safe only because TanStack #6064 (a nested router reacting to
+// out-of-basepath history events) needs a *persistent* container, and a plugin
+// router unmounts on cross-navigation. These tests fail if an upgrade changes that.
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';

@@ -3,11 +3,9 @@ import { loadRemote, registerRemotes } from '@module-federation/runtime';
 import type { PluginEntry } from './registry';
 import { CONTRACT_VERSION, type Plugin } from './sdk';
 
-// Load plugins through the host runtime the `@module-federation/vite`
-// federation() plugin initializes — it holds the shared-singleton scope, so a
-// plugin reuses the app's React/Router. (A fresh `createInstance` has no
-// shares, so a plugin would bundle its own React and break hooks/context.)
-// These runtime globals operate on that already-initialized host.
+// These globals act on the host the vite federation() plugin already
+// initialized, which holds the shared-singleton scope. A fresh createInstance
+// has none, so the plugin would bundle its own React.
 const registered = new Set<string>();
 
 /** Register a plugin's remote so `loadPlugin` can reach it. Idempotent. */

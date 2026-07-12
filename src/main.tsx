@@ -47,9 +47,8 @@ declare module '@tanstack/react-router' {
   }
 }
 
-// E2E-only: expose the host's React so the browser test can prove a loaded
-// plugin reuses this exact instance (shared singleton) rather than bundling a
-// second copy. Off in normal builds (gated on a build-time env flag).
+// E2E-only: expose the host React so the browser test can prove a loaded plugin
+// reuses this instance, not a second copy. Gated off in normal builds.
 if (import.meta.env.VITE_EXPOSE_REACT) {
   (globalThis as unknown as { __hostReact?: unknown }).__hostReact = HostReact;
 }

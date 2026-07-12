@@ -1,8 +1,7 @@
-// The runtime surface for plugin authors. The build-time pieces are imported
-// directly from their own modules, NOT re-exported here: `pluginFederation`
-// (./pluginFederation) pulls in @module-federation/vite, and SHARED_SINGLETONS
-// (./shared) imports package.json — re-exporting either would drag build-only
-// code (and the whole package.json) into the runtime bundle.
+// Runtime surface for plugin authors. Build-time pieces (pluginFederation,
+// SHARED_SINGLETONS) are imported from their own modules, NOT re-exported here:
+// re-exporting would drag @module-federation/vite and package.json into the
+// runtime bundle.
 export { CONTRACT_VERSION } from './contract';
 export type { PluginProps, Plugin } from './contract';
 export { definePlugin } from './definePlugin';

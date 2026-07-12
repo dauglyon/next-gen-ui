@@ -1,11 +1,8 @@
 import pkg from '../../../package.json';
 
-// WHICH dependencies must resolve to a single shared instance across the host
-// and every plugin — a second React or Router would break hooks and shared
-// context. This file owns only that membership list; the version RANGE for
-// each is read straight from the host's package.json, so the shared config can
-// never drift from what the app actually installs. (Build-time only: this is
-// consumed by vite.config and the plugin federation preset, never at runtime.)
+// Deps that must resolve to ONE shared instance across host + plugins (a second
+// React/Router breaks hooks and context). Ranges come from package.json so they
+// can't drift from what's installed. Build-time only (vite.config, the preset).
 const deps: Record<string, string> = pkg.dependencies;
 
 function shared(name: string) {

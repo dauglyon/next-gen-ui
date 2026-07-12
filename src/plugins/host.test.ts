@@ -1,9 +1,6 @@
-// Guards the shared-React fix: host.ts must load plugins through the Module
-// Federation runtime globals (registerRemotes / loadRemote) — the instance the
-// vite federation() plugin initialized, which holds the shared-singleton scope.
-// If someone reverts to a fresh createInstance, a plugin gets its own React and
-// these mocked globals go uncalled, failing the test. Also covers the contract
-// version gate.
+// Guards the shared-React fix: host.ts must load via the MF runtime globals
+// (registerRemotes/loadRemote), not a fresh createInstance. If it regresses,
+// these mocked globals go uncalled and the test fails. Also covers the version gate.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@module-federation/runtime', () => ({
@@ -32,7 +29,9 @@ describe('plugin host', () => {
   });
 
   it('loads a plugin through loadRemote and returns it', async () => {
-    vi.mocked(loadRemote).mockResolvedValue({ default: { contractVersion: CONTRACT_VERSION, Component } });
+    vi.mocked(loadRemote).mockResolvedValue({
+      default: { contractVersion: CONTRACT_VERSION, Component },
+    });
     const plugin = await loadPlugin('alpha');
     expect(loadRemote).toHaveBeenCalledWith('alpha/Plugin');
     expect(plugin.Component).toBe(Component);
