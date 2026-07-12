@@ -2,5 +2,6 @@
 // (pluginFederation) is imported directly from ./pluginFederation, since it
 // pulls in @module-federation/vite.
 export { SHARED_SINGLETONS } from './shared';
+export { CONTRACT_VERSION } from './contract';
 export type { PluginProps, Plugin } from './contract';
 export { definePlugin } from './definePlugin';

@@ -1,31 +1,32 @@
 import { Component, type ReactNode } from 'react';
-import { createFileRoute, useRouter } from '@tanstack/react-router';
-import { Alert } from '@kbase/design-system';
+import { createFileRoute, notFound, useRouter } from '@tanstack/react-router';
+import { Alert, Button, Loader } from '@kbase/design-system';
 
 import { pluginsOptions } from '../plugins/registry';
 import { loadPlugin, registerPlugin } from '../plugins/host';
 
-// Plugins mount at the top level: /{id} and below. Static routes match
-// before this dynamic segment, so a plugin claims only ids no real route
-// uses; unmatched paths land here too, making it the not-found page.
+// Plugins mount at the top level: /{id} and below. Static routes match before
+// this dynamic segment, so a plugin claims only ids no real route uses. NOTE:
+// a future top-level app route can shadow an existing plugin id — the registry
+// enforces a reserved-id denylist to avoid that.
 export const Route = createFileRoute('/$pluginId/$')({
   loader: async ({ context, params }) => {
     const plugins = await context.queryClient.ensureQueryData(pluginsOptions());
     const entry = plugins.find((p) => p.id === params.pluginId);
-    if (!entry) return { plugin: null };
+    if (!entry) throw notFound();
     registerPlugin(entry);
     return { plugin: await loadPlugin(entry.id) };
   },
   component: PluginHost,
-  errorComponent: PluginRouteError,
+  pendingComponent: () => <Loader label="Loading plugin" />,
+  notFoundComponent: () => <Alert color="red">Page not found.</Alert>,
+  errorComponent: PluginError,
 });
 
 function PluginHost() {
   const { pluginId } = Route.useParams();
   const { plugin } = Route.useLoaderData();
   const router = useRouter();
-
-  if (!plugin) return <Alert color="red">Page not found.</Alert>;
 
   const Mounted = plugin.Component;
   return (
@@ -35,8 +36,17 @@ function PluginHost() {
   );
 }
 
-function PluginRouteError() {
-  return <Alert color="red">This plugin failed to load.</Alert>;
+// The registry was unreachable or the plugin failed to load — offer a retry.
+function PluginError() {
+  const router = useRouter();
+  return (
+    <Alert color="red">
+      This plugin failed to load.{' '}
+      <Button type="button" variant="outline" size="sm" onClick={() => void router.invalidate()}>
+        Retry
+      </Button>
+    </Alert>
+  );
 }
 
 // Contain a plugin's render error instead of blanking the app.
