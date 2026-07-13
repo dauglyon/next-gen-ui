@@ -22,10 +22,9 @@ export default defineConfig(({ mode }) => {
     plugins: [
       // Module Federation host: plugin remotes are registered at runtime
       // from the registry, so none are declared here. The shared contract
-      // lives in the SDK (src/plugins/sdk/shared.ts).
-      //
-      // @kbase/design-system is not shared — it resolves via a source
-      // alias, not a package, so MF can't wire it into the share scope.
+      // lives in the SDK (src/plugins/sdk/shared.ts) — including
+      // @kbase/design-system, which MF shares via the source alias below so a
+      // plugin reuses the host's one design-system instance (and its styles).
       federation({ name: 'spa', remotes: {}, shared: SHARED_SINGLETONS }),
       tanstackRouter({
         target: 'react',

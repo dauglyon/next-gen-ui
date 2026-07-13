@@ -1,4 +1,4 @@
-import { dependencies } from '../../../package.json';
+import { dependencies, version } from '../../../package.json';
 
 // Deps that must resolve to ONE shared instance across host + plugins (a second
 // React/Router breaks hooks and context). Ranges come from package.json so they
@@ -21,4 +21,8 @@ export const SHARED_SINGLETONS = {
   'react-dom': shared('react-dom'),
   '@tanstack/react-query': shared('@tanstack/react-query'),
   '@tanstack/react-router': shared('@tanstack/react-router'),
+  // Ships from THIS repo (source alias in the host, published package for
+  // plugins), so it isn't in `dependencies`; pin its shared version to the repo
+  // version it builds as, so host and plugins agree on one instance.
+  '@kbase/design-system': { singleton: true, requiredVersion: version },
 };
