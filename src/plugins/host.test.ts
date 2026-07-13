@@ -9,7 +9,7 @@ vi.mock('@module-federation/runtime', () => ({
 }));
 
 import { loadRemote, registerRemotes } from '@module-federation/runtime';
-import { CONTRACT_VERSION } from './sdk';
+import { CONTRACT_VERSION } from '@dauglyon/plugin-ui-sdk';
 import { loadPlugin, registerPlugin } from './host';
 
 const Component = () => null;

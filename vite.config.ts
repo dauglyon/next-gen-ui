@@ -7,11 +7,15 @@ import { federation } from '@module-federation/vite';
 
 import { SHARED_SINGLETONS } from './src/plugins/sdk/shared';
 
-// `@kbase/design-system` is the public name; the canonical source
-// lives in this repo at `src/design-system/`. Keep this alias in
-// sync with `tsconfig.json`'s `paths` so bundler and typecheck
-// resolve the same way.
+// `@kbase/design-system` and `@dauglyon/plugin-ui-sdk` are the public package
+// names; their canonical source lives in this repo. Aliasing to source lets
+// in-repo code import the public names (external plugins install the packages).
+// Keep these in sync with `tsconfig.json`'s `paths`.
 const designSystemSrc = fileURLToPath(new URL('./src/design-system', import.meta.url));
+const pluginSdkSrc = fileURLToPath(new URL('./src/plugins/sdk/index.ts', import.meta.url));
+const pluginSdkViteSrc = fileURLToPath(
+  new URL('./src/plugins/sdk/pluginFederation.ts', import.meta.url),
+);
 
 export default defineConfig(({ mode }) => {
   // .env files are loaded into import.meta.env for the client by
@@ -37,6 +41,9 @@ export default defineConfig(({ mode }) => {
     build: { target: 'esnext' },
     resolve: {
       alias: {
+        // More specific first: `/vite` must match before the bare package name.
+        '@dauglyon/plugin-ui-sdk/vite': pluginSdkViteSrc,
+        '@dauglyon/plugin-ui-sdk': pluginSdkSrc,
         '@kbase/design-system': designSystemSrc,
       },
     },

@@ -1,7 +1,7 @@
 import { loadRemote, registerRemotes } from '@module-federation/runtime';
 
 import type { PluginEntry } from './registry';
-import { CONTRACT_VERSION, type Plugin } from './sdk';
+import { CONTRACT_VERSION, type Plugin } from '@dauglyon/plugin-ui-sdk';
 
 // These globals act on the host the vite federation() plugin already
 // initialized, which holds the shared-singleton scope. A fresh createInstance

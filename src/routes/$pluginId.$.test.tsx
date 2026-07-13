@@ -8,7 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { server } from '../test/setup';
 import { routeTree } from '../routeTree.gen';
 import { loadPlugin } from '../plugins/host';
-import type { PluginProps } from '../plugins/sdk';
+import type { PluginProps } from '@dauglyon/plugin-ui-sdk';
 
 // Stub the federation host so tests never fetch a real remote; the stub
 // renders the basepath it's handed and drives the app router.
