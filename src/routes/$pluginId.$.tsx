@@ -1,6 +1,6 @@
 import { Component, type ReactNode } from 'react';
 import { createFileRoute, notFound, useRouter } from '@tanstack/react-router';
-import { Alert, Button, Loader } from '@kbase/design-system';
+import { Alert, Button, Loader } from '@dauglyon/design-system';
 
 import { pluginsOptions } from '../plugins/registry';
 import { loadPlugin, registerPlugin } from '../plugins/host';

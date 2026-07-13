@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, createFileRoute, isRedirect, redirect, useNavigate } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
-import { Alert, Button, Frame, Loader } from '@kbase/design-system';
+import { Alert, Button, Frame, Loader } from '@dauglyon/design-system';
 
 import {
   MfaRequiredError,

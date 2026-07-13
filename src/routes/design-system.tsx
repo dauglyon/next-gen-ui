@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import * as Toast from '@kbase/design-system/components/Toast';
+import * as Toast from '@dauglyon/design-system/components/Toast';
 
-import { Showcase } from '@kbase/design-system/Showcase';
+import { Showcase } from '@dauglyon/design-system/Showcase';
 
 export const Route = createFileRoute('/design-system')({
   component: DesignSystemPage,

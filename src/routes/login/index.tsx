@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
-import { Alert, Button, Field, Frame, Input } from '@kbase/design-system';
+import { Alert, Button, Field, Frame, Input } from '@dauglyon/design-system';
 
 import {
   AUTH_ORIGIN,

@@ -1,4 +1,4 @@
-# `@kbase/design-system`
+# `@dauglyon/design-system`
 
 KBase design system: components, tokens, and styles. Source at
 `src/design-system/`. Published to GitHub Packages npm.
@@ -11,7 +11,7 @@ KBase design system: components, tokens, and styles. Source at
 echo "@kbase:registry=https://npm.pkg.github.com" >> ~/.npmrc
 echo "//npm.pkg.github.com/:_authToken=<GHCR_PAT>" >> ~/.npmrc
 
-npm install @kbase/design-system
+npm install @dauglyon/design-system
 ```
 
 PAT scope: `read:packages`.
@@ -25,8 +25,8 @@ peer dependency: every icon-using component imports from it.
 ## Use
 
 ```tsx
-import { Button, Alert } from '@kbase/design-system';
-import '@kbase/design-system/style.css';
+import { Button, Alert } from '@dauglyon/design-system';
+import '@dauglyon/design-system/style.css';
 ```
 
 `style.css` is the all-in-one bundle: tokens, utilities, resets, and
@@ -61,7 +61,7 @@ new component:
 
 ## In-repo usage
 
-The host app imports from source via the `@kbase/design-system` alias
+The host app imports from source via the `@dauglyon/design-system` alias
 (declared in `vite.config.ts` and `tsconfig.json`'s `paths`). No build
 step needed; Vite and `tsc` resolve straight to `src/design-system/`.
 
@@ -106,7 +106,7 @@ When adding a new external, update both:
 
 ## Release
 
-A `ds-vX.Y.Z` GitHub release publishes `@kbase/design-system`
+A `ds-vX.Y.Z` GitHub release publishes `@dauglyon/design-system`
 at version `X.Y.Z`. The version is derived from the tag; the workflow
 sets `DS_VERSION=X.Y.Z` and feeds it to the build. No `package.json`
 bump required.

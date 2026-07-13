@@ -20,8 +20,8 @@
     "noEmit": true,
     "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom"],
     "paths": {
-      "@kbase/design-system": ["./src/design-system/index.ts"],
-      "@kbase/design-system/*": ["./src/design-system/*"],
+      "@dauglyon/design-system": ["./src/design-system/index.ts"],
+      "@dauglyon/design-system/*": ["./src/design-system/*"],
       "@dauglyon/plugin-ui-sdk": ["./src/plugins/sdk/index.ts"],
       "@dauglyon/plugin-ui-sdk/vite": ["./src/plugins/sdk/pluginFederation.ts"]
     }

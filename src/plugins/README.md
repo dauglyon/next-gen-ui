@@ -34,5 +34,6 @@ the app's shared history, so it routes in clean local paths
 
 Plugin assets load same-origin: nginx reverse-proxies the registry under
 `/plugin-registry/` (see `nginx.conf`), so the CSP keeps `script-src 'self'`.
-The registry endpoint is stubbed via MSW in dev/test. `@kbase/design-system`
-sharing and publishing the SDK are follow-ups.
+The registry endpoint is stubbed via MSW in dev/test. The SDK and
+`@dauglyon/design-system` are both shared MF singletons, so a plugin reuses the
+host's React, Router, and design-system instances.

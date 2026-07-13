@@ -9,7 +9,7 @@ import {
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import type { QueryClient } from '@tanstack/react-query';
-import { Alert, Avatar, Button, Frame, Loader, NavIcon, Tooltip } from '@kbase/design-system';
+import { Alert, Avatar, Button, Frame, Loader, NavIcon, Tooltip } from '@dauglyon/design-system';
 import { MapTrifold } from '@phosphor-icons/react';
 
 import {

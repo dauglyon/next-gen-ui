@@ -61,7 +61,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
           registry-url: 'https://npm.pkg.github.com'
-          scope: '@kbase'
+          scope: '@dauglyon'
 
       - run: npm ci
 
@@ -84,7 +84,7 @@ jobs:
         working-directory: dist-design-system
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm publish "kbase-design-system-${DS_VERSION}.tgz"
+        run: npm publish "dauglyon-design-system-${DS_VERSION}.tgz"
 
       - name: Attach tarball to GitHub release
         env:

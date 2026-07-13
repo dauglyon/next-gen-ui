@@ -7,7 +7,7 @@ import { federation } from '@module-federation/vite';
 
 import { SHARED_SINGLETONS } from './src/plugins/sdk/shared';
 
-// `@kbase/design-system` and `@dauglyon/plugin-ui-sdk` are the public package
+// `@dauglyon/design-system` and `@dauglyon/plugin-ui-sdk` are the public package
 // names; their canonical source lives in this repo. Aliasing to source lets
 // in-repo code import the public names (external plugins install the packages).
 // Keep these in sync with `tsconfig.json`'s `paths`.
@@ -27,7 +27,7 @@ export default defineConfig(({ mode }) => {
       // Module Federation host: plugin remotes are registered at runtime
       // from the registry, so none are declared here. The shared contract
       // lives in the SDK (src/plugins/sdk/shared.ts) — including
-      // @kbase/design-system, which MF shares via the source alias below so a
+      // @dauglyon/design-system, which MF shares via the source alias below so a
       // plugin reuses the host's one design-system instance (and its styles).
       federation({ name: 'spa', remotes: {}, shared: SHARED_SINGLETONS }),
       tanstackRouter({
@@ -44,7 +44,7 @@ export default defineConfig(({ mode }) => {
         // More specific first: `/vite` must match before the bare package name.
         '@dauglyon/plugin-ui-sdk/vite': pluginSdkViteSrc,
         '@dauglyon/plugin-ui-sdk': pluginSdkSrc,
-        '@kbase/design-system': designSystemSrc,
+        '@dauglyon/design-system': designSystemSrc,
       },
     },
     css: {

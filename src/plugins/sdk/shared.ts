@@ -24,5 +24,5 @@ export const SHARED_SINGLETONS = {
   // Ships from THIS repo (source alias in the host, published package for
   // plugins), so it isn't in `dependencies`; pin its shared version to the repo
   // version it builds as, so host and plugins agree on one instance.
-  '@kbase/design-system': { singleton: true, requiredVersion: version },
+  '@dauglyon/design-system': { singleton: true, requiredVersion: version },
 };

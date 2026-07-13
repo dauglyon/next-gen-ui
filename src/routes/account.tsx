@@ -16,7 +16,7 @@ import {
   Th,
   Thead,
   Tr,
-} from '@kbase/design-system';
+} from '@dauglyon/design-system';
 import { CheckCircle, Question, SignOut, X } from '@phosphor-icons/react';
 
 import orcidIdUrl from '../assets/orcid-id.svg';

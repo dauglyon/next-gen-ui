@@ -31,7 +31,7 @@ to add hosts.
 | ----------------------------- | ------------------------------------------------------------------ |
 | `npm run dev`                 | Vite dev server, port 3000, HMR.                                   |
 | `npm run build`               | Type-check route tree, bundle to `dist/`.                          |
-| `npm run build:design-system` | Build the `@kbase/design-system` package to `dist-design-system/`. |
+| `npm run build:design-system` | Build the `@dauglyon/design-system` package to `dist-design-system/`. |
 | `npm run preview`             | Serve the built `dist/` locally (smoke-test the prod bundle).      |
 | `npm run typecheck`           | `tsc --noEmit`.                                                    |
 | `npm run lint`                | ESLint (flat config in `eslint.config.js`).                        |
@@ -67,8 +67,8 @@ diff against the committed file.
   [`src/api/auth/README.md`](./src/api/auth/README.md) for the wire
   contract, flow, and trade-offs.
 - **UI primitives**: KBase design system at `src/design-system/`
-  (in-repo alias `@kbase/design-system`); also published as
-  `@kbase/design-system` on GitHub Packages npm. See
+  (in-repo alias `@dauglyon/design-system`); also published as
+  `@dauglyon/design-system` on GitHub Packages npm. See
   [`src/design-system/README.md`](./src/design-system/README.md).
 - **Icons**: `@phosphor-icons/react`.
 - **Tests**: Vitest + Testing Library, `jsdom` environment, MSW for
@@ -201,7 +201,7 @@ comments so PR diffs surface drift.
     tokens to untrusted code).
   - `workflow_dispatch` is allowed for manual rebuilds.
 - **`.github/workflows/design-system.yml`**: builds the
-  `@kbase/design-system` package on every PR and push to
+  `@dauglyon/design-system` package on every PR and push to
   `main`; uploads the `.tgz` as a workflow artifact. On a release
   with a `ds-v*` tag, derives the version from the tag, publishes
   to GitHub Packages npm, and attaches the tarball to the release.

@@ -57,7 +57,7 @@ function PackageCallout() {
     '//npm.pkg.github.com/:_authToken=<GH_PAT with read:packages>',
     '',
     '# in your project',
-    'npm install @kbase/design-system',
+    'npm install @dauglyon/design-system',
   ].join('\n');
 
   const tarballSnippet = [
@@ -85,7 +85,7 @@ function PackageCallout() {
           <p className="note" style={{ maxWidth: '70ch', margin: 0 }}>
             Published as{' '}
             <a className="link" href={packageUrl} target="_blank" rel="noopener noreferrer">
-              <code>@kbase/design-system</code>
+              <code>@dauglyon/design-system</code>
             </a>{' '}
             on GitHub Packages.
           </p>

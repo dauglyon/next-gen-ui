@@ -58,11 +58,11 @@ const combined = allInOneOrder.map((rel) => readFileSync(join(distRoot, rel), 'u
 writeFileSync(join(distRoot, 'style.css'), combined);
 
 const pkg = {
-  name: '@kbase/design-system',
+  name: '@dauglyon/design-system',
   version,
   ...(isPublishBuild ? {} : { private: true }),
   description:
-    'KBase design system: components, tokens, and styles. Canonical source lives in kbase/next-gen-ui.',
+    'KBase design system: components, tokens, and styles. Canonical source lives in dauglyon/next-gen-ui.',
   type: 'module',
   // Tree-shake JS but keep CSS imports.
   sideEffects: ['*.css'],
@@ -101,7 +101,7 @@ const pkg = {
   },
   repository: {
     type: 'git',
-    url: 'git+https://github.com/kbase/next-gen-ui.git',
+    url: 'git+https://github.com/dauglyon/next-gen-ui.git',
     directory: 'src/design-system',
   },
   publishConfig: {

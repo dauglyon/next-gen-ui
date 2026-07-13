@@ -1,5 +1,5 @@
 import { Link, createFileRoute } from '@tanstack/react-router';
-import { Chip, Frame } from '@kbase/design-system';
+import { Chip, Frame } from '@dauglyon/design-system';
 import {
   ArrowUpRight,
   Database,
