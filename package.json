@@ -10,6 +10,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:design-system": "vite build --config vite.config.designsystem.ts && tsc -p tsconfig.designsystem.json && node scripts/build-design-system.mjs",
+    "build:plugin-sdk": "vite build --config vite.config.pluginsdk.ts && tsc -p tsconfig.pluginsdk.json && node scripts/build-plugin-sdk.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings=0",

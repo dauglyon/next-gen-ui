@@ -1,9 +1,9 @@
-import pkg from '../../../package.json';
+import { dependencies } from '../../../package.json';
 
 // Deps that must resolve to ONE shared instance across host + plugins (a second
 // React/Router breaks hooks and context). Ranges come from package.json so they
 // can't drift from what's installed. Build-time only (vite.config, the preset).
-const deps: Record<string, string> = pkg.dependencies;
+const deps: Record<string, string> = dependencies;
 
 function shared(name: string) {
   const requiredVersion = deps[name];
