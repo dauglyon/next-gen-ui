@@ -14,7 +14,7 @@
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
   color: var(--c-ink4);
-  transition: color 0.1s;
+  transition: color var(--t-fast);
 
   &[data-selected],
   &[data-active] {
@@ -29,7 +29,7 @@
 
   &:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px var(--c-glow);
+    box-shadow: 0 0 0 3px var(--c-focus);
   }
 }
 

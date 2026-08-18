@@ -83,7 +83,7 @@
   margin-left: var(--s-1);
   color: var(--c-ink5);
   opacity: 0;
-  transition: opacity 0.1s;
+  transition: opacity var(--t-fast);
 
   svg {
     display: block;

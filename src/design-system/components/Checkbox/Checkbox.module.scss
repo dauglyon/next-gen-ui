@@ -10,8 +10,8 @@
   cursor: pointer;
   flex-shrink: 0;
   transition:
-    background 0.12s,
-    border-color 0.12s;
+    background var(--t-fast),
+    border-color var(--t-fast);
 
   &[data-checked],
   &[data-indeterminate] {
@@ -21,7 +21,7 @@
 
   &:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px var(--c-glow);
+    box-shadow: 0 0 0 3px var(--c-focus);
   }
 
   &[data-disabled] {

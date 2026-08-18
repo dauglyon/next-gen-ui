@@ -7,7 +7,7 @@
 
   &:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px var(--c-glow);
+    box-shadow: 0 0 0 3px var(--c-focus);
     border-radius: var(--r-sm);
   }
 }
@@ -60,7 +60,7 @@
   justify-content: center;
   flex-shrink: 0;
   color: var(--c-ink5);
-  transition: transform 0.1s;
+  transition: transform var(--t-fast);
 
   &.expanded {
     transform: rotate(90deg);
@@ -120,7 +120,7 @@
 
     &:hover {
       color: var(--c-ink2);
-      background: rgba(0, 0, 0, 0.06);
+      background: var(--c-border);
     }
 
     svg {

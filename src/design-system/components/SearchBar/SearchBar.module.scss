@@ -6,12 +6,12 @@
   border-radius: var(--r-full);
   padding: var(--s-3) var(--s-6);
   background: var(--c-surface);
-  transition: border-color 0.15s;
+  transition: border-color var(--t-base);
   min-width: 180px;
 
   &:focus-within {
     border-color: var(--c-primary);
-    box-shadow: 0 0 0 3px var(--c-glow);
+    box-shadow: 0 0 0 3px var(--c-focus);
   }
 }
 

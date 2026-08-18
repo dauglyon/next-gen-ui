@@ -9,8 +9,8 @@
   outline: none;
   width: 100%;
   transition:
-    border-color 0.15s,
-    box-shadow 0.15s;
+    border-color var(--t-base),
+    box-shadow var(--t-base);
 
   &::placeholder {
     color: var(--c-ink5);
@@ -19,7 +19,7 @@
   &:focus,
   &[data-focused] {
     border-color: var(--c-primary);
-    box-shadow: 0 0 0 3px var(--c-glow);
+    box-shadow: 0 0 0 3px var(--c-focus);
   }
 
   &[data-disabled] {
