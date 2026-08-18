@@ -49,34 +49,34 @@
   --ct-orange: #af4b00; /* aux */
 
   /* tint bgs on cream (OKLAB hue, C=0.015, L=0.935; yellow hand-tuned) */
-  --bg-primary: #e1ebf3;
-  --bg-green: #e5ece2;
-  --bg-yellow: #eeead2;
-  --bg-red: #f3e6e4;
-  --bg-purple: #eae8f3;
-  --bg-teal: #dfedea;
-  --bg-ocean: #dfedee;
-  --bg-orange: #f1e7e0; /* aux */
+  --bg-primary: oklch(from var(--c-primary) 0.935 0.015 h); /* #e1ebf3 */
+  --bg-green: oklch(from var(--c-green) 0.935 0.015 h); /* #e5ece2 */
+  --bg-yellow: oklch(from var(--c-yellow) 0.935 0.032 calc(h + 6.1)); /* #eeead2 */
+  --bg-red: oklch(from var(--c-red) 0.935 0.015 h); /* #f3e6e4 */
+  --bg-purple: oklch(from var(--c-purple) 0.935 0.015 h); /* #eae8f3 */
+  --bg-teal: oklch(from var(--c-teal) 0.935 0.015 h); /* #dfedea */
+  --bg-ocean: oklch(from var(--c-ocean) 0.935 0.015 h); /* #dfedee */
+  --bg-orange: oklch(from var(--c-orange) 0.935 0.015 h); /* #f1e7e0 · aux */
 
   /* tint borders on cream (OKLAB hue, C=0.035, L=0.895; yellow hand-tuned) */
-  --bo-primary: #cae0f2;
-  --bo-green: #d3e2cb;
-  --bo-yellow: #ecdda4;
-  --bo-red: #f3d4d0;
-  --bo-purple: #ded8f1;
-  --bo-teal: #c4e4df;
-  --bo-ocean: #c3e4e6;
-  --bo-orange: #efd8c6; /* aux */
+  --bo-primary: oklch(from var(--c-primary) 0.895 0.035 h); /* #cae0f2 */
+  --bo-green: oklch(from var(--c-green) 0.895 0.035 h); /* #d3e2cb */
+  --bo-yellow: oklch(from var(--c-yellow) 0.895 0.075 calc(h + 2)); /* #ecdda4 */
+  --bo-red: oklch(from var(--c-red) 0.895 0.035 h); /* #f3d4d0 */
+  --bo-purple: oklch(from var(--c-purple) 0.895 0.035 h); /* #ded8f1 */
+  --bo-teal: oklch(from var(--c-teal) 0.895 0.035 h); /* #c4e4df */
+  --bo-ocean: oklch(from var(--c-ocean) 0.895 0.035 h); /* #c3e4e6 */
+  --bo-orange: oklch(from var(--c-orange) 0.895 0.035 h); /* #efd8c6 · aux */
 
-  /* tint bgs on white (for elements inside cards/frames) */
-  --bgw-primary: #dfebf6;
-  --bgw-green: #e4eddf;
-  --bgw-yellow: #f8f0d4;
-  --bgw-red: #f7e5e3;
-  --bgw-purple: #ebe7f6;
-  --bgw-teal: #dceeeb;
-  --bgw-ocean: #dbeeef;
-  --bgw-orange: #f4e7dd; /* aux */
+  /* tint bgs on white (for elements inside cards/frames; yellow hand-tuned) */
+  --bgw-primary: oklch(from var(--c-primary) 0.935 0.02 h); /* #dfebf6 */
+  --bgw-green: oklch(from var(--c-green) 0.935 0.02 h); /* #e4eddf */
+  --bgw-yellow: oklch(from var(--c-yellow) 0.954 0.038 h); /* #f8f0d4 */
+  --bgw-red: oklch(from var(--c-red) 0.935 0.02 h); /* #f7e5e3 */
+  --bgw-purple: oklch(from var(--c-purple) 0.935 0.02 h); /* #ebe7f6 */
+  --bgw-teal: oklch(from var(--c-teal) 0.935 0.02 h); /* #dceeeb */
+  --bgw-ocean: oklch(from var(--c-ocean) 0.935 0.02 h); /* #dbeeef */
+  --bgw-orange: oklch(from var(--c-orange) 0.935 0.02 h); /* #f4e7dd · aux */
 
   /* interactive */
   --c-primary-dim: #005889; /* hover: 70% of freshwater */
