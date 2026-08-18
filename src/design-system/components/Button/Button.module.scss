@@ -101,19 +101,19 @@
    in space. All sizes share --r-button radius for visual consistency
    (no per-size radius drift). */
 .md {
-  padding: var(--s-4) var(--s-7);
-  font-size: var(--fs-6);
-  gap: var(--s-2);
-}
-
-.sm {
   padding: var(--s-3) var(--s-6);
   font-size: var(--fs-5);
   gap: var(--s-2);
 }
 
+.sm {
+  padding: var(--s-2) var(--s-4);
+  font-size: var(--fs-3);
+  gap: var(--s-1);
+}
+
 .xs {
-  padding: var(--s-2) var(--s-5);
-  font-size: var(--fs-4);
+  padding: var(--s-1) var(--s-3);
+  font-size: var(--fs-2);
   gap: var(--s-1);
 }

@@ -41,7 +41,7 @@ export function Section01Tokens() {
         <code>{`padding: 'var(--s-5) var(--s-7)'`}</code>
       </p>
       <p className={s.note}>
-        Row padding is s-5 / s-7. Frame inner padding is s-7. Component gaps are s-4. Chip padding
+        Row padding is s-2 / s-4. Frame inner padding is s-7. Component gaps are s-4. Chip padding
         is s-3. No raw pixel values anywhere in the system.
       </p>
 
@@ -65,7 +65,7 @@ export function Section01Tokens() {
             r-sm 4px
           </div>
           <div className={css.radiusSample} style={{ borderRadius: 'var(--r-button)' }}>
-            r-button 7px
+            r-button 6px
           </div>
           <div className={css.radiusSample} style={{ borderRadius: 'var(--r-md)' }}>
             r-md 8px
@@ -100,7 +100,7 @@ export function Section01Tokens() {
           </Tr>
           <Tr>
             <Td>
-              <code>--r-button</code> 7px
+              <code>--r-button</code> 6px
             </Td>
             <Td>Button-shaped controls (Button, NavIcon, SegmentedControl)</Td>
           </Tr>

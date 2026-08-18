@@ -5,37 +5,37 @@
    ================================================================ */
 
 .h1 {
-  font-size: var(--fs-11);
-  font-weight: 700;
-  color: var(--c-ink);
-}
-
-.h2 {
   font-size: var(--fs-9);
   font-weight: 700;
   color: var(--c-ink);
 }
 
-.h3 {
+.h2 {
   font-size: var(--fs-7);
+  font-weight: 700;
+  color: var(--c-ink);
+}
+
+.h3 {
+  font-size: var(--fs-6);
   font-weight: 600;
   color: var(--c-ink);
 }
 
 .h4 {
-  font-size: var(--fs-6);
+  font-size: var(--fs-5);
   font-weight: 600;
   color: var(--c-ink);
 }
 
 .body {
-  font-size: var(--fs-6);
+  font-size: var(--fs-5);
   color: var(--c-ink2);
   line-height: 1.55;
 }
 
 .label {
-  font-size: var(--fs-5);
+  font-size: var(--fs-4);
   font-weight: 600;
   color: var(--c-ink3);
   text-transform: uppercase;
@@ -72,7 +72,7 @@
    size; pair with a smaller class on the surrounding label. */
 .mono-value {
   font-family: var(--f-mono);
-  font-size: var(--fs-5);
+  font-size: var(--fs-4);
   font-weight: 700;
   color: var(--c-ink2);
 }
@@ -86,7 +86,7 @@
 
 /* Section label: 12px 600, used inside forms/panels (not uppercase like .label) */
 .section-label {
-  font-size: var(--fs-5);
+  font-size: var(--fs-4);
   font-weight: 600;
   color: var(--c-ink2);
 }

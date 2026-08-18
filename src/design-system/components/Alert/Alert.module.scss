@@ -5,7 +5,7 @@
   display: flex;
   flex-direction: column;
   border-radius: var(--r-md);
-  font-size: var(--fs-5);
+  font-size: var(--fs-3);
   color: var(--c-ink2);
   border: 1px solid;
   overflow: hidden;
@@ -13,13 +13,13 @@
 
 .alertHeader {
   display: flex;
-  gap: var(--s-5);
-  padding: var(--s-5) var(--s-6);
+  gap: var(--s-4);
+  padding: var(--s-3) var(--s-5);
   align-items: flex-start;
 }
 
 .icon {
-  font-size: var(--fs-8);
+  font-size: var(--fs-6);
   flex-shrink: 0;
   margin-top: 1px;
   display: flex;
@@ -92,7 +92,7 @@
   line-height: 1.5;
   color: var(--c-ink2);
   margin: 0;
-  padding: var(--s-5) var(--s-7);
+  padding: var(--s-3) var(--s-5);
   background: var(--c-surface);
   border-top: 1px solid var(--c-border);
   border-radius: 0;

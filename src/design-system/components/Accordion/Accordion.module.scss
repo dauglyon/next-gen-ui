@@ -14,11 +14,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--s-5) 0;
+  padding: var(--s-3) 0;
   border: none;
   background: none;
   font-family: var(--f-sans);
-  font-size: var(--fs-6);
+  font-size: var(--fs-5);
   font-weight: 600;
   color: var(--c-ink);
   cursor: pointer;
@@ -52,8 +52,8 @@
 }
 
 .panel {
-  padding-bottom: var(--s-6);
-  font-size: var(--fs-6);
+  padding-bottom: var(--s-5);
+  font-size: var(--fs-5);
   color: var(--c-ink2);
   line-height: 1.55;
 }

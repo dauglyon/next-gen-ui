@@ -1,5 +1,5 @@
 .row {
-  padding: var(--s-5) var(--s-7);
+  padding: var(--s-2) var(--s-4);
   border-bottom: 1px solid var(--c-border);
   cursor: pointer;
   transition: background var(--t-fast);
@@ -21,7 +21,7 @@
 .content {
   display: flex;
   align-items: center;
-  gap: var(--s-5);
+  gap: var(--s-4);
 }
 
 .leading {
@@ -29,13 +29,13 @@
 }
 
 .title {
-  font-size: var(--fs-6);
+  font-size: var(--fs-5);
   font-weight: 600;
   color: var(--c-ink);
 }
 
 .meta {
-  font-size: var(--fs-4);
+  font-size: var(--fs-3);
   color: var(--c-ink4);
   margin-top: var(--s-1);
   font-variant-numeric: tabular-nums;

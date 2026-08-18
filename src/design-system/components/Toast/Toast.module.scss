@@ -13,7 +13,7 @@
   background: var(--c-surface);
   border: 1px solid var(--c-border);
   border-radius: var(--r-lg);
-  padding: var(--s-6) var(--s-7);
+  padding: var(--s-4) var(--s-5);
   display: flex;
   align-items: flex-start;
   gap: var(--s-5);
@@ -26,7 +26,7 @@
 }
 
 .title {
-  font-size: var(--fs-6);
+  font-size: var(--fs-4);
   font-weight: 600;
   color: var(--c-ink);
   margin-bottom: var(--s-1);
