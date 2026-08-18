@@ -11,8 +11,8 @@
   color: var(--c-ink4);
   font-size: var(--fs-10);
   transition:
-    background 0.1s,
-    color 0.1s;
+    background var(--t-fast),
+    color var(--t-fast);
 
   &:hover {
     background: var(--bg-primary);
@@ -21,7 +21,7 @@
 
   &:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px var(--c-glow);
+    box-shadow: 0 0 0 3px var(--c-focus);
   }
 }
 

@@ -2,7 +2,7 @@
   padding: var(--s-5) var(--s-7);
   border-bottom: 1px solid var(--c-border);
   cursor: pointer;
-  transition: background 0.1s;
+  transition: background var(--t-fast);
 
   &:last-child {
     border-bottom: none;
@@ -14,7 +14,7 @@
 
   &:focus-visible {
     outline: none;
-    box-shadow: inset 0 0 0 2px var(--c-glow);
+    box-shadow: inset 0 0 0 2px var(--c-focus);
   }
 }
 

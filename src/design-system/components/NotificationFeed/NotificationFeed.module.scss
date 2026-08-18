@@ -32,7 +32,7 @@
 
   &:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px var(--c-glow);
+    box-shadow: 0 0 0 2px var(--c-focus);
     border-radius: var(--r-sm);
   }
 }
@@ -78,7 +78,7 @@
 
   &:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px var(--c-glow);
+    box-shadow: 0 0 0 2px var(--c-focus);
     border-radius: var(--r-sm);
   }
 }
@@ -98,7 +98,7 @@
   color: var(--c-ink5);
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.1s;
+  transition: opacity var(--t-fast);
 
   &:hover {
     color: var(--c-ink3);
@@ -107,7 +107,7 @@
   &:focus-visible {
     opacity: 1;
     outline: none;
-    box-shadow: 0 0 0 2px var(--c-glow);
+    box-shadow: 0 0 0 2px var(--c-focus);
   }
 }
 

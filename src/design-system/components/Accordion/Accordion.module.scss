@@ -26,7 +26,7 @@
 
   &:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px var(--c-glow);
+    box-shadow: 0 0 0 3px var(--c-focus);
     border-radius: var(--r-sm);
   }
 }
@@ -44,7 +44,7 @@
 
 .chevron {
   color: var(--c-ink4);
-  transition: transform 0.15s;
+  transition: transform var(--t-base);
 
   .trigger[data-panel-open] & {
     transform: rotate(180deg);

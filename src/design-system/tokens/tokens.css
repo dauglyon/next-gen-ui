@@ -84,7 +84,30 @@
   --c-teal-dim: #007368; /* hover: teal button darkened */
   --c-purple-btn: #66489d; /* same as base; purple is already button-weight */
   --c-purple-dim: #49297c; /* OKLAB L×0.778, same ratio as primary to primary-dim */
-  --c-glow: rgba(0, 125, 195, 0.08);
+  --c-focus: rgb(from var(--c-primary) r g b / 0.08);
+
+  /* Elevation. --c-shadow matches --c-ink but is its own token: a dark theme
+     inverts ink and does not invert shadows. */
+  --c-shadow: #1a1714;
+  --c-scrim: rgb(from var(--c-shadow) r g b / 0.4);
+  --e-1: 0 1px 2px rgb(from var(--c-shadow) r g b / 0.12); /* switch thumb */
+  --e-2: 0 2px 8px rgb(from var(--c-shadow) r g b / 0.15); /* tooltip */
+  --e-3:
+    0 1px 2px rgb(from var(--c-shadow) r g b / 0.04),
+    0 4px 12px rgb(from var(--c-shadow) r g b / 0.08); /* menu, select */
+  --e-4:
+    var(--e-3), 0 12px 32px rgb(from var(--c-shadow) r g b / 0.06); /* dialog, popover, toast */
+
+  /* motion */
+  --t-fast: 0.1s; /* hover and press feedback */
+  --t-base: 0.15s; /* control state: border, focus ring, switch */
+  --t-slow: 0.3s; /* a value animating to a new one */
+
+  /* stacking */
+  --z-raised: 1;
+  --z-scrim: 100;
+  --z-modal: 101;
+  --z-toast: 200;
 
   /* spacing */
   --s-1: 4px; /* micro: chip icon gap, border offsets */

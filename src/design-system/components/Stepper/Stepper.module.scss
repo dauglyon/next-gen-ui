@@ -82,7 +82,7 @@
   color: var(--c-ink5);
   background: var(--c-bg);
   position: relative;
-  z-index: 1;
+  z-index: var(--z-raised);
 }
 
 .completed .dot {
@@ -95,7 +95,7 @@
   background: var(--c-primary);
   border-color: var(--c-primary);
   color: white;
-  box-shadow: 0 0 0 3px var(--c-glow);
+  box-shadow: 0 0 0 3px var(--c-focus);
 }
 
 .label {

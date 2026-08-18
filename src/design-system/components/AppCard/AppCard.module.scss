@@ -1,7 +1,7 @@
 /* AppCard composes Frame and TypeBadge. */
 
 .root {
-  transition: background 0.1s;
+  transition: background var(--t-fast);
 
   &:hover {
     background: var(--c-raised);
@@ -40,7 +40,7 @@ button.clickable {
 
   &:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px var(--c-glow);
+    box-shadow: 0 0 0 2px var(--c-focus);
     border-radius: var(--r-sm);
   }
 }
@@ -115,7 +115,7 @@ button.clickable {
 
   > :first-child {
     position: relative;
-    z-index: 1;
+    z-index: var(--z-raised);
   }
 
   > :last-child {
@@ -148,7 +148,7 @@ button.clickable {
 
   &:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px var(--c-glow);
+    box-shadow: 0 0 0 2px var(--c-focus);
     border-radius: var(--r-sm);
   }
 }
