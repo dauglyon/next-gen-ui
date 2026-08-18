@@ -2,7 +2,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--s-1);
-  font-size: var(--fs-3);
+  font-size: var(--fs-2);
   font-weight: 600;
   padding: 1px var(--s-3);
   border-radius: var(--r-sm);
@@ -10,7 +10,7 @@
   white-space: nowrap;
 
   i {
-    font-size: var(--fs-2);
+    font-size: var(--fs-1);
   }
   svg {
     display: block;

@@ -14,7 +14,7 @@
   background: var(--c-surface);
   border: 1px solid var(--c-border);
   border-radius: var(--r-lg);
-  padding: var(--s-9);
+  padding: var(--s-7);
   min-width: 360px;
   max-width: 520px;
   box-shadow: var(--e-4);
@@ -25,14 +25,14 @@
 }
 
 .title {
-  font-size: var(--fs-8);
+  font-size: var(--fs-7);
   font-weight: 700;
   color: var(--c-ink);
   margin-bottom: var(--s-2);
 }
 
 .description {
-  font-size: var(--fs-5);
+  font-size: var(--fs-4);
   color: var(--c-ink3);
   line-height: 1.55;
   margin-bottom: var(--s-8);

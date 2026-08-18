@@ -1,7 +1,7 @@
 .trigger {
   font-family: var(--f-sans);
-  font-size: var(--fs-6);
-  padding: var(--s-4) var(--s-6);
+  font-size: var(--fs-4);
+  padding: var(--s-2) var(--s-4);
   border: 1px solid var(--c-border2);
   border-radius: var(--r-md);
   background: var(--c-surface);
@@ -46,8 +46,8 @@
 }
 
 .item {
-  font-size: var(--fs-6);
-  padding: var(--s-3) var(--s-10) var(--s-3) var(--s-5);
+  font-size: var(--fs-4);
+  padding: var(--s-2) var(--s-9) var(--s-2) var(--s-4);
   border-radius: var(--r-sm);
   cursor: pointer;
   display: flex;

@@ -7,7 +7,7 @@
   padding: 0;
 }
 html {
-  font-size: var(--fs-9);
+  font-size: var(--fs-7);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   /* iOS Safari auto-boosts text it deems "main content", and the
@@ -20,7 +20,7 @@ body {
   font-family: var(--f-sans);
   color: var(--c-ink);
   background: var(--c-bg);
-  line-height: 1.6;
+  line-height: 1.5;
   font-synthesis: none;
 }
 h1,

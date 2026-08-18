@@ -101,7 +101,7 @@ export function Section03Typography() {
           </thead>
           <tbody>
             <tr>
-              <td className={s.typeSize}>--fs-11</td>
+              <td className={s.typeSize}>--fs-9</td>
               <td className="h1">h1</td>
               <td className={s.typeUse}>700</td>
               <td className={s.typeUse}>ink</td>
@@ -111,7 +111,7 @@ export function Section03Typography() {
               <td className={s.typeUse}>page titles</td>
             </tr>
             <tr>
-              <td className={s.typeSize}>--fs-9</td>
+              <td className={s.typeSize}>--fs-7</td>
               <td className="h2">h2</td>
               <td className={s.typeUse}>700</td>
               <td className={s.typeUse}>ink</td>
@@ -121,7 +121,7 @@ export function Section03Typography() {
               <td className={s.typeUse}>section headings</td>
             </tr>
             <tr>
-              <td className={s.typeSize}>--fs-7</td>
+              <td className={s.typeSize}>--fs-6</td>
               <td className="h3">h3</td>
               <td className={s.typeUse}>600</td>
               <td className={s.typeUse}>ink</td>
@@ -131,7 +131,7 @@ export function Section03Typography() {
               <td className={s.typeUse}>subsections</td>
             </tr>
             <tr>
-              <td className={s.typeSize}>--fs-6</td>
+              <td className={s.typeSize}>--fs-5</td>
               <td className="h4">h4</td>
               <td className={s.typeUse}>600</td>
               <td className={s.typeUse}>ink</td>
@@ -141,7 +141,7 @@ export function Section03Typography() {
               <td className={s.typeUse}>panel / card titles</td>
             </tr>
             <tr>
-              <td className={s.typeSize}>--fs-6</td>
+              <td className={s.typeSize}>--fs-5</td>
               <td className="body">body</td>
               <td className={s.typeUse}>400</td>
               <td className={s.typeUse}>ink2</td>
@@ -151,7 +151,7 @@ export function Section03Typography() {
               <td className={s.typeUse}>prose, descriptions</td>
             </tr>
             <tr>
-              <td className={s.typeSize}>--fs-5</td>
+              <td className={s.typeSize}>--fs-4</td>
               <td className="label">label</td>
               <td className={s.typeUse}>600</td>
               <td className={s.typeUse}>ink3</td>
@@ -171,7 +171,7 @@ export function Section03Typography() {
               <td className={s.typeUse}>real names, attribution</td>
             </tr>
             <tr>
-              <td className={s.typeSize}>--fs-5</td>
+              <td className={s.typeSize}>--fs-4</td>
               <td className="section-label">section-label</td>
               <td className={s.typeUse}>600</td>
               <td className={s.typeUse}>ink2</td>
@@ -211,7 +211,7 @@ export function Section03Typography() {
               <td className={s.typeUse}>IDs, refs, usernames, paths</td>
             </tr>
             <tr>
-              <td className={s.typeSize}>--fs-5</td>
+              <td className={s.typeSize}>--fs-4</td>
               <td className="mono-value">mono-value</td>
               <td className={s.typeUse}>700</td>
               <td className={s.typeUse}>ink2</td>

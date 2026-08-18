@@ -139,7 +139,7 @@
 
   /* radii (concentric: inner = outer - padding) */
   --r-sm: 4px; /* chips, badges, inner pills */
-  --r-button: 7px; /* button-shaped controls. A touch tighter than --r-md so they don't read as oversized chips. */
+  --r-button: 6px; /* button-shaped controls. A touch tighter than --r-md so they don't read as oversized chips. */
   --r-md: 8px; /* inputs, alerts, content cards' inner */
   --r-lg: 12px; /* frames, cards, code blocks */
   --r-full: 999px;
