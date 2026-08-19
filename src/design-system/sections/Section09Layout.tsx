@@ -1,17 +1,31 @@
+import { useState } from 'react';
+import {
+  ArrowClockwise,
+  ArrowsOut,
+  CaretDown,
+  Columns,
+  DownloadSimple,
+  FunnelSimple,
+} from '@phosphor-icons/react';
 import s from './showcase.module.scss';
 import { Frame } from '../components/Frame';
 import { Accordion } from '../components/Accordion';
+import * as Collapsible from '../components/Collapsible';
+import * as Toolbar from '../components/Toolbar';
 import { Avatar } from '../components/Avatar';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 import { CodeBlock } from '../components/CodeBlock';
 
 export function Section09Layout() {
+  const [showMethod, setShowMethod] = useState(false);
+
   return (
     <div className={s.section}>
       <div className={s.sNum}>09</div>
       <div className={s.sTitle}>Structure</div>
       <p className={s.sDesc}>
-        The pieces that frame content: collapsible sections, user identity, and navigation context.
+        The pieces that frame content: collapsible sections, control strips, user identity, and
+        navigation context.
       </p>
 
       <div className={s.sub}>Accordion</div>
@@ -39,6 +53,98 @@ export function Section09Layout() {
         code={`<Accordion title={<span className="caption">Assembly parameters</span>} defaultOpen>
   <span className="body">Content here.</span>
 </Accordion>`}
+      />
+
+      <div className={s.sub}>Collapsible</div>
+      <p className={s.note}>
+        The same Base UI part with the trigger left to the caller, for disclosures that are not a
+        titled section. The panel animates its height. Keep the panel immediately after the trigger
+        so a screen reader reaches the revealed content by moving forward.
+      </p>
+      <Frame style={{ padding: 'var(--s-7) var(--s-8)' }}>
+        <Collapsible.Root
+          open={showMethod}
+          onOpenChange={setShowMethod}
+          style={{ display: 'grid', justifyItems: 'start', gap: 'var(--s-4)' }}
+        >
+          <p className="body" style={{ maxWidth: '68ch' }}>
+            Assembled with MEGAHIT v1.2.9. 4,355 contigs, N50 8,241 bp.
+          </p>
+          <Collapsible.Trigger>
+            {showMethod ? 'Hide parameters' : 'Show parameters'}
+            <CaretDown
+              size={12}
+              style={{
+                transform: showMethod ? 'rotate(180deg)' : undefined,
+                transition: 'transform var(--t-base)',
+              }}
+            />
+          </Collapsible.Trigger>
+          <Collapsible.Panel>
+            <p className="body" style={{ maxWidth: '68ch' }}>
+              Reads trimmed with fastp. Minimum contig length 200 bp. K-list 21, 29, 39, 59, 79, 99,
+              119, 141. Binned with MetaBAT2 and scored with CheckM2.
+            </p>
+          </Collapsible.Panel>
+        </Collapsible.Root>
+      </Frame>
+      <CodeBlock
+        language="tsx"
+        code={`<Collapsible.Root open={open} onOpenChange={setOpen}>
+  <p className="body">The summary that is always shown.</p>
+  <Collapsible.Trigger>
+    {open ? 'Hide parameters' : 'Show parameters'}
+  </Collapsible.Trigger>
+  <Collapsible.Panel>
+    <p className="body">The detail that is not.</p>
+  </Collapsible.Panel>
+</Collapsible.Root>`}
+      />
+
+      <div className={s.sub}>Toolbar</div>
+      <p className={s.note}>
+        One tab stop; arrow keys move between the controls. Toolbar.Button renders a ghost Button
+        unless <code>render</code> says otherwise. Group what belongs together and separate the
+        groups.
+      </p>
+      <Frame style={{ padding: 'var(--s-4) var(--s-5)' }}>
+        <Toolbar.Root aria-label="Table controls">
+          <Toolbar.Group>
+            <Toolbar.Button>
+              <DownloadSimple size={14} /> Export
+            </Toolbar.Button>
+            <Toolbar.Button>
+              <FunnelSimple size={14} /> Filter
+            </Toolbar.Button>
+            <Toolbar.Button>
+              <Columns size={14} /> Columns
+            </Toolbar.Button>
+          </Toolbar.Group>
+          <Toolbar.Separator />
+          <Toolbar.Group>
+            <Toolbar.Button aria-label="Refresh">
+              <ArrowClockwise size={14} />
+            </Toolbar.Button>
+            <Toolbar.Button aria-label="Full screen">
+              <ArrowsOut size={14} />
+            </Toolbar.Button>
+          </Toolbar.Group>
+        </Toolbar.Root>
+      </Frame>
+      <CodeBlock
+        language="tsx"
+        code={`<Toolbar.Root aria-label="Table controls">
+  <Toolbar.Group>
+    <Toolbar.Button>Export</Toolbar.Button>
+    <Toolbar.Button>Filter</Toolbar.Button>
+  </Toolbar.Group>
+  <Toolbar.Separator />
+  <Toolbar.Group>
+    <Toolbar.Button aria-label="Refresh">
+      <ArrowClockwise size={14} />
+    </Toolbar.Button>
+  </Toolbar.Group>
+</Toolbar.Root>`}
       />
 
       <div className={s.sub}>Avatar</div>

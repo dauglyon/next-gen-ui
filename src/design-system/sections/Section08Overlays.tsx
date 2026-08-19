@@ -1,9 +1,11 @@
 import s from './showcase.module.scss';
 import * as Dialog from '../components/Dialog';
+import * as AlertDialog from '../components/AlertDialog';
 import * as Tooltip from '../components/Tooltip';
 import * as Popover from '../components/Popover';
 import * as Menu from '../components/Menu';
 import { Button } from '../components/Button';
+import { Input } from '../components/Input';
 import { CodeBlock } from '../components/CodeBlock';
 import {
   CheckCircle,
@@ -26,7 +28,7 @@ export function Section08Overlays({ onShowToast }: Section08OverlaysProps) {
       <div className={s.sTitle}>Overlays</div>
       <p className={s.sDesc}>
         Tooltip for a quick hint, popover for richer detail, menu for a list of actions, dialog for
-        confirmation, toast for transient feedback.
+        a task, alert dialog for a decision, toast for transient feedback.
       </p>
 
       <div className={s.sub}>Tooltip</div>
@@ -135,25 +137,67 @@ toasts.add({
 
       <div className={s.sub}>Dialog</div>
       <p className={s.note}>
-        Modal confirmation. Dialog.Close dismisses. Put destructive action on the right.
+        A task the user can back out of. The backdrop and Escape both close it, as does
+        Dialog.Close. Confirming action on the right.
       </p>
       <Dialog.Root>
         <Dialog.Trigger
+          render={
+            <Button variant="outline">
+              <PencilSimple size={14} /> Rename project
+            </Button>
+          }
+        />
+        <Dialog.Popup>
+          <Dialog.Title>Rename project</Dialog.Title>
+          <Dialog.Description>
+            The new name is shown everywhere the project appears. Anyone it is shared with keeps
+            their access.
+          </Dialog.Description>
+          <Input defaultValue="Soil Metagenome Assembly" aria-label="Project name" />
+          <div className={s.row} style={{ justifyContent: 'flex-end', marginTop: 'var(--s-7)' }}>
+            <Dialog.Close render={<Button variant="ghost">Cancel</Button>} />
+            <Dialog.Close>Save</Dialog.Close>
+          </div>
+        </Dialog.Popup>
+      </Dialog.Root>
+      <CodeBlock
+        language="tsx"
+        code={`<Dialog.Root>
+  <Dialog.Trigger>Rename</Dialog.Trigger>
+  <Dialog.Popup>
+    <Dialog.Title>Rename project</Dialog.Title>
+    <Dialog.Description>The new name is shown everywhere.</Dialog.Description>
+    <Dialog.Close render={<Button variant="ghost">Cancel</Button>} />
+    <Dialog.Close>Save</Dialog.Close>
+  </Dialog.Popup>
+</Dialog.Root>`}
+      />
+
+      <div className={s.sub}>Alert dialog</div>
+      <p className={s.note}>
+        For destructive or irreversible actions. Dialog's parts with{' '}
+        <code>role=&quot;alertdialog&quot;</code>. The backdrop does not dismiss it; Escape does, so
+        Escape must cancel, never confirm. Name the action in each button and put its consequences
+        in the description.
+      </p>
+      <AlertDialog.Root>
+        <AlertDialog.Trigger
           render={
             <Button variant="danger">
               <Trash size={14} /> Delete project
             </Button>
           }
         />
-        <Dialog.Popup>
-          <Dialog.Title>Delete project?</Dialog.Title>
-          <Dialog.Description>
-            This will permanently delete &quot;Soil Metagenome Assembly&quot; and all associated
-            data objects.
-          </Dialog.Description>
+        <AlertDialog.Popup>
+          <AlertDialog.Title>Delete project?</AlertDialog.Title>
+          <AlertDialog.Description>
+            This permanently deletes &quot;Soil Metagenome Assembly&quot; and all 47 data objects in
+            it. Collaborators lose access. This cannot be undone.
+          </AlertDialog.Description>
           <div className={s.row} style={{ justifyContent: 'flex-end' }}>
-            <Dialog.Close render={<Button variant="ghost">Cancel</Button>} />
-            <Dialog.Close
+            <AlertDialog.Close render={<Button variant="ghost">Keep project</Button>} />
+            <AlertDialog.Close
               render={
                 <Button variant="danger">
                   <Trash size={14} /> Delete
@@ -161,19 +205,19 @@ toasts.add({
               }
             />
           </div>
-        </Dialog.Popup>
-      </Dialog.Root>
+        </AlertDialog.Popup>
+      </AlertDialog.Root>
       <CodeBlock
         language="tsx"
-        code={`<Dialog.Root>
-  <Dialog.Trigger>Delete</Dialog.Trigger>
-  <Dialog.Popup>
-    <Dialog.Title>Delete project?</Dialog.Title>
-    <Dialog.Description>This is permanent.</Dialog.Description>
-    <Dialog.Close>Cancel</Dialog.Close>
-    <Dialog.Close>Delete</Dialog.Close>
-  </Dialog.Popup>
-</Dialog.Root>`}
+        code={`<AlertDialog.Root>
+  <AlertDialog.Trigger render={<Button variant="danger">Delete project</Button>} />
+  <AlertDialog.Popup>
+    <AlertDialog.Title>Delete project?</AlertDialog.Title>
+    <AlertDialog.Description>This cannot be undone.</AlertDialog.Description>
+    <AlertDialog.Close render={<Button variant="ghost">Keep project</Button>} />
+    <AlertDialog.Close render={<Button variant="danger">Delete</Button>} />
+  </AlertDialog.Popup>
+</AlertDialog.Root>`}
       />
     </div>
   );
