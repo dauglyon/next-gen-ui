@@ -1,8 +1,8 @@
 /* ================================================================
    KBASE DESIGN TOKENS
    Everything visual is defined here. Nothing else uses a raw color.
-   Tints: OKLAB hue from brand at fixed C/L. Yellow hand-tuned.
-   Text-on-tint: OKLAB L-axis darkened for WCAG AA 4.5:1.
+   Tints: brand hue at a family-fixed lightness and chroma. Yellow hand-tuned.
+   Theming: no data-theme on <html> follows the OS; light or dark forces one.
    ================================================================ */
 :root {
   /* fonts */
@@ -10,16 +10,19 @@
   --f-mono: 'Fira Code', 'SF Mono', ui-monospace, monospace;
 
   /* base (warm neutrals) */
-  --c-bg: #f5f2ee;
-  --c-raised: #fafaf8;
-  --c-surface: #ffffff;
-  --c-border: rgba(62, 56, 50, 0.09);
-  --c-border2: rgba(62, 56, 50, 0.16);
-  --c-ink: #1a1714;
-  --c-ink2: #3e3832;
-  --c-ink3: #6a6158;
-  --c-ink4: #776d64; /* OKLAB: 4.53:1 on cream */
-  --c-ink5: #9d9389; /* decorative only */
+  --c-bg: light-dark(#f5f2ee, #17140f);
+  --c-raised: light-dark(#fafaf8, #262219);
+  --c-surface: light-dark(#ffffff, #1e1b16);
+  --c-border: light-dark(rgba(62, 56, 50, 0.09), rgba(240, 238, 234, 0.11));
+  --c-border2: light-dark(rgba(62, 56, 50, 0.16), rgba(240, 238, 234, 0.2));
+  --c-ink: light-dark(#1a1714, #f5f3ef); /* APCA Lc 97 on --c-bg */
+  --c-ink2: light-dark(#3e3832, #e9e6e1);
+  --c-ink3: light-dark(#6a6158, #d0cbc5);
+  --c-ink4: light-dark(
+    #776d64,
+    #c7c2ba
+  ); /* APCA Lc 67; worst ground is --c-bg in light, --c-raised in dark */
+  --c-ink5: light-dark(#9d9389, #9f9992); /* decorative only */
   /* Warm-neutral mid-scale, used in showcase swatches; not for ink. */
   --c-warm-200: #ded5cb;
   --c-warm-300: #c4b9ad;
@@ -38,65 +41,199 @@
   --c-grellow: #c1cd23;
   --c-frost: #c7dbee;
 
-  /* text on tint (OKLAB L-axis darkened for 4.5:1) */
-  --ct-primary: #006eac; /* darkened freshwater for 4.9:1 on cream */
-  --ct-green: #3c6e08;
-  --ct-yellow: #8c5200;
-  --ct-red: #ce1d27;
-  --ct-purple: #66489d;
-  --ct-teal: #00776b; /* aux */
-  --ct-ocean: #03757c; /* aux */
-  --ct-orange: #af4b00; /* aux */
+  /* text on tint (WCAG AA 4.5:1 on cream, APCA Lc 62) */
+  --ct-primary: light-dark(#006eac, oklch(from var(--c-primary) 0.8 0.105 h));
+  --ct-green: light-dark(#3c6e08, oklch(from var(--c-green) 0.78 0.13 h));
+  --ct-yellow: light-dark(#8c5200, oklch(from var(--c-yellow) 0.87 0.16 h));
+  --ct-red: light-dark(#ce1d27, oklch(from var(--c-red) 0.88 0.09 h));
+  --ct-purple: light-dark(#66489d, oklch(from var(--c-purple) 0.8 0.105 h));
+  --ct-teal: light-dark(#00776b, oklch(from var(--c-teal) 0.8 0.105 h));
+  --ct-ocean: light-dark(#03757c, oklch(from var(--c-ocean) 0.8 0.105 h));
+  --ct-orange: light-dark(#af4b00, oklch(from var(--c-orange) 0.8 0.105 h));
 
-  /* tint bgs on cream (OKLAB hue, C=0.015, L=0.935; yellow hand-tuned) */
-  --bg-primary: oklch(from var(--c-primary) 0.935 0.015 h); /* #e1ebf3 */
-  --bg-green: oklch(from var(--c-green) 0.935 0.015 h); /* #e5ece2 */
-  --bg-yellow: oklch(from var(--c-yellow) 0.935 0.032 calc(h + 6.1)); /* #eeead2 */
-  --bg-red: oklch(from var(--c-red) 0.935 0.015 h); /* #f3e6e4 */
-  --bg-purple: oklch(from var(--c-purple) 0.935 0.015 h); /* #eae8f3 */
-  --bg-teal: oklch(from var(--c-teal) 0.935 0.015 h); /* #dfedea */
-  --bg-ocean: oklch(from var(--c-ocean) 0.935 0.015 h); /* #dfedee */
-  --bg-orange: oklch(from var(--c-orange) 0.935 0.015 h); /* #f1e7e0 · aux */
+  /* internal: L and C per tint family. Yellow is hand-tuned. */
+  --tl-bg: 0.935;
+  --tl-bg-dark: 0.285;
+  --tc-bg: 0.015;
+  --tc-bg-dark: 0.038;
+  --tl-bo: 0.895;
+  --tl-bo-dark: 0.43;
+  --tc-bo: 0.035;
+  --tc-bo-dark: 0.062;
+  --tl-bgw: 0.935;
+  --tl-bgw-dark: 0.315;
+  --tc-bgw: 0.02;
+  --tc-bgw-dark: 0.04;
+  --tc-bg-yellow: 0.032;
+  --tc-bg-yellow-dark: 0.055;
+  --tc-bo-yellow: 0.075;
+  --tc-bo-yellow-dark: 0.09;
+  --tl-bgw-yellow: 0.954;
+  --tl-bgw-yellow-dark: 0.315;
+  --tc-bgw-yellow: 0.038;
+  --tc-bgw-yellow-dark: 0.058;
 
-  /* tint borders on cream (OKLAB hue, C=0.035, L=0.895; yellow hand-tuned) */
-  --bo-primary: oklch(from var(--c-primary) 0.895 0.035 h); /* #cae0f2 */
-  --bo-green: oklch(from var(--c-green) 0.895 0.035 h); /* #d3e2cb */
-  --bo-yellow: oklch(from var(--c-yellow) 0.895 0.075 calc(h + 2)); /* #ecdda4 */
-  --bo-red: oklch(from var(--c-red) 0.895 0.035 h); /* #f3d4d0 */
-  --bo-purple: oklch(from var(--c-purple) 0.895 0.035 h); /* #ded8f1 */
-  --bo-teal: oklch(from var(--c-teal) 0.895 0.035 h); /* #c4e4df */
-  --bo-ocean: oklch(from var(--c-ocean) 0.895 0.035 h); /* #c3e4e6 */
-  --bo-orange: oklch(from var(--c-orange) 0.895 0.035 h); /* #efd8c6 · aux */
+  /* internal: alphas behind --e-1..4 and --c-scrim */
+  --sa-1: 0.12;
+  --sa-1-dark: 0.5;
+  --sa-2: 0.15;
+  --sa-2-dark: 0.55;
+  --sa-3: 0.04;
+  --sa-3-dark: 0.4;
+  --sa-4: 0.08;
+  --sa-4-dark: 0.45;
+  --sa-5: 0.06;
+  --sa-5-dark: 0.4;
+  --sa-scrim: 0.4;
+  --sa-scrim-dark: 0.62;
 
-  /* tint bgs on white (for elements inside cards/frames; yellow hand-tuned) */
-  --bgw-primary: oklch(from var(--c-primary) 0.935 0.02 h); /* #dfebf6 */
-  --bgw-green: oklch(from var(--c-green) 0.935 0.02 h); /* #e4eddf */
-  --bgw-yellow: oklch(from var(--c-yellow) 0.954 0.038 h); /* #f8f0d4 */
-  --bgw-red: oklch(from var(--c-red) 0.935 0.02 h); /* #f7e5e3 */
-  --bgw-purple: oklch(from var(--c-purple) 0.935 0.02 h); /* #ebe7f6 */
-  --bgw-teal: oklch(from var(--c-teal) 0.935 0.02 h); /* #dceeeb */
-  --bgw-ocean: oklch(from var(--c-ocean) 0.935 0.02 h); /* #dbeeef */
-  --bgw-orange: oklch(from var(--c-orange) 0.935 0.02 h); /* #f4e7dd · aux */
+  /* tint bgs on cream */
+  --bg-primary: light-dark(
+    oklch(from var(--c-primary) var(--tl-bg) var(--tc-bg) h),
+    oklch(from var(--c-primary) var(--tl-bg-dark) var(--tc-bg-dark) h)
+  ); /* #e1ebf3 */
+  --bg-green: light-dark(
+    oklch(from var(--c-green) var(--tl-bg) var(--tc-bg) h),
+    oklch(from var(--c-green) var(--tl-bg-dark) var(--tc-bg-dark) h)
+  ); /* #e5ece2 */
+  --bg-yellow: light-dark(
+    oklch(from var(--c-yellow) var(--tl-bg) var(--tc-bg-yellow) calc(h + 6.1)),
+    oklch(from var(--c-yellow) var(--tl-bg-dark) var(--tc-bg-yellow-dark) calc(h + 6.1))
+  ); /* #eeead2 */
+  --bg-red: light-dark(
+    oklch(from var(--c-red) var(--tl-bg) var(--tc-bg) h),
+    oklch(from var(--c-red) var(--tl-bg-dark) var(--tc-bg-dark) h)
+  ); /* #f3e6e4 */
+  --bg-purple: light-dark(
+    oklch(from var(--c-purple) var(--tl-bg) var(--tc-bg) h),
+    oklch(from var(--c-purple) var(--tl-bg-dark) var(--tc-bg-dark) h)
+  ); /* #eae8f3 */
+  --bg-teal: light-dark(
+    oklch(from var(--c-teal) var(--tl-bg) var(--tc-bg) h),
+    oklch(from var(--c-teal) var(--tl-bg-dark) var(--tc-bg-dark) h)
+  ); /* #dfedea */
+  --bg-ocean: light-dark(
+    oklch(from var(--c-ocean) var(--tl-bg) var(--tc-bg) h),
+    oklch(from var(--c-ocean) var(--tl-bg-dark) var(--tc-bg-dark) h)
+  ); /* #dfedee */
+  --bg-orange: light-dark(
+    oklch(from var(--c-orange) var(--tl-bg) var(--tc-bg) h),
+    oklch(from var(--c-orange) var(--tl-bg-dark) var(--tc-bg-dark) h)
+  ); /* #f1e7e0 · aux */
+
+  /* tint borders on cream */
+  --bo-primary: light-dark(
+    oklch(from var(--c-primary) var(--tl-bo) var(--tc-bo) h),
+    oklch(from var(--c-primary) var(--tl-bo-dark) var(--tc-bo-dark) h)
+  ); /* #cae0f2 */
+  --bo-green: light-dark(
+    oklch(from var(--c-green) var(--tl-bo) var(--tc-bo) h),
+    oklch(from var(--c-green) var(--tl-bo-dark) var(--tc-bo-dark) h)
+  ); /* #d3e2cb */
+  --bo-yellow: light-dark(
+    oklch(from var(--c-yellow) var(--tl-bo) var(--tc-bo-yellow) calc(h + 2)),
+    oklch(from var(--c-yellow) var(--tl-bo-dark) var(--tc-bo-yellow-dark) calc(h + 2))
+  ); /* #ecdda4 */
+  --bo-red: light-dark(
+    oklch(from var(--c-red) var(--tl-bo) var(--tc-bo) h),
+    oklch(from var(--c-red) var(--tl-bo-dark) var(--tc-bo-dark) h)
+  ); /* #f3d4d0 */
+  --bo-purple: light-dark(
+    oklch(from var(--c-purple) var(--tl-bo) var(--tc-bo) h),
+    oklch(from var(--c-purple) var(--tl-bo-dark) var(--tc-bo-dark) h)
+  ); /* #ded8f1 */
+  --bo-teal: light-dark(
+    oklch(from var(--c-teal) var(--tl-bo) var(--tc-bo) h),
+    oklch(from var(--c-teal) var(--tl-bo-dark) var(--tc-bo-dark) h)
+  ); /* #c4e4df */
+  --bo-ocean: light-dark(
+    oklch(from var(--c-ocean) var(--tl-bo) var(--tc-bo) h),
+    oklch(from var(--c-ocean) var(--tl-bo-dark) var(--tc-bo-dark) h)
+  ); /* #c3e4e6 */
+  --bo-orange: light-dark(
+    oklch(from var(--c-orange) var(--tl-bo) var(--tc-bo) h),
+    oklch(from var(--c-orange) var(--tl-bo-dark) var(--tc-bo-dark) h)
+  ); /* #efd8c6 · aux */
+
+  /* tint bgs on white, for elements inside cards/frames */
+  --bgw-primary: light-dark(
+    oklch(from var(--c-primary) var(--tl-bgw) var(--tc-bgw) h),
+    oklch(from var(--c-primary) var(--tl-bgw-dark) var(--tc-bgw-dark) h)
+  ); /* #dfebf6 */
+  --bgw-green: light-dark(
+    oklch(from var(--c-green) var(--tl-bgw) var(--tc-bgw) h),
+    oklch(from var(--c-green) var(--tl-bgw-dark) var(--tc-bgw-dark) h)
+  ); /* #e4eddf */
+  --bgw-yellow: light-dark(
+    oklch(from var(--c-yellow) var(--tl-bgw-yellow) var(--tc-bgw-yellow) h),
+    oklch(from var(--c-yellow) var(--tl-bgw-yellow-dark) var(--tc-bgw-yellow-dark) h)
+  ); /* #f8f0d4 */
+  --bgw-red: light-dark(
+    oklch(from var(--c-red) var(--tl-bgw) var(--tc-bgw) h),
+    oklch(from var(--c-red) var(--tl-bgw-dark) var(--tc-bgw-dark) h)
+  ); /* #f7e5e3 */
+  --bgw-purple: light-dark(
+    oklch(from var(--c-purple) var(--tl-bgw) var(--tc-bgw) h),
+    oklch(from var(--c-purple) var(--tl-bgw-dark) var(--tc-bgw-dark) h)
+  ); /* #ebe7f6 */
+  --bgw-teal: light-dark(
+    oklch(from var(--c-teal) var(--tl-bgw) var(--tc-bgw) h),
+    oklch(from var(--c-teal) var(--tl-bgw-dark) var(--tc-bgw-dark) h)
+  ); /* #dceeeb */
+  --bgw-ocean: light-dark(
+    oklch(from var(--c-ocean) var(--tl-bgw) var(--tc-bgw) h),
+    oklch(from var(--c-ocean) var(--tl-bgw-dark) var(--tc-bgw-dark) h)
+  ); /* #dbeeef */
+  --bgw-orange: light-dark(
+    oklch(from var(--c-orange) var(--tl-bgw) var(--tc-bgw) h),
+    oklch(from var(--c-orange) var(--tl-bgw-dark) var(--tc-bgw-dark) h)
+  ); /* #f4e7dd · aux */
 
   /* interactive */
-  --c-primary-dim: #005889; /* hover: 70% of freshwater */
+  --c-primary-dim: light-dark(#005889, oklch(from var(--c-primary) 0.68 c h));
   --c-teal-btn: #008578;
-  --c-teal-dim: #007368; /* hover: teal button darkened */
+  --c-teal-dim: light-dark(#007368, oklch(from var(--c-teal-btn) 0.68 c h));
   --c-purple-btn: #66489d; /* same as base; purple is already button-weight */
-  --c-purple-dim: #49297c; /* OKLAB L×0.778, same ratio as primary to primary-dim */
-  --c-focus: rgb(from var(--c-primary) r g b / 0.08);
+  --c-purple-dim: light-dark(#49297c, oklch(from var(--c-purple-btn) 0.7 c h));
+  --c-focus: light-dark(
+    rgb(from var(--c-primary) r g b / 0.08),
+    rgb(from var(--c-primary) r g b / 0.32)
+  );
 
-  /* Elevation. --c-shadow matches --c-ink but is its own token: a dark theme
-     inverts ink and does not invert shadows. */
-  --c-shadow: #1a1714;
-  --c-scrim: rgb(from var(--c-shadow) r g b / 0.4);
-  --e-1: 0 1px 2px rgb(from var(--c-shadow) r g b / 0.12); /* switch thumb */
-  --e-2: 0 2px 8px rgb(from var(--c-shadow) r g b / 0.15); /* tooltip */
+  /* elevation, lowest to highest */
+  --c-shadow: light-dark(#1a1714, #000000); /* not --c-ink: a theme inverts ink, not shadows */
+  --c-scrim: light-dark(
+    rgb(from var(--c-shadow) r g b / var(--sa-scrim)),
+    rgb(from var(--c-shadow) r g b / var(--sa-scrim-dark))
+  );
+  --e-1: 0 1px 2px
+    light-dark(
+      rgb(from var(--c-shadow) r g b / var(--sa-1)),
+      rgb(from var(--c-shadow) r g b / var(--sa-1-dark))
+    ); /* switch thumb */
+  --e-2: 0 2px 8px
+    light-dark(
+      rgb(from var(--c-shadow) r g b / var(--sa-2)),
+      rgb(from var(--c-shadow) r g b / var(--sa-2-dark))
+    ); /* tooltip */
   --e-3:
-    0 1px 2px rgb(from var(--c-shadow) r g b / 0.04),
-    0 4px 12px rgb(from var(--c-shadow) r g b / 0.08); /* menu, select */
+    0 1px 2px
+      light-dark(
+        rgb(from var(--c-shadow) r g b / var(--sa-3)),
+        rgb(from var(--c-shadow) r g b / var(--sa-3-dark))
+      ),
+    0 4px 12px
+      light-dark(
+        rgb(from var(--c-shadow) r g b / var(--sa-4)),
+        rgb(from var(--c-shadow) r g b / var(--sa-4-dark))
+      ); /* menu, select */
   --e-4:
-    var(--e-3), 0 12px 32px rgb(from var(--c-shadow) r g b / 0.06); /* dialog, popover, toast */
+    var(--e-3),
+    0 12px 32px
+      light-dark(
+        rgb(from var(--c-shadow) r g b / var(--sa-5)),
+        rgb(from var(--c-shadow) r g b / var(--sa-5-dark))
+      ); /* dialog, popover, toast */
 
   /* motion */
   --t-fast: 0.1s; /* hover and press feedback */
@@ -143,4 +280,23 @@
   --r-md: 8px; /* inputs, alerts, content cards' inner */
   --r-lg: 12px; /* frames, cards, code blocks */
   --r-full: 999px;
+}
+
+/* ================================================================
+   THEME SELECTION
+   light-dark() above reads whichever of the two schemes is in use, so this
+   is all that picks a theme. `light dark` means either is acceptable and
+   the OS decides; naming one forces it. color-scheme also switches native
+   scrollbars and form controls, which no stylesheet can reach.
+   ================================================================ */
+:root {
+  color-scheme: light dark;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
 }

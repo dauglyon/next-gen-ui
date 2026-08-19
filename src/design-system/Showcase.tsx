@@ -1,5 +1,9 @@
 import { useState } from 'react';
 import s from './Showcase.module.scss';
+import { Sun, Moon, Desktop } from '@phosphor-icons/react';
+import { useTheme } from './theme/useTheme';
+import type { ThemeChoice } from './theme/useTheme';
+import { SegmentedControl } from './components/SegmentedControl';
 import { Package } from '@phosphor-icons/react';
 import { Accordion } from './components/Accordion';
 import { useToastManager } from './components/Toast';
@@ -192,6 +196,23 @@ function TableOfContents() {
   );
 }
 
+const THEME_OPTIONS = [
+  { value: 'system', label: 'Match system', icon: <Desktop size={15} weight="bold" /> },
+  { value: 'light', label: 'Light', icon: <Sun size={15} weight="bold" /> },
+  { value: 'dark', label: 'Dark', icon: <Moon size={15} weight="bold" /> },
+];
+
+function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+  return (
+    <SegmentedControl
+      options={THEME_OPTIONS}
+      value={theme}
+      onChange={(v) => setTheme(v as ThemeChoice)}
+    />
+  );
+}
+
 export function Showcase() {
   const [cvd, setCvd] = useState<CvdMode>('off');
   const toasts = useToastManager();
@@ -228,17 +249,20 @@ export function Showcase() {
                 <span className={s.heroLabelMono}>design system</span>
               </div>
             </div>
-            <button
-              className={s.cvdToggle}
-              onClick={() => {
-                const next: CvdMode =
-                  cvd === 'off' ? 'deutan' : cvd === 'deutan' ? 'protan' : 'off';
-                setCvd(next);
-                applyCvdFilter(next);
-              }}
-            >
-              {cvd === 'off' ? 'deuteranopia' : cvd === 'deutan' ? 'protanopia' : 'reset'}
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-4)' }}>
+              <ThemeToggle />
+              <button
+                className={s.cvdToggle}
+                onClick={() => {
+                  const next: CvdMode =
+                    cvd === 'off' ? 'deutan' : cvd === 'deutan' ? 'protan' : 'off';
+                  setCvd(next);
+                  applyCvdFilter(next);
+                }}
+              >
+                {cvd === 'off' ? 'deuteranopia' : cvd === 'deutan' ? 'protanopia' : 'reset'}
+              </button>
+            </div>
           </div>
           <h1 className={s.heroHeadline}>
             Warm, data-literate,

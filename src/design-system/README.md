@@ -37,6 +37,75 @@ for opt-in: `components.css`, `global.css`,
 
 ---
 
+## Theming
+
+The tokens ship both themes. Which one resolves is decided by one attribute on
+`<html>`:
+
+| `data-theme` | Result                       |
+| ------------ | ---------------------------- |
+| absent       | follows the OS (the default) |
+| `light`      | light, even on a dark OS     |
+| `dark`       | dark, even on a light OS     |
+
+Nothing else is required — no provider, no class on `<body>`, no JS.
+
+### Without a bundler
+
+Set the attribute however the page already renders. That is the whole
+integration:
+
+```html
+<html data-theme="dark"></html>
+```
+
+To let a page remember a choice, store it under `kbase-theme` and stamp the
+attribute before the first paint, so a dark-theme user never sees a light
+frame:
+
+```html
+<script>
+  (function () {
+    try {
+      var v = localStorage.getItem('kbase-theme');
+      if (v === 'light' || v === 'dark') document.documentElement.setAttribute('data-theme', v);
+    } catch (e) {}
+  })();
+</script>
+```
+
+### In React
+
+`useTheme()` does the same thing, and persists the choice under the same key,
+so the two consumers agree:
+
+```tsx
+const { theme, setTheme } = useTheme(); // 'system' | 'light' | 'dark'
+```
+
+Inline `themeInitScript` in `<head>` for the pre-paint stamp:
+
+```tsx
+<script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+```
+
+### How the two themes are stored
+
+Every themed token carries both values on one line:
+
+```css
+--c-bg: light-dark(#f5f2ee, #17140f);
+```
+
+`light-dark()` reads the element's `color-scheme`, which is the only thing the
+three rules above set. There is no second copy of the palette to keep in step.
+
+`light-dark()` takes colors, so the lightnesses and chromas the tints are built
+from cannot go inside it. Those sit in `:root` as pairs — `--tl-bg` and
+`--tl-bg-dark` — and each half of the tint's `light-dark()` reads its own.
+
+---
+
 ## Layout
 
 ```

@@ -1,5 +1,9 @@
 export { cx } from './util/cx';
 
+// Theme
+export { useTheme, themeInitScript } from './theme/useTheme';
+export type { ThemeChoice } from './theme/useTheme';
+
 // Display
 export { Loader } from './components/Loader';
 export type { LoaderProps } from './components/Loader/Loader';
