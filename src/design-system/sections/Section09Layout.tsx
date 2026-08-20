@@ -2,14 +2,13 @@ import { useState } from 'react';
 import {
   ArrowClockwise,
   ArrowsOut,
-  CaretDown,
   Columns,
   DownloadSimple,
   FunnelSimple,
 } from '@phosphor-icons/react';
 import s from './showcase.module.scss';
 import { Frame } from '../components/Frame';
-import { Accordion } from '../components/Accordion';
+import * as Accordion from '../components/Accordion';
 import * as Collapsible from '../components/Collapsible';
 import * as Toolbar from '../components/Toolbar';
 import { Avatar } from '../components/Avatar';
@@ -30,58 +29,63 @@ export function Section09Layout() {
 
       <div className={s.sub}>Accordion</div>
       <p className={s.note}>
-        Wraps Base UI Collapsible. <code>defaultOpen</code> starts expanded. Use inside Frame with
-        horizontal padding for panel-style grouping.
+        Sections whose triggers are their titles; each renders as a heading. Arrow keys move between
+        them. <code>defaultValue</code> lists the items that start open; pass{' '}
+        <code>multiple={'{false}'}</code> to open one at a time. <code>summary</code> shows on the
+        trigger in both states.
       </p>
-      <Frame>
-        <div style={{ padding: '0 var(--s-8)' }}>
-          <Accordion title={<span className="caption">Assembly parameters</span>} defaultOpen>
+      <Frame paddingY={0} paddingX={8}>
+        <Accordion.Root defaultValue={['params']}>
+          <Accordion.Item
+            value="params"
+            title={<span className="caption">Assembly parameters</span>}
+            summary="MEGAHIT v1.2.9"
+          >
             <span className="body">
-              MEGAHIT v1.2.9 with default parameters. Min contig length: 200 bp. K-list: 21, 29, 39,
-              59, 79, 99, 119, 141.
+              Default parameters. Min contig length: 200 bp. K-list: 21, 29, 39, 59, 79, 99, 119,
+              141.
             </span>
-          </Accordion>
-          <Accordion title={<span className="caption">Quality metrics</span>}>
-            <span className="body">
-              N50: 8,241 bp. Total: 48.2 Mb. GC: 52.3%. CheckM completeness: 94.2%.
-            </span>
-          </Accordion>
-        </div>
+          </Accordion.Item>
+          <Accordion.Item
+            value="quality"
+            title={<span className="caption">Quality metrics</span>}
+            summary="94.2% complete"
+          >
+            <span className="body">N50: 8,241 bp. Total: 48.2 Mb. GC: 52.3%.</span>
+          </Accordion.Item>
+        </Accordion.Root>
       </Frame>
       <CodeBlock
         language="tsx"
-        code={`<Accordion title={<span className="caption">Assembly parameters</span>} defaultOpen>
-  <span className="body">Content here.</span>
-</Accordion>`}
+        code={`<Accordion.Root defaultValue={['params']}>
+  <Accordion.Item
+    value="params"
+    title={<span className="caption">Assembly parameters</span>}
+    summary="MEGAHIT v1.2.9"
+  >
+    <span className="body">Content here.</span>
+  </Accordion.Item>
+  <Accordion.Item value="quality" title={<span className="caption">Quality metrics</span>}>
+    <span className="body">More content.</span>
+  </Accordion.Item>
+</Accordion.Root>`}
       />
 
       <div className={s.sub}>Collapsible</div>
       <p className={s.note}>
-        The same Base UI part with the trigger left to the caller, for disclosures that are not a
-        titled section. The panel animates its height. Keep the panel immediately after the trigger
-        so a screen reader reaches the revealed content by moving forward.
+        A section whose trigger is a control, not a title. Styled text, in the flow of the copy it
+        expands, no heading. Use Accordion when the trigger titles the section.
       </p>
-      <Frame style={{ padding: 'var(--s-7) var(--s-8)' }}>
-        <Collapsible.Root
-          open={showMethod}
-          onOpenChange={setShowMethod}
-          style={{ display: 'grid', justifyItems: 'start', gap: 'var(--s-4)' }}
-        >
+      <Frame paddingY={7} paddingX={8}>
+        <Collapsible.Root open={showMethod} onOpenChange={setShowMethod}>
           <p className="body" style={{ maxWidth: '68ch' }}>
-            Assembled with MEGAHIT v1.2.9. 4,355 contigs, N50 8,241 bp.
+            Assembled with MEGAHIT v1.2.9. 4,355 contigs, N50 8,241 bp.{' '}
+            <Collapsible.Trigger>
+              {showMethod ? 'Fewer details' : 'More details'}
+            </Collapsible.Trigger>
           </p>
-          <Collapsible.Trigger>
-            {showMethod ? 'Hide parameters' : 'Show parameters'}
-            <CaretDown
-              size={12}
-              style={{
-                transform: showMethod ? 'rotate(180deg)' : undefined,
-                transition: 'transform var(--t-base)',
-              }}
-            />
-          </Collapsible.Trigger>
           <Collapsible.Panel>
-            <p className="body" style={{ maxWidth: '68ch' }}>
+            <p className="body" style={{ maxWidth: '68ch', paddingTop: 'var(--s-4)' }}>
               Reads trimmed with fastp. Minimum contig length 200 bp. K-list 21, 29, 39, 59, 79, 99,
               119, 141. Binned with MetaBAT2 and scored with CheckM2.
             </p>
@@ -107,7 +111,7 @@ export function Section09Layout() {
         unless <code>render</code> says otherwise. Group what belongs together and separate the
         groups.
       </p>
-      <Frame style={{ padding: 'var(--s-4) var(--s-5)' }}>
+      <Frame paddingY={4} paddingX={5}>
         <Toolbar.Root aria-label="Table controls">
           <Toolbar.Group>
             <Toolbar.Button>

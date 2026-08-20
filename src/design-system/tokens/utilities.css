@@ -113,3 +113,18 @@
   color: var(--c-ink5);
   font-variant-numeric: tabular-nums;
 }
+
+/* Anchors, and buttons styled as anchors. font: inherit keeps a <button> at
+   body size beside real anchors. */
+.link {
+  font: inherit;
+  color: var(--ct-primary);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.link:hover {
+  text-decoration-thickness: 2px;
+}

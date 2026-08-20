@@ -5,7 +5,7 @@ import { Frame } from '../Frame';
 import { Chip } from '../Chip';
 import { Progress } from '../Progress';
 import { Loader } from '../Loader';
-import { Accordion } from '../Accordion';
+import * as Collapsible from '../Collapsible';
 import {
   Play,
   Clock,
@@ -15,6 +15,7 @@ import {
   ArrowCounterClockwise,
   X,
   ArrowSquareOut,
+  CaretDown,
 } from '@phosphor-icons/react';
 
 export type JobStatus = 'queued' | 'running' | 'completed' | 'error' | 'terminated';
@@ -80,7 +81,7 @@ export function JobPanel({
   const failed = status === 'error' || status === 'terminated';
 
   return (
-    <Frame className={cx(styles.root, failed && styles[status], className)}>
+    <Frame padding={0} className={cx(styles.root, failed && styles[status], className)}>
       <div className={cx(styles.header, active && !stages && styles.headerWithLoader)}>
         {active && !stages && <Loader size={12} />}
         <span className={styles.title}>{title}</span>
@@ -110,9 +111,16 @@ export function JobPanel({
 
       {logLines && logLines.length > 0 && (
         <div className={styles.logSection}>
-          <Accordion title={`Log · ${logLines.length} lines`}>
-            <pre className={styles.logPre}>{logLines.join('\n')}</pre>
-          </Accordion>
+          <Collapsible.Root>
+            <Collapsible.Trigger render={<button type="button" className={styles.logTrigger} />}>
+              <CaretDown size={12} className={styles.logChevron} />
+              Log
+              <span className={styles.logCount}>{logLines.length} lines</span>
+            </Collapsible.Trigger>
+            <Collapsible.Panel>
+              <pre className={styles.logPre}>{logLines.join('\n')}</pre>
+            </Collapsible.Panel>
+          </Collapsible.Root>
         </div>
       )}
 

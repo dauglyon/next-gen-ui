@@ -102,13 +102,13 @@ function AccountPage() {
   const me = useMe();
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-7)' }}>
-      <Frame style={{ padding: 'var(--s-9)' }}>
+      <Frame padding={9}>
         <PublicProfileSection me={me} />
       </Frame>
-      <Frame style={{ padding: 'var(--s-9)' }}>
+      <Frame padding={9}>
         <IdentitySection me={me} />
       </Frame>
-      <Frame style={{ padding: 'var(--s-9)' }}>
+      <Frame padding={9}>
         <SessionSection />
       </Frame>
     </div>

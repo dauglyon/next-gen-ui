@@ -31,3 +31,41 @@
     overflow-x: auto;
   }
 }
+
+/* Vertical room for the trigger; the card supplies the horizontal inset. */
+.triggerRow {
+  padding: var(--s-3) 0;
+}
+
+/* Quieter than the default disclosure trigger: ink, not link colour, and no
+   underline. */
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: var(--fs-4);
+  color: var(--c-ink3);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--c-ink);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--c-focus);
+    border-radius: var(--r-sm);
+  }
+}
+
+.chevron {
+  transition: transform var(--t-base);
+
+  button:not([data-panel-open]) & {
+    transform: rotate(-90deg);
+  }
+}

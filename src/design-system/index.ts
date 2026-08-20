@@ -45,7 +45,7 @@ export type { SegmentedControlProps, SegmentOption } from './components/Segmente
 
 // Layout
 export { Frame } from './components/Frame';
-export type { FrameProps } from './components/Frame';
+export type { FrameProps, FrameSpace } from './components/Frame';
 export { Row } from './components/Row';
 export type { RowProps } from './components/Row';
 export { NavIcon } from './components/NavIcon';
@@ -54,8 +54,7 @@ export * as Tabs from './components/Tabs';
 export * as Toolbar from './components/Toolbar';
 export { Separator } from './components/Separator';
 export type { SeparatorProps } from './components/Separator';
-export { Accordion } from './components/Accordion';
-export type { AccordionProps } from './components/Accordion';
+export * as Accordion from './components/Accordion';
 export * as Collapsible from './components/Collapsible';
 export { Breadcrumbs } from './components/Breadcrumbs';
 export type { BreadcrumbsProps, BreadcrumbItem } from './components/Breadcrumbs';

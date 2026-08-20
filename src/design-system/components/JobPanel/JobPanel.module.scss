@@ -96,10 +96,6 @@
 .logSection {
   padding: 0 var(--s-7);
   border-top: 1px solid var(--c-border);
-
-  button {
-    font-size: var(--fs-4);
-  }
 }
 
 .logPre {
@@ -107,7 +103,8 @@
   font-size: var(--fs-3);
   line-height: 1.5;
   color: var(--c-ink3);
-  margin: 0;
+  /* Insets the open log from the footer divider. */
+  margin: 0 0 var(--s-5);
   white-space: pre-wrap;
   word-break: break-all;
   max-height: 100px;
@@ -167,5 +164,45 @@
     outline: none;
     box-shadow: 0 0 0 2px var(--c-focus);
     border-radius: var(--r-sm);
+  }
+}
+
+/* Quieter than the default disclosure trigger: ink, not link colour, and no
+   underline. */
+.logTrigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-3) 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: var(--fs-4);
+  color: var(--c-ink3);
+  cursor: pointer;
+  text-align: left;
+
+  &:hover {
+    color: var(--c-ink);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--c-focus);
+    border-radius: var(--r-sm);
+  }
+}
+
+.logCount {
+  margin-left: auto;
+  color: var(--c-ink4);
+}
+
+.logChevron {
+  transition: transform var(--t-base);
+
+  .logTrigger:not([data-panel-open]) & {
+    transform: rotate(-90deg);
   }
 }
