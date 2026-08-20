@@ -1,6 +1,12 @@
 import type { CSSProperties } from 'react';
 import styles from './Loader.module.scss';
+import { useInView } from '../../util/useInView';
 import { cx } from '../../util/cx';
+
+/* The circles blend where they overlap, which puts each on its own
+   compositing layer, and they animate their fill, so the layer cannot be
+   cached. Out of view the animation is paused rather than repainting every
+   frame. */
 
 export interface LoaderProps {
   /** Rendered width/height in px */
@@ -18,9 +24,13 @@ export interface LoaderProps {
 }
 
 export function Loader({ size = 48, blend, svgFilter, label, className }: LoaderProps) {
+  const [ref, inView] = useInView<HTMLSpanElement>();
+
   return (
     <span
+      ref={ref}
       className={cx(styles.root, className)}
+      data-paused={inView ? undefined : ''}
       style={blend ? ({ '--loader-blend': blend } as CSSProperties) : undefined}
       role={label ? 'status' : undefined}
       aria-label={label}
