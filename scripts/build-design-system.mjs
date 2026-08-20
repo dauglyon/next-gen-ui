@@ -29,7 +29,7 @@ const isPublishBuild = Boolean(process.env.DS_VERSION);
 
 const cssAssets = [
   'global.css',
-  'tokens/fonts.css',
+  'fonts.css',
   'tokens/tokens.css',
   'tokens/prism-kbase.css',
   'tokens/utilities.css',
@@ -46,8 +46,8 @@ for (const rel of cssAssets) {
 // global resets + component styles, in load order. Vite emits the
 // component styles to `style.css`; rename it first, then concat.
 renameSync(join(distRoot, 'style.css'), join(distRoot, 'components.css'));
+// fonts.css is left out: bare specifiers need a bundler to resolve them.
 const allInOneOrder = [
-  'tokens/fonts.css',
   'tokens/tokens.css',
   'tokens/prism-kbase.css',
   'tokens/utilities.css',
@@ -77,12 +77,13 @@ const pkg = {
     './style.css': './style.css',
     './components.css': './components.css',
     './global.css': './global.css',
-    './tokens/fonts.css': './tokens/fonts.css',
+    './fonts.css': './fonts.css',
     './tokens/tokens.css': './tokens/tokens.css',
     './tokens/prism-kbase.css': './tokens/prism-kbase.css',
     './tokens/utilities.css': './tokens/utilities.css',
   },
   files: [
+    'fonts.css',
     'index.js',
     'index.js.map',
     'style.css',
@@ -92,6 +93,10 @@ const pkg = {
     'types/',
     'README.md',
   ],
+  dependencies: {
+    '@fontsource/oxygen': rootPkg.dependencies['@fontsource/oxygen'],
+    '@fontsource/fira-code': rootPkg.dependencies['@fontsource/fira-code'],
+  },
   peerDependencies: {
     react: rootPkg.dependencies.react,
     'react-dom': rootPkg.dependencies['react-dom'],

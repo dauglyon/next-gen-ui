@@ -27,12 +27,14 @@ peer dependency: every icon-using component imports from it.
 ```tsx
 import { Button, Alert } from '@kbase/design-system';
 import '@kbase/design-system/style.css';
+import '@kbase/design-system/fonts.css';
 ```
 
 `style.css` is the all-in-one bundle: tokens, utilities, resets, and
-component styles in correct order. Granular entries are available
-for opt-in: `components.css`, `global.css`,
-`tokens/{fonts,tokens,prism-kbase,utilities}.css`. See
+component styles in correct order. `fonts.css` is separate — see
+[Fonts](#fonts). Granular entries are available for opt-in:
+`components.css`, `global.css`,
+`fonts.css`, `tokens/{tokens,prism-kbase,utilities}.css`. See
 [Layering](#layering).
 
 ---
@@ -112,7 +114,8 @@ from cannot go inside it. Those sit in `:root` as pairs — `--tl-bg` and
 src/design-system/
   index.ts                  Public surface. Anything not re-exported here is private.
   components/<Name>/        Component.tsx, Component.module.scss, index.ts
-  tokens/                   fonts.css, tokens.css, prism-kbase.css, utilities.css
+  fonts.css                 Optional @font-face loading. Not in style.css.
+  tokens/                   tokens.css, prism-kbase.css, utilities.css
   global.css                Element resets and globals.
   util/cx.ts                Class-name helper.
   sections/, appendix/      In-app demo content. Not in the published package.
@@ -152,6 +155,7 @@ Output: `dist-design-system/`.
 | `components.css` | Component styles only (no tokens, no resets).                                |
 | `global.css`     | Element resets, mirrored from `src/design-system/global.css`.                |
 | `tokens/*.css`   | Tokens, mirrored from `src/design-system/tokens/*.css`.                      |
+| `fonts.css`      | Optional `@font-face` loading. Not part of `style.css`.                      |
 | `types/`         | `.d.ts` declarations emitted by `tsc`.                                       |
 | `package.json`   | Generated. Version from `DS_VERSION` env or root `package.json` as fallback. |
 
@@ -206,9 +210,39 @@ The combined `style.css` concatenates the layers in this order. Use
 the granular entries instead if a specific layer needs to be skipped
 or replaced.
 
-1. `tokens/fonts.css`: Google Fonts `@import`
-2. `tokens/tokens.css`: design tokens (`--c-*`, `--s-*`, `--r-*`, …)
-3. `tokens/prism-kbase.css`: Prism syntax theme
-4. `tokens/utilities.css`: `.h1` / `.h2` / `.body` / `.caption` / `.note`
-5. `global.css`: element resets and globals
-6. `components.css`: bundled component styles
+1. `tokens/tokens.css`: design tokens (`--c-*`, `--s-*`, `--r-*`, …)
+2. `tokens/prism-kbase.css`: Prism syntax theme
+3. `tokens/utilities.css`: `.h1` / `.h2` / `.body` / `.caption` / `.note`
+4. `global.css`: element resets and globals
+5. `components.css`: bundled component styles
+
+## Fonts
+
+`fonts.css` imports Oxygen and Fira Code from the Fontsource packages,
+which ship as dependencies. It is not part of `style.css`, because the imports
+are bare specifiers: they need a toolchain that resolves those inside a CSS
+`@import` — Vite and webpack's `css-loader` do, a bare PostCSS pipeline without
+`postcss-import` does not, and a browser cannot.
+
+If your pipeline passes CSS imports through untouched, import the faces from JS
+instead, which any bundler handles:
+
+```js
+import '@fontsource/oxygen/400.css';
+import '@fontsource/oxygen/700.css';
+import '@fontsource/fira-code/400.css';
+import '@fontsource/fira-code/700.css';
+```
+
+**Serving `style.css` from a plain `<link>` gets you no webfonts**, and
+`--f-sans` / `--f-mono` fall back to `system-ui` and the platform monospace. The
+package has no build-free entry for the faces, but the page can load them
+itself — self-hosted, or from a CDN:
+
+```html
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Oxygen:wght@400;700&family=Fira+Code:wght@400;700&display=swap"
+/>
+```
