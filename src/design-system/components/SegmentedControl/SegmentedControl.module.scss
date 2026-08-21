@@ -7,11 +7,14 @@
 
 .btn {
   all: unset;
+  box-sizing: border-box;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 28px;
+  /* Total width, not content width: `all: unset` drops the global border-box,
+     so this is 28px + the horizontal padding as it measured before. */
+  min-width: 48px;
   height: 28px;
   padding: 0 var(--s-4);
   color: var(--c-ink4);
@@ -29,7 +32,9 @@
     box-shadow: inset 0 0 0 2px var(--c-focus);
   }
 
-  & + & {
+  /* General sibling, not adjacent: each Radio.Root renders a hidden input
+     after its span, so no two spans are adjacent. */
+  & ~ & {
     border-left: 1px solid var(--c-border);
   }
 
@@ -38,7 +43,7 @@
   }
 }
 
-.active {
+.btn[data-checked] {
   background: var(--c-primary);
   color: white;
 

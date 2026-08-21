@@ -25,8 +25,8 @@ export { EmptyState } from './components/EmptyState';
 export type { EmptyStateProps } from './components/EmptyState';
 
 // Form controls
-export { Button } from './components/Button';
-export type { ButtonProps, ButtonVariant, ButtonSize } from './components/Button';
+export { Button, ButtonLink } from './components/Button';
+export type { ButtonProps, ButtonLinkProps, ButtonVariant, ButtonSize } from './components/Button';
 export { Input } from './components/Input';
 export type { InputProps } from './components/Input';
 export { Textarea } from './components/Textarea';
