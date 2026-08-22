@@ -1,5 +1,6 @@
 import s from './showcase.module.scss';
 import { Button, ButtonLink } from '../components/Button';
+import { CopyButton } from '../components/CopyButton';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { CodeBlock } from '../components/CodeBlock';
 import {
@@ -134,6 +135,41 @@ export function Section05Actions() {
 <Button size="xs" variant="outline">Filter</Button>
 <Button size="xs" variant="ghost">Reset</Button>`}
       />
+
+      <div className={s.sub}>Copy button</div>
+      <p className={s.note}>
+        Writes <code>text</code> to the clipboard and confirms it. The component owns the whole
+        confirmation: the icon, how long it shows, and the announcement. It uses{' '}
+        <code>copy-to-clipboard</code>, because <code>navigator.clipboard</code> does not exist on
+        insecure origins &mdash; including any dev server reached over http.
+      </p>
+      <div className={s.row} style={{ marginBottom: 'var(--s-7)', alignItems: 'center' }}>
+        <CopyButton
+          text="s3://cdm-lake/users-general-warehouse/alice/"
+          variant="outline"
+          size="sm"
+          label="Copy path"
+        />
+        <CopyButton
+          text="s3://cdm-lake/users-general-warehouse/alice/"
+          variant="ghost"
+          size="sm"
+          label="Copy path"
+          iconOnly
+        />
+      </div>
+      <CodeBlock
+        language="tsx"
+        code={`<CopyButton text={path} label="Copy path" variant="outline" size="sm" />
+<CopyButton text={path} label="Copy path" variant="ghost" size="sm" iconOnly />`}
+      />
+      <p className={s.note}>
+        The icon is <code>aria-hidden</code>, so the result is also announced in a polite live
+        region. A failed copy shows <code>XCircle</code> and says so &mdash; silence is
+        indistinguishable from a dead button. <code>label</code> is required, because a button is
+        operable and always needs a name; <code>iconOnly</code> hides the words and keeps it. Takes
+        Button's <code>variant</code>, <code>size</code>, and its other props.
+      </p>
 
       <div className={s.sub}>Segmented control</div>
       <p className={s.note}>
