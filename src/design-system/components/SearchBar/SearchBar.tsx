@@ -16,11 +16,13 @@ export function SearchBar({
   value,
   onValueChange,
   className,
+  // Paired with className on the root; in props it reaches the inner input.
+  style,
   placeholder = 'Search...',
   ...props
 }: SearchBarProps) {
   return (
-    <div className={cx(styles.root, className)}>
+    <div className={cx(styles.root, className)} style={style}>
       <MagnifyingGlass size={14} className={styles.icon} />
       <input
         type="text"

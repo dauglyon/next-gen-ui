@@ -1,6 +1,7 @@
 import {
   useState,
   useCallback,
+  useMemo,
   useRef,
   type ReactNode,
   type KeyboardEvent,
@@ -27,6 +28,12 @@ export interface TreeProps {
   onSelect?: (id: string) => void;
   onContextMenu?: (id: string, event: MouseEvent) => void;
   defaultExpanded?: string[];
+  /** The expanded ids. Use when controlled. */
+  expanded?: string[];
+  /** Called with the ids after a toggle, controlled or not. */
+  onExpandedChange?: (ids: string[]) => void;
+  /** Names the tree; without one it is announced only as "tree". */
+  'aria-label'?: string;
   className?: string;
 }
 
@@ -49,19 +56,40 @@ export function Root({
   onSelect,
   onContextMenu,
   defaultExpanded = [],
+  expanded: expandedProp,
+  onExpandedChange,
+  'aria-label': ariaLabel,
   className,
 }: TreeProps) {
-  const [expanded, setExpanded] = useState<Set<string>>(new Set(defaultExpanded));
+  const [ownExpanded, setOwnExpanded] = useState<Set<string>>(new Set(defaultExpanded));
   const listRef = useRef<HTMLUListElement>(null);
 
-  const toggle = useCallback((id: string) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
+  const controlled = expandedProp !== undefined;
+  const expanded = useMemo(
+    () => (controlled ? new Set(expandedProp) : ownExpanded),
+    [controlled, expandedProp, ownExpanded],
+  );
+
+  // Uncontrolled toggling reads this, so two toggles in one event compose.
+  // toggle is its only writer and updates it together with ownExpanded.
+  const latestOwn = useRef(ownExpanded);
+
+  const toggle = useCallback(
+    (id: string) => {
+      // Controlled toggling reads the prop instead. A parent that ignores the
+      // callback does not re-render, so a ref would hold an expansion that was
+      // never displayed.
+      const next = new Set(controlled ? expandedProp : latestOwn.current);
       if (next.has(id)) next.delete(id);
       else next.add(id);
-      return next;
-    });
-  }, []);
+      if (!controlled) {
+        latestOwn.current = next;
+        setOwnExpanded(next);
+      }
+      onExpandedChange?.([...next]);
+    },
+    [controlled, expandedProp, onExpandedChange],
+  );
 
   const getAllVisibleIds = useCallback((): string[] => {
     const ids: string[] = [];
@@ -129,6 +157,7 @@ export function Root({
     <ul
       ref={listRef}
       role="tree"
+      aria-label={ariaLabel}
       className={cx(styles.root, className)}
       onKeyDown={handleKeyDown}
       tabIndex={0}

@@ -3,6 +3,9 @@ import s from './showcase.module.scss';
 import { Frame } from '../components/Frame';
 import * as Tree from '../components/Tree';
 import * as Stepper from '../components/Stepper';
+import { SearchBar } from '../components/SearchBar';
+import { CodeBlock } from '../components/CodeBlock';
+import css from './Section12Navigation.module.scss';
 import { Folder, FileText, FileCode, Eye, DotsThree } from '@phosphor-icons/react';
 
 const treeBtn = (icon: ReactNode) => <button onClick={(e) => e.stopPropagation()}>{icon}</button>;
@@ -73,8 +76,31 @@ const treeItems: Tree.TreeNode[] = [
   { id: 'README.md', label: 'README.md', icon: <FileText size={13} /> },
 ];
 
+function branchesMatching(nodes: Tree.TreeNode[], query: string): string[] {
+  // Trimmed, or a lone space matches every label containing one.
+  const needle = query.trim().toLowerCase();
+  if (!needle) return [];
+  const found: string[] = [];
+  const walk = (node: Tree.TreeNode): boolean => {
+    const childMatched = (node.children ?? []).map(walk).some(Boolean);
+    if (childMatched) found.push(node.id);
+    return childMatched || node.label.toLowerCase().includes(needle);
+  };
+  nodes.forEach(walk);
+  return found;
+}
+
 export function Section12Navigation() {
   const [treeSelected, setTreeSelected] = useState<string | undefined>('src/components/Tree.tsx');
+  const [filter, setFilter] = useState('');
+  const [expandedIds, setExpandedIds] = useState<string[]>(['src']);
+  // Its own selection, so the two demos do not move each other's highlight.
+  const [filteredSelected, setFilteredSelected] = useState<string | undefined>();
+
+  function handleFilter(query: string) {
+    setFilter(query);
+    setExpandedIds((prev) => [...new Set([...prev, ...branchesMatching(treeItems, query)])]);
+  }
 
   return (
     <div className={s.section}>
@@ -92,6 +118,7 @@ export function Section12Navigation() {
             selected={treeSelected}
             onSelect={setTreeSelected}
             defaultExpanded={['src', 'src/components']}
+            aria-label="Project files"
           />
         </Frame>
         <div style={{ flex: 1, minWidth: 200 }}>
@@ -113,6 +140,48 @@ export function Section12Navigation() {
           </div>
         </div>
       </div>
+
+      <div className={s.sub} style={{ marginTop: 'var(--s-9)' }}>
+        Tree, controlled expansion
+      </div>
+      <p className={s.note}>
+        Pass <code>expanded</code> and <code>onExpandedChange</code> to decide what is open. Here a
+        search opens every branch containing a match. Because expansion is state rather than derived
+        from the query, a branch the search opened can still be collapsed by hand.
+      </p>
+      <div className={css.treePanel}>
+        <SearchBar
+          value={filter}
+          onValueChange={handleFilter}
+          placeholder="Search files..."
+          aria-label="Search files"
+        />
+        <Frame padding={4}>
+          <Tree.Root
+            items={treeItems}
+            selected={filteredSelected}
+            onSelect={setFilteredSelected}
+            expanded={expandedIds}
+            onExpandedChange={setExpandedIds}
+            aria-label="Filtered project files"
+          />
+        </Frame>
+        <div className={css.treeState}>
+          <span className="mono-secondary">Expanded</span> {expandedIds.join(', ') || 'none'}
+        </div>
+      </div>
+      <CodeBlock
+        language="tsx"
+        code={`const [expanded, setExpanded] = useState(['src']);
+
+function handleFilter(query: string) {
+  setFilter(query);
+  // Open the branches containing a match, without closing anything.
+  setExpanded((prev) => [...new Set([...prev, ...branchesMatching(items, query)])]);
+}
+
+<Tree.Root items={items} expanded={expanded} onExpandedChange={setExpanded} />`}
+      />
 
       <div className={s.sub} style={{ marginTop: 'var(--s-9)' }}>
         Stepper, Horizontal

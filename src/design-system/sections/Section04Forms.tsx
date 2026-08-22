@@ -11,12 +11,26 @@ import { Textarea } from '../components/Textarea';
 import { Frame } from '../components/Frame';
 import { Separator } from '../components/Separator';
 import { SearchBar } from '../components/SearchBar';
+import { Autocomplete } from '../components/Autocomplete';
 import { CodeBlock } from '../components/CodeBlock';
 import { Play, PaperPlaneRight } from '@phosphor-icons/react';
 import css from './Section04Forms.module.scss';
 
+const PROJECTS = [
+  'Soil Metagenome Assembly',
+  'Ocean Sampling 2025',
+  'Soil Carbon Flux',
+  'Permafrost Cores',
+];
+
 export function Section04Forms() {
   const [prompt, setPrompt] = useState('');
+  const [project, setProject] = useState('Soil Carbon Flux');
+
+  // The button is disabled when blank, Enter is not, so the guard lives here.
+  function sendPrompt() {
+    if (prompt.trim()) setPrompt('');
+  }
   return (
     <div className={s.section}>
       <div className={s.sNum}>04</div>
@@ -122,19 +136,53 @@ export function Section04Forms() {
 
       <div className={s.sub}>SearchBar</div>
       <p className={s.note}>
-        A filter field: it narrows a list someone else is already rendering. Not a combobox &mdash;
-        it owns no list of its own and picks nothing, so it has no listbox and no active option. A
-        field that <em>is</em> the list, owning a listbox and an active option, is a combobox and is
-        not in the system yet.
+        A filter field: it narrows a list someone else is already rendering. It owns no list of its
+        own and picks nothing, so it has no listbox and no active option. A field that owns its own
+        list is an Autocomplete, below.
       </p>
       <SearchBar
         value=""
         onValueChange={() => {}}
         placeholder="Search genomes, assemblies, models..."
+        aria-label="Search genomes"
       />
       <CodeBlock
         language="tsx"
         code={`<SearchBar value={query} onValueChange={setQuery} placeholder="Search genomes..." />`}
+      />
+
+      <div className={s.sub}>Autocomplete</div>
+      <p className={s.note}>
+        For &ldquo;pick an existing one or name a new one&rdquo;. The suggestions narrow as you
+        type, and anything you type is a valid value, which is what separates it from Select, which
+        accepts only what it lists. Screen readers call it a combobox. Use <code>emptyMessage</code>{' '}
+        to say what happens to a value that matches nothing, since an empty list otherwise reads as
+        a rejection.
+      </p>
+      <div style={{ maxWidth: 320 }}>
+        <Field.Root>
+          <Field.Label>Project</Field.Label>
+          <Autocomplete
+            items={PROJECTS}
+            value={project}
+            onValueChange={setProject}
+            emptyMessage="No project by that name. It is created on save."
+            placeholder="Existing project, or a new name"
+          />
+          <Field.Description>Filed under {project.trim() || 'no project'}.</Field.Description>
+        </Field.Root>
+      </div>
+      <CodeBlock
+        language="tsx"
+        code={`<Field.Root>
+  <Field.Label>Project</Field.Label>
+  <Autocomplete
+    items={projectNames}
+    value={project}
+    onValueChange={setProject}
+    emptyMessage="No project by that name. It is created on save."
+  />
+</Field.Root>`}
       />
 
       <div className={s.sub}>Prompt input</div>
@@ -145,34 +193,61 @@ export function Section04Forms() {
       </p>
       <Frame paddingY={5} paddingX={6} className={css.promptInput}>
         <Textarea
-          rows={2}
+          rows={1}
           autoGrow
           maxRows={6}
           value={prompt}
           onValueChange={setPrompt}
-          onSubmit={() => setPrompt('')}
+          onSubmit={sendPrompt}
           placeholder="Describe the analysis you want to run, or search for data…"
           aria-label="Prompt"
           className={css.textarea}
         />
-        <Button variant="primary" size="sm" aria-label="Run prompt" onClick={() => setPrompt('')}>
-          <PaperPlaneRight size={12} weight="bold" />
+        <Button
+          variant="primary"
+          size="sm"
+          aria-label="Run prompt"
+          disabled={!prompt.trim()}
+          onClick={sendPrompt}
+          className={css.send}
+        >
+          <PaperPlaneRight size={14} weight="bold" />
         </Button>
       </Frame>
       <CodeBlock
         language="tsx"
-        code={`<Textarea
-  autoGrow
-  maxRows={6}
-  value={prompt}
-  onValueChange={setPrompt}
-  onSubmit={send}
-/>
+        code={`<Frame className={styles.composer}>
+  <Textarea
+    autoGrow
+    maxRows={6}
+    value={prompt}
+    onValueChange={setPrompt}
+    onSubmit={send}
+    className={styles.field}
+  />
+  <Button disabled={!prompt.trim()} onClick={send}>Run</Button>
+</Frame>
 
-/* Stripping the chrome? Tell the cap. */
-.myTextarea {
+/* Doubled: a single class ties with Textarea's own and falls to
+   emit order. Zero the custom properties too, or autoGrow's
+   max-height counts a border and padding that are no longer drawn. */
+.field.field {
+  --textarea-pad-y: 0px;
   --textarea-border: 0px;
+  padding: 0;
   border: none;
+}
+
+/* :focus and :disabled are (0,2,0) too, so match them. */
+.field.field:focus,
+.field.field:disabled {
+  box-shadow: none;
+}
+
+/* The field has no border left to light, so the surface shows focus.
+   Keyed on the textarea: a focused Run shows its own ring. */
+.composer:has(textarea:focus) {
+  box-shadow: 0 0 0 3px var(--c-focus);
 }`}
       />
 

@@ -1,5 +1,7 @@
+import { useState, type FormEvent } from 'react';
 import s from './showcase.module.scss';
 import * as Dialog from '../components/Dialog';
+import * as Field from '../components/Field';
 import * as AlertDialog from '../components/AlertDialog';
 import * as Tooltip from '../components/Tooltip';
 import * as Popover from '../components/Popover';
@@ -22,6 +24,24 @@ interface Section08OverlaysProps {
 }
 
 export function Section08Overlays({ onShowToast }: Section08OverlaysProps) {
+  const [projectName, setProjectName] = useState('Soil Metagenome Assembly');
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameSeed, setRenameSeed] = useState(projectName);
+
+  function handleOpenChange(open: boolean) {
+    // Seeded on open, not per render: the popup outlives the close, and Base
+    // UI errors when a mounted uncontrolled field's defaultValue changes.
+    if (open) setRenameSeed(projectName);
+    setRenameOpen(open);
+  }
+
+  function handleRename(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const name = new FormData(event.currentTarget).get('name');
+    setProjectName(String(name).trim());
+    setRenameOpen(false);
+  }
+
   return (
     <div className={s.section}>
       <div className={s.sNum}>08</div>
@@ -140,7 +160,7 @@ toasts.add({
         A task the user can back out of. The backdrop and Escape both close it, as does
         Dialog.Close. Confirming action on the right.
       </p>
-      <Dialog.Root>
+      <Dialog.Root open={renameOpen} onOpenChange={handleOpenChange}>
         <Dialog.Trigger
           render={
             <Button variant="outline">
@@ -149,27 +169,81 @@ toasts.add({
           }
         />
         <Dialog.Popup>
-          <Dialog.Title>Rename project</Dialog.Title>
-          <Dialog.Description>
-            The new name is shown everywhere the project appears. Anyone it is shared with keeps
-            their access.
-          </Dialog.Description>
-          <Input defaultValue="Soil Metagenome Assembly" aria-label="Project name" />
-          <div className={s.row} style={{ justifyContent: 'flex-end', marginTop: 'var(--s-7)' }}>
-            <Dialog.Close render={<Button variant="ghost">Cancel</Button>} />
-            <Dialog.Close>Save</Dialog.Close>
-          </div>
+          <form onSubmit={handleRename}>
+            <Dialog.Title>Rename project</Dialog.Title>
+            <Dialog.Description>
+              The new name is shown everywhere the project appears. Anyone it is shared with keeps
+              their access.
+            </Dialog.Description>
+            <Field.Root>
+              <Field.Label>Project name</Field.Label>
+              <Input
+                name="name"
+                defaultValue={renameSeed}
+                required
+                // required accepts "   "; the pattern does not.
+                pattern=".*\S.*"
+                title="A name needs at least one non-space character."
+              />
+            </Field.Root>
+            <div className={s.row} style={{ justifyContent: 'flex-end', marginTop: 'var(--s-7)' }}>
+              <Dialog.Close
+                render={
+                  <Button variant="ghost" type="button">
+                    Cancel
+                  </Button>
+                }
+              />
+              <Button type="submit">Save</Button>
+            </div>
+          </form>
         </Dialog.Popup>
       </Dialog.Root>
+      <p className={s.note}>
+        Current name: <strong>{projectName}</strong>
+      </p>
+      <p className={s.note}>
+        A dialog that collects a value is a form &mdash; that is what makes Enter submit and gives
+        the browser something to validate. It replaces <code>window.prompt</code>, which no design
+        system ships as a component; <code>window.confirm</code> is AlertDialog, below.
+      </p>
       <CodeBlock
         language="tsx"
-        code={`<Dialog.Root>
+        code={`const [open, setOpen] = useState(false);
+const [seed, setSeed] = useState(project.name);
+
+// Seeded on open, not per render: the popup outlives the close, and Base
+// UI errors when a mounted uncontrolled field's defaultValue changes.
+function handleOpenChange(next: boolean) {
+  if (next) setSeed(project.name);
+  setOpen(next);
+}
+
+function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+  const name = new FormData(event.currentTarget).get('name');
+  rename(String(name).trim());
+  setOpen(false);
+}
+
+<Dialog.Root open={open} onOpenChange={handleOpenChange}>
   <Dialog.Trigger>Rename</Dialog.Trigger>
+  {/* No autoFocus: Base UI focuses the first tabbable element, except on
+      touch, where it focuses the popup so the keyboard stays down. */}
   <Dialog.Popup>
-    <Dialog.Title>Rename project</Dialog.Title>
-    <Dialog.Description>The new name is shown everywhere.</Dialog.Description>
-    <Dialog.Close render={<Button variant="ghost">Cancel</Button>} />
-    <Dialog.Close>Save</Dialog.Close>
+    <form onSubmit={handleSubmit}>
+      <Dialog.Title>Rename project</Dialog.Title>
+      <Dialog.Description>The new name is shown everywhere.</Dialog.Description>
+      <Field.Root>
+        <Field.Label>Project name</Field.Label>
+        {/* required alone accepts "   "; the pattern rejects whitespace. */}
+        <Input name="name" defaultValue={seed} required pattern=".*\\S.*" />
+      </Field.Root>
+      {/* type="button", or Cancel submits the form too. */}
+      <Dialog.Close render={<Button variant="ghost" type="button">Cancel</Button>} />
+      {/* A plain Button, not a Dialog.Close: closing waits for the handler. */}
+      <Button type="submit">Save</Button>
+    </form>
   </Dialog.Popup>
 </Dialog.Root>`}
       />

@@ -1,0 +1,42 @@
+.input {
+  composes: input from '../Input/Input.module.scss';
+}
+
+.positioner {
+  /* Base UI sets this from the input's measured width. */
+  width: var(--anchor-width);
+}
+
+.popup {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: var(--s-2);
+  box-shadow: var(--e-3);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.item {
+  font-size: var(--fs-4);
+  padding: var(--s-2) var(--s-4);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  outline: none;
+  color: var(--c-ink2);
+
+  &[data-highlighted] {
+    background: var(--c-raised);
+  }
+}
+
+.empty {
+  font-size: var(--fs-3);
+  color: var(--c-ink4);
+
+  /* The element stays mounted and visible when empty, because Base UI
+     announces it, so padding applies only when it has text. */
+  &:not(:empty) {
+    padding: var(--s-2) var(--s-4);
+  }
+}
