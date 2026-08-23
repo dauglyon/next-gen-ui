@@ -234,12 +234,13 @@ export function DataExplorerAppendix() {
       <div className={s.num}>A</div>
       <div className={s.title}>Data explorer pattern</div>
       <p className={s.desc}>
-        Not a component. It's a composition recipe: apps arrange design system primitives for
-        faceted search, sortable tables, and filtered views.
+        Not a component. Apps compose design system primitives into faceted search, sortable tables,
+        and filtered views.
       </p>
       <p className={s.note}>
-        Narrow screens: facet panel stacks above the table. Accordion groups collapse by default.
-        Dismissable chips summarize active filters inline.
+        On narrow screens the facet panel stacks above the table. Accordion groups start open, so
+        the available facets are visible without a click. Dismissable chips summarize the active
+        filters inline.
       </p>
 
       <div className={s.layout}>
