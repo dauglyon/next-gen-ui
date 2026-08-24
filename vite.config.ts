@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { loadEnv } from 'vite';
 import { defineConfig } from 'vitest/config';
@@ -25,6 +27,27 @@ export default defineConfig(({ mode }) => {
       }),
       react(),
       {
+        // Deploy config placeholders, substituted when the container starts
+        // (docker-entrypoint.d/05-render-config.sh) so one image serves every
+        // environment. Build-only: in dev the tags are absent and src/config.ts
+        // falls back to import.meta.env. Meta rather than an inline script
+        // because CSP would demand a per-environment hash for the latter.
+        name: 'runtime-config',
+        apply: 'build' as const,
+        transformIndexHtml: () => [
+          {
+            tag: 'meta',
+            attrs: { name: 'config:auth-origin', content: '__AUTH_ORIGIN__' },
+            injectTo: 'head-prepend' as const,
+          },
+          {
+            tag: 'meta',
+            attrs: { name: 'config:cookie-domain', content: '__COOKIE_DOMAIN__' },
+            injectTo: 'head-prepend' as const,
+          },
+        ],
+      },
+      {
         // Stamps data-theme from localStorage before the first paint, so a
         // dark-theme user gets no light flash. Inlined rather than imported
         // because it has to run before the bundle loads.
@@ -32,6 +55,15 @@ export default defineConfig(({ mode }) => {
         transformIndexHtml: () => [
           { tag: 'script', children: themeInitScript, injectTo: 'head-prepend' as const },
         ],
+        // The CSP blocks inline scripts, so the one above needs its hash in
+        // `script-src` or it silently never runs (dev has no CSP, so the
+        // breakage only shows up behind nginx). Emitted for the Dockerfile's
+        // conf stage rather than hardcoded, so editing the script above can't
+        // leave a stale hash behind.
+        writeBundle: () => {
+          const hash = createHash('sha256').update(themeInitScript).digest('base64');
+          writeFileSync('.csp-script-hash', `sha256-${hash}`);
+        },
       },
     ],
     resolve: {

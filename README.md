@@ -2,7 +2,7 @@
 
 # next-gen-ui
 
-KBase / KBERDL web app. Vite + React 19 + TypeScript, file-based
+KBase 2.0 web app. Vite + React 19 + TypeScript, file-based
 TanStack Router with TanStack Query, ORCID-only auth against the
 kbase auth service. Source repo for the KBase design system.
 
@@ -89,8 +89,10 @@ src/
     __root.tsx             Root route. Auth gate (beforeLoad), error +
                            pending boundaries, layout split between
                            AppLayout (sidebar+header) and AuthLayout (no chrome).
-    index.tsx              `/`        KBERDL home page.
+    index.tsx              `/`        KBase 2.0 home page.
     account.tsx            `/account` Identity + sessions.
+    portals.tsx            `/portals` Public. Published-portals gallery.
+    portals.module.css     Styles for the above, scoped to that route.
     design-system.tsx      `/design-system` Hidden. Design-system showcase.
     login/
       index.tsx            `/login`           Public. ORCID button + dev token paste.
@@ -120,15 +122,39 @@ the deepest matched route.
 
 ## Environment variables
 
-All client-side env vars are prefixed `VITE_` (Vite's convention)
-so they're embedded at build time. Server-side runtime config
-doesn't exist; this is a static SPA.
+Two sets, and the distinction matters.
+
+**Dev-time `VITE_*`**, read from `.env*` files and inlined by Vite.
+These configure `npm run dev` only — a production image ignores
+them.
 
 | Var                      | Default (in code)  | Notes                                                                                   |
 | ------------------------ | ------------------ | --------------------------------------------------------------------------------------- |
-| `VITE_AUTH_ORIGIN`       | `https://kbase.us` | Auth service origin. Production `--build-arg` baked into bundle and nginx CSP.          |
+| `VITE_AUTH_ORIGIN`       | `https://kbase.us` | Auth service origin. Empty means relative paths through the dev proxy.                  |
 | `VITE_COOKIE_DOMAIN`     | unset              | Optional. `.kbase.us` for prod-like deploys; leave unset locally.                       |
 | `VITE_DEV_ALLOWED_HOSTS` | unset              | Comma-separated; leading dot is Vite's subdomain wildcard. For non-localhost dev hosts. |
+
+**Runtime**, read by the container's entrypoint and rendered into
+`nginx.conf` and `index.html` at start. Set these on the workload;
+no rebuild is involved.
+
+Unset and empty mean the same thing.
+
+| Var             | Not set means                                            |
+| --------------- | -------------------------------------------------------- |
+| `AUTH_ORIGIN`   | no auth service in this deployment                       |
+| `COOKIE_DOMAIN` | derive from the current host                             |
+| `IDP_ORIGINS`   | `https://orcid.org` (space-separated, for `form-action`) |
+
+Leaving `AUTH_ORIGIN` out is a supported deployment, not a broken one:
+public routes serve normally and sign-in reports itself as unavailable
+rather than posting to a path that does not exist. That is the initial
+rollout, before an auth route exists.
+
+`src/config.ts` reads the rendered values from `<meta name="config:*">`
+tags. An absent tag means a dev build, and falls back to the `VITE_*`
+value; a tag still holding its `__PLACEHOLDER__` means a container
+whose operator did not set that variable, and reads as not configured.
 
 `.env.example` is the documentation; `.env.development` overrides
 for `npm run dev` and is committed. Personal overrides go in
@@ -141,29 +167,39 @@ The auth-related env vars have deeper context in
 
 ## Build & deploy
 
+Deploying on Rancher2: [`DEPLOYING.md`](./DEPLOYING.md).
+
 ```bash
-docker build \
-  --build-arg VITE_AUTH_ORIGIN=https://kbase.us \
-  -t frontend .
+docker build -t frontend .
+docker run -e AUTH_ORIGIN=https://kbase.us -p 8080:8080 frontend
 ```
 
-`VITE_AUTH_ORIGIN` is the single source of truth for both the
-bundle (Vite's `import.meta.env`) and the runtime CSP
-(`connect-src`, `form-action`); the build stage substitutes it
-into `nginx.conf` alongside `IDP_ORIGINS` (defaults to
-`https://orcid.org`). Both are `--build-arg`s; pass
-`--build-arg IDP_ORIGINS="https://orcid.org https://other.idp"` if a
-multi-IDP build is needed. A staging build that needs `ci.kbase.us`
-overrides `VITE_AUTH_ORIGIN` via `--build-arg`.
+**No build args.** The image is environment-agnostic: the same
+bytes run on CI, staging, and prod, and get promoted by tag. Deploy
+config is rendered when the container starts, not baked into the
+bundle, so the artifact you tested is the artifact you ship.
 
 Multi-stage layout:
 
 1. `deps`: `npm ci` against `package*.json` with the npm cache mounted.
-2. `build`: `npm run build` → `dist/`. Receives `VITE_AUTH_ORIGIN`.
-3. `conf`: substitutes `__AUTH_ORIGIN__` / `__IDP_ORIGINS__`
-   placeholders in `nginx.conf`.
-4. `runtime`: `nginxinc/nginx-unprivileged:1.27-alpine` on port
+2. `build`: `npm run build` → `dist/`, plus `.csp-script-hash`.
+3. `runtime`: `nginxinc/nginx-unprivileged:1.27-alpine` on port
    8080, serves `dist/` with the SPA fallback.
+
+At start, `docker-entrypoint.d/05-render-config.sh` renders both
+`nginx.conf` and `index.html` from pristine templates kept outside
+the doc root. From templates rather than in place so the render is
+idempotent — the entrypoint runs again on every restart, and an
+in-place edit would consume its own placeholders. It exits non-zero
+if a `__PLACEHOLDER__` survives where a real value was required — a
+stray one in a CSP is a broken policy — so a container that cannot be
+configured correctly does not serve traffic.
+
+`AUTH_ORIGIN` lands in two places at once — the CSP's `connect-src`
+and `form-action`, and the `<meta name="config:auth-origin">` the
+bundle reads. That coupling is the point: a bundle calling one
+origin while the CSP allows another produces a blocked request with
+a confusing console message.
 
 `nginx.conf` sets:
 
@@ -171,9 +207,16 @@ Multi-stage layout:
   `form-action` is `'self' <AUTH_ORIGIN> <IDP_ORIGINS>` (the IDP
   entry is required because modern browsers check `form-action`
   against every redirect target, and the ORCID hop falls under this);
-  `style-src` and `font-src` allowlist
-  `https://fonts.googleapis.com` / `https://fonts.gstatic.com` for
-  the design-system fonts.
+  `script-src` is `'self' '<sha256 of the theme-init script>'`
+  (that script is inlined into `index.html`, and CSP blocks inline
+  script unless it is named by hash; the hash is computed at build
+  time by the `theme-init` plugin in `vite.config.ts` and written
+  to `.csp-script-hash` for the container entrypoint, so editing the
+  script cannot leave a stale hash behind); `font-src` is
+  `'self' data:`, because Vite inlines font subsets under 4 KB as
+  `data:` URIs while the rest ship as files. The fonts are
+  self-hosted via `@fontsource`, so no Google Fonts origin is
+  allowlisted.
 - `X-Content-Type-Options: nosniff`
 - `Referrer-Policy: strict-origin-when-cross-origin`
 - `X-Frame-Options: DENY`
@@ -243,8 +286,8 @@ The auth subsystem's high-leverage coverage is summarised in
   importing only from layers below. New backends (workspace,
   narrative, …) get their own sibling directory with the same
   shape.
-- **App-specific styles in `styles.css`**, route-specific in
-  inline styles, design-system tokens for everything else.
+- **Route styles in a sibling `*.module.css`**, app-shell styling
+  in `styles.css`, design-system tokens for everything else.
 
 ---
 
@@ -265,3 +308,6 @@ Set `VITE_DEV_ALLOWED_HOSTS` in `.env.development.local`
 - [`src/api/auth/README.md`](./src/api/auth/README.md): wire
   contract, login flow, `safeRedirect`, cross-tab sync, token
   storage trade-off, local dev, troubleshooting.
+- [`DEPLOYING.md`](./DEPLOYING.md): Rancher2 deployment — image
+  tags, container facts, runtime configuration, and what the
+  Ingress has to do.

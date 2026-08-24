@@ -139,6 +139,43 @@ body,
   margin: 0 auto;
 }
 
+/* Light/dark pair; height set by the caller. Three rules because the theme
+   has three states: data-theme dark, data-theme light, and neither (OS). */
+.kbase-logo {
+  display: block;
+  width: auto;
+}
+
+.kbase-logo--dark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .kbase-logo--light {
+    display: none;
+  }
+
+  :root:not([data-theme='light']) .kbase-logo--dark {
+    display: block;
+  }
+}
+
+:root[data-theme='dark'] .kbase-logo--light {
+  display: none;
+}
+
+:root[data-theme='dark'] .kbase-logo--dark {
+  display: block;
+}
+
+:root[data-theme='light'] .kbase-logo--light {
+  display: block;
+}
+
+:root[data-theme='light'] .kbase-logo--dark {
+  display: none;
+}
+
 /* Login footer: quiet utility links that sit below the auth card.
    Smaller than body copy; muted ink-4 by default; underline only on
    hover. The visual weight should never compete with the primary
