@@ -28,7 +28,13 @@ function mountGallery() {
 }
 
 const cards = () => [...document.querySelectorAll<HTMLElement>(`.${styles.card}`)];
-const titleOf = (card: HTMLElement) => card.querySelector(`.${styles.titleRow} h3`)?.textContent;
+const titleOf = (card: HTMLElement) => card.querySelector(`.${styles.titleRow} h4`)?.textContent;
+const sections = () => [...document.querySelectorAll<HTMLElement>(`.${styles.section}`)];
+// The heading a section is labelled by, not the first h3 inside it: every
+// card's sources disclosure is an h3 too.
+const headingEl = (section: HTMLElement) =>
+  document.getElementById(section.getAttribute('aria-labelledby') ?? '');
+const headingOf = (section: HTMLElement) => headingEl(section)?.textContent;
 const facetsOf = (card: HTMLElement) =>
   [...card.querySelectorAll(`.${styles.facets} > *`)].map((c) => c.textContent?.trim() ?? '');
 
@@ -61,6 +67,46 @@ describe('portal gallery', () => {
 
     for (const card of cards()) {
       expect(card.querySelector(`img.${styles.shot}`)).toBeTruthy();
+    }
+  });
+
+  it('groups every card under a headed, described section', async () => {
+    await mountGallery();
+
+    const grouped = sections().flatMap((s) => [
+      ...s.querySelectorAll<HTMLElement>(`.${styles.card}`),
+    ]);
+    expect(grouped).toEqual(cards());
+    for (const section of sections()) {
+      const heading = headingEl(section);
+      expect(heading?.tagName).toBe('H3');
+      expect(heading?.textContent).toBeTruthy();
+      expect(heading?.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+      expect(section.querySelector(`.${styles.sectionDescription}`)?.textContent).toBeTruthy();
+    }
+  });
+
+  // A section is a partition, not a filter: a facet cuts across sections,
+  // and a section it leaves empty is not shown.
+  it('shows, under a facet, exactly the sections with a card carrying it', async () => {
+    const user = userEvent.setup();
+    await mountGallery();
+
+    const facetsBySection = new Map(
+      sections().map((s) => [
+        headingOf(s),
+        new Set([...s.querySelectorAll<HTMLElement>(`.${styles.card}`)].flatMap(facetsOf)),
+      ]),
+    );
+
+    for (const label of namedFilters().map((f) => f.label)) {
+      await user.click(namedFilters().find((f) => f.label === label)!.el);
+
+      const expected = [...facetsBySection].filter(([, f]) => f.has(label)).map(([h]) => h);
+      expect(sections().map(headingOf)).toEqual(expected);
+      for (const section of sections()) {
+        expect(section.querySelectorAll(`.${styles.card}`).length).toBeGreaterThan(0);
+      }
     }
   });
 
@@ -114,6 +160,40 @@ describe('portal gallery', () => {
 
     await user.clear(search());
     expect(cards().map(titleOf)).toEqual(before);
+  });
+
+  // A query retrieves; the result list is flat, and each card says which
+  // section it came from. A facet pill browses, and keeps the sections.
+  it("flattens the gallery for a query, naming each card's section", async () => {
+    const user = userEvent.setup();
+    await mountGallery();
+
+    const headings = sections().map(headingOf);
+    const sectionOfTitle = new Map(
+      sections().flatMap((s) =>
+        [...s.querySelectorAll<HTMLElement>(`.${styles.card}`)].map((c) => [
+          titleOf(c),
+          headingOf(s),
+        ]),
+      ),
+    );
+
+    await user.type(search(), cards()[0]!.querySelector(`.${styles.titleRow} h4`)!.textContent!);
+    expect(sections()).toHaveLength(0);
+    expect(cards().length).toBeGreaterThan(0);
+    for (const card of cards()) {
+      const section = sectionOfTitle.get(titleOf(card))!;
+      expect(card.querySelector(`.${styles.sectionLabel}`)?.textContent).toBe(section);
+      // The link's aria-label is its whole accessible name, so the label has
+      // to be in it or assistive technology never hears the section.
+      expect(card.querySelector('a[href]')?.getAttribute('aria-label')).toContain(section);
+    }
+
+    await user.clear(search());
+    await user.click(namedFilters()[0].el);
+    expect(sections().length).toBeGreaterThan(0);
+    expect(headings).toEqual(expect.arrayContaining(sections().map(headingOf)));
+    expect(document.querySelector(`.${styles.sectionLabel}`)).toBeNull();
   });
 
   it('offers a way back when a search matches nothing', async () => {

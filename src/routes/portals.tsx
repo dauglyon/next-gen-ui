@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import { Accordion, ButtonLink, Chip, Frame, SearchBar, Select } from '@kbase/design-system';
+import { Accordion, ButtonLink, Chip, Frame, SearchBar } from '@kbase/design-system';
 import type { ChipColor } from '@kbase/design-system';
-import { ArrowUpRight } from '@phosphor-icons/react';
+import { ArrowUpRight, Brain, Database, Files } from '@phosphor-icons/react';
+import type { Icon } from '@phosphor-icons/react';
 
 import styles from './portals.module.css';
 
@@ -30,11 +31,51 @@ const FACETS = {
   proteins: { label: 'Proteins', color: 'purple' },
 } as const satisfies Record<string, PortalFacet>;
 
+interface Section {
+  heading: string;
+  /** From the design-system icon glossary, so its meaning is taken, not chosen here. */
+  icon: Icon;
+  /** One hue per section; a hue may repeat a facet chip's, an icon may not. */
+  color: ChipColor;
+  /** What separates this group from the other two, in a visitor's words. */
+  description: string;
+}
+
+// Rendered in key order. A section is a partition, not a filter: the facet
+// pills cut across all three, and a section with nothing left in it is not
+// shown. A pill is browsing; a query is retrieving, and retrieval gets a
+// flat list with each card naming its section, since grouping a result
+// list only buries the best match under section order.
+const SECTIONS = {
+  kbase: {
+    heading: 'KBase Knowledge Portals',
+    icon: Brain, // Knowledge, memory
+    color: 'primary',
+    description:
+      'General-purpose portals from KBase, built for researchers on any project to pursue their own questions.',
+  },
+  project: {
+    heading: 'Project Knowledge Portals',
+    icon: Database, // Database, warehouse: the tenant the portal sits over
+    color: 'orange',
+    description: 'Portals from a research project, grounded in its data, with purpose-built tools.',
+  },
+  data: {
+    heading: 'Project Data Resources',
+    icon: Files, // Data, file set
+    color: 'teal',
+    description: 'Data from a research project, released for use in your own work.',
+  },
+} as const satisfies Record<string, Section>;
+
+type SectionKey = keyof typeof SECTIONS;
+
 interface Portal {
   /** Also the thumbnail filename: `public/portal-thumbs/<slug>.webp`. */
   slug: string;
   title: string;
   blurb: string;
+  section: SectionKey;
   facets: PortalFacet[];
   /** Not filterable; rendered as plain text so it reads as prose. */
   topics: string[];
@@ -53,11 +94,19 @@ interface Portal {
 // Every field below is copied from somewhere authoritative. None of it is
 // written from memory, and none of it is inferred. Where each comes from:
 //
-//   slug        the app's id -- its repo name under kbaseincubator, its key
-//               in the KIND*AI manifest, and its thumbnail filename.
+//   slug        the path segment under PORTAL_BASE, and the thumbnail
+//               filename. Usually also the repo name under kbaseincubator
+//               and the key in the KIND*AI manifest; the deployed path wins
+//               when they differ (IDEAS: repo ideas-portal, path ideas).
 //   title       manifest `title`, in the KIND*AI repo at plugins/<slug>.json.
 //   blurb       manifest `description`, condensed. RELEASES.md often carries
 //               detail worth folding in.
+//   section     one of SECTIONS. The line is purpose, not features: a
+//               general-purpose portal not built for one project is
+//               `kbase`; a portal that exists to show what a project has
+//               learned is `project`; one that exists to hand over what a
+//               project has produced is `data`. A portal that does both
+//               goes where its front door points.
 //   facets      chosen from FACETS above. The filter row is derived from
 //               these, so a new facet is only worth adding if it groups more
 //               than one portal.
@@ -71,8 +120,9 @@ interface Portal {
 //                 gh api repos/kbaseincubator/<repo>/commits/<sha>
 //   undeployed  set when there is no public/portal-thumbs/<slug>.webp yet.
 //               The entry is kept out of PORTALS entirely, so the card, the
-//               count and the filter row do not see it. Deploy, capture the
-//               thumbnail, delete the flag.
+//               count, the filter row and the section do not see it; a
+//               section whose every member is undeployed is not shown.
+//               Deploy, capture the thumbnail, delete the flag.
 //
 // SOURCES
 //
@@ -87,7 +137,7 @@ interface Portal {
 //   2. src/<app>/sources.py -- the registry behind that verb. Function
 //      Junction's is the reference implementation and states the rule: it is
 //      the single source of truth, and the in-app footer is derived from it
-//      so the two never drift. ENIGMA Strata has one too.
+//      so the two never drift. ENIGMA Strata and PMI Understory have one too.
 //   3. docs/DATA_SOURCES.md -- Plant Terra and Fungal Jungle. Read it as an
 //      ingest plan, not an attribution list: only rows marked have/ingested/
 //      SHIPPED are live.
@@ -105,122 +155,15 @@ interface Portal {
 //
 // Only portals cleared for public display belong here: the bundle is public,
 // so an uncleared entry is readable whether or not it is rendered. Array
-// order is the `default` sort.
+// order within a section is the order the cards render in.
 // ══════════════════════════════════════════════════════════════════════════
 const DECLARED: readonly Portal[] = [
-  {
-    slug: 'genknown',
-    title: 'genKnown',
-    blurb:
-      'A taxonomic telescope. Search any node of the tree of life for a rank-relative evidence report: measured and predicted physiology, ecology, and metabolite exchange.',
-    facets: [FACETS.genomes, FACETS.ecology],
-    topics: ['Taxonomy', 'Physiology', 'Metabolite exchange'],
-    sources: [
-      'GTDB',
-      'NCBI Taxonomy',
-      'KBase KE-pangenome',
-      'Fitness Browser (RB-TnSeq)',
-      'BacDive',
-      'KBase carbon-source growth panel',
-      'ENIGMA CORAL growth curves (LBNL)',
-      'GenomeSPOT',
-      'GapMind',
-      'Web of Microbes',
-      'Rhea / ChEBI',
-      'Microbe Atlas',
-      'NMDC',
-      'GOLD',
-    ],
-    version: 'v0.1.3',
-    updated: '2026-08-21',
-  },
-  {
-    slug: 'diaspora',
-    title: 'Diaspora',
-    blurb:
-      'A microbial-ecology atlas. Walk compendium → cohort → sample → MAG, linking metagenome observations to physicochemistry, geography, and pangenome-resolved function.',
-    facets: [FACETS.ecology, FACETS.environment],
-    topics: ['Metagenomics', 'Biogeography', 'Pangenomes'],
-    sources: [
-      'NMDC',
-      'NEON',
-      'EMP',
-      'GROWdb (USGS)',
-      'PlanetMicrobe',
-      'agmicrobiome',
-      'MGnify',
-      'SPIRE',
-      'SMAG',
-      'JGI-GEM',
-      'Tara Oceans',
-      'Microbe Atlas',
-      'KBase KE-pangenome',
-    ],
-    version: 'v0.2.0',
-    updated: '2026-08-21',
-  },
-  {
-    slug: 'plant-terra',
-    title: 'Plant Terra',
-    blurb:
-      'Plant functional genomics with genomes in environmental context — a per-genome dossier spanning comparative genomics, metabolism, variation, and G×E.',
-    facets: [FACETS.genomes, FACETS.environment],
-    topics: ['Plants', 'Metabolism', 'G×E'],
-    sources: [
-      'JGI Phytozome',
-      'Ensembl Plants',
-      'UniProt',
-      'InterPro',
-      'GO',
-      'Rhea',
-      'Ensembl plant VCF',
-      'USDA NRCS PLANTS',
-      'USDA NASS QuickStats',
-      'WorldClim',
-      'SoilGrids',
-      'CHELSA',
-      'SSURGO',
-      'GBIF',
-    ],
-    version: 'v0.2.2',
-    updated: '2026-08-25',
-  },
-  {
-    slug: 'fungal-jungle',
-    title: 'Fungal Jungle',
-    blurb:
-      'Per-genome fungal functional genomics: CAZyme repertoire crossed with ecological guild, plus model-organism deep dives, structure, and biogeography.',
-    facets: [FACETS.genomes, FACETS.ecology, FACETS.proteins],
-    topics: ['Fungi', 'CAZymes', 'Structure'],
-    sources: [
-      'Ensembl Fungi',
-      'JGI MycoCosm',
-      'SGD',
-      'PomBase',
-      'CGD',
-      'NCBI Datasets / Taxonomy',
-      'GBIF backbone',
-      'CAZy',
-      'dbCAN',
-      'MEROPS',
-      'TCDB',
-      'InterPro',
-      'MIBiG',
-      'antiSMASH-DB',
-      'FunGuild',
-      'AlphaFold DB',
-      'UniProt',
-      'WorldClim v2',
-      'SoilGrids',
-    ],
-    version: 'v0.6.0',
-    updated: '2026-08-21',
-  },
   {
     slug: 'function-junction',
     title: 'Function Junction',
     blurb:
       'Paste a protein — id, sequence, gene, or name — and get every line of functional evidence converged on one page, scored for novelty and information density.',
+    section: 'kbase',
     facets: [FACETS.proteins],
     topics: ['Annotation', 'Structure', 'Homologs'],
     sources: [
@@ -250,10 +193,123 @@ const DECLARED: readonly Portal[] = [
     updated: '2026-08-21',
   },
   {
+    slug: 'genknown',
+    title: 'genKnown',
+    blurb:
+      'A taxonomic telescope. Search any node of the tree of life for a rank-relative evidence report: measured and predicted physiology, ecology, and metabolite exchange.',
+    section: 'kbase',
+    facets: [FACETS.genomes, FACETS.ecology],
+    topics: ['Taxonomy', 'Physiology', 'Metabolite exchange'],
+    sources: [
+      'GTDB',
+      'NCBI Taxonomy',
+      'KBase KE-pangenome',
+      'Fitness Browser (RB-TnSeq)',
+      'BacDive',
+      'KBase carbon-source growth panel',
+      'ENIGMA CORAL growth curves (LBNL)',
+      'GenomeSPOT',
+      'GapMind',
+      'Web of Microbes',
+      'Rhea / ChEBI',
+      'Microbe Atlas',
+      'NMDC',
+      'GOLD',
+    ],
+    version: 'v0.1.3',
+    updated: '2026-08-21',
+  },
+  {
+    slug: 'fungal-jungle',
+    title: 'Fungal Jungle',
+    blurb:
+      'Per-genome fungal functional genomics: CAZyme repertoire crossed with ecological guild, plus model-organism deep dives, structure, and biogeography.',
+    section: 'kbase',
+    facets: [FACETS.genomes, FACETS.ecology, FACETS.proteins],
+    topics: ['Fungi', 'CAZymes', 'Structure'],
+    sources: [
+      'Ensembl Fungi',
+      'JGI MycoCosm',
+      'SGD',
+      'PomBase',
+      'CGD',
+      'NCBI Datasets / Taxonomy',
+      'GBIF backbone',
+      'CAZy',
+      'dbCAN',
+      'MEROPS',
+      'TCDB',
+      'InterPro',
+      'MIBiG',
+      'antiSMASH-DB',
+      'FunGuild',
+      'AlphaFold DB',
+      'UniProt',
+      'WorldClim v2',
+      'SoilGrids',
+    ],
+    version: 'v0.6.0',
+    updated: '2026-08-21',
+  },
+  {
+    slug: 'plant-terra',
+    title: 'Plant Terra',
+    blurb:
+      'Plant functional genomics with genomes in environmental context — a per-genome dossier spanning comparative genomics, metabolism, variation, and G×E.',
+    section: 'kbase',
+    facets: [FACETS.genomes, FACETS.environment],
+    topics: ['Plants', 'Metabolism', 'G×E'],
+    sources: [
+      'JGI Phytozome',
+      'Ensembl Plants',
+      'UniProt',
+      'InterPro',
+      'GO',
+      'Rhea',
+      'Ensembl plant VCF',
+      'USDA NRCS PLANTS',
+      'USDA NASS QuickStats',
+      'WorldClim',
+      'SoilGrids',
+      'CHELSA',
+      'SSURGO',
+      'GBIF',
+    ],
+    version: 'v0.2.2',
+    updated: '2026-08-25',
+  },
+  {
+    slug: 'diaspora',
+    title: 'Diaspora',
+    blurb:
+      'A microbial-ecology atlas. Walk compendium → cohort → sample → MAG, linking metagenome observations to physicochemistry, geography, and pangenome-resolved function.',
+    section: 'kbase',
+    facets: [FACETS.ecology, FACETS.environment],
+    topics: ['Metagenomics', 'Biogeography', 'Pangenomes'],
+    sources: [
+      'NMDC',
+      'NEON',
+      'EMP',
+      'GROWdb (USGS)',
+      'PlanetMicrobe',
+      'agmicrobiome',
+      'MGnify',
+      'SPIRE',
+      'SMAG',
+      'JGI-GEM',
+      'Tara Oceans',
+      'Microbe Atlas',
+      'KBase KE-pangenome',
+    ],
+    version: 'v0.2.0',
+    updated: '2026-08-21',
+  },
+  {
     slug: 'enigma-strata',
     title: 'ENIGMA Strata',
     blurb:
       'A branded portal over the ENIGMA subsurface lakehouse — geology, hydrology, geochemistry, biogeography, and genomes of the Oak Ridge plume in one cross-linked focus.',
+    section: 'project',
     facets: [FACETS.environment, FACETS.genomes],
     topics: ['Subsurface', 'Geochemistry', 'Biogeography'],
     sources: [
@@ -271,10 +327,40 @@ const DECLARED: readonly Portal[] = [
     updated: '2026-08-21',
   },
   {
+    slug: 'pmi-understory',
+    title: 'PMI Understory',
+    blurb:
+      'ORNL’s Plant-Microbe Interfaces poplar isolate collection — 3,207 isolates, 548 sequenced — with taxonomy, provenance, function, novelty, NMDC field context, and a consortium designer.',
+    section: 'project',
+    facets: [FACETS.genomes, FACETS.ecology],
+    topics: ['Isolates', 'Poplar', 'Synthetic communities'],
+    // src/pmi_understory/sources.py
+    sources: [
+      'PMI isolate collection (ORNL)',
+      'PMI genome collection (ORNL)',
+      'RDP',
+      'GTDB / GTDB-Tk',
+      'IMG/M',
+      'Bakta',
+      'eggNOG-mapper',
+      'KOfam / KEGG',
+      'antiSMASH',
+      'NMDC',
+      'Unified microbial trait tables (metaTraits · FAPROTAX · BactoTraits · IJSEM)',
+      'BacDive',
+      'GapMind',
+      'NCBI Taxonomy / Datasets',
+    ],
+    version: 'v0.2.2',
+    updated: '2026-08-26',
+    undeployed: true,
+  },
+  {
     slug: 'phagecast',
     title: 'Phagecast',
     blurb:
       'Phage and host genomics over the Phage Foundry tenant — browse genomes and phage–host interactions, with on-demand receptor and host-range prediction.',
+    section: 'project',
     facets: [FACETS.genomes, FACETS.proteins],
     topics: ['Phage', 'Host range', 'Receptors'],
     // No sources registry yet; these are from the README and docs/STORAGE.md.
@@ -283,17 +369,20 @@ const DECLARED: readonly Portal[] = [
     updated: '2026-08-24',
   },
   {
-    slug: 'ideas-portal',
+    // Repo and CLI are `ideas-portal`; the deployed path is /portals/ideas/.
+    slug: 'ideas',
     title: 'IDEAS Portal',
     blurb:
       'Open data releases from the IDEAS enzyme-design program — each published dataset as browsable tables mirroring the paper’s supplementary sheets, per-table CSV downloads, and a verifiable manifest over a typed relational schema.',
+    section: 'data',
     facets: [FACETS.proteins],
     topics: ['Enzymes', 'Biomanufacturing', 'Data releases'],
     // `ideas-portal sources --json`: the released dataset plus three enrichment providers.
     sources: ['IDEAS program (Argonne)', 'PubChem', 'UniProt', 'RCSB PDB'],
+    // The deployed portal prints no app version (the "v1" it shows is the
+    // dataset's), so this is the newest tag.
     version: 'v0.1.4',
     updated: '2026-08-25',
-    undeployed: true,
   },
 ];
 
@@ -307,14 +396,6 @@ const FILTERS = [
     .filter((f) => PORTALS.some((p) => p.facets.includes(f)))
     .map((f) => ({ value: f.label, label: f.label, color: f.color as ChipColor | null })),
 ];
-
-const SORTS = [
-  { value: 'default', label: 'Default' },
-  { value: 'name', label: 'Name (A–Z)' },
-  { value: 'updated', label: 'Last updated' },
-] as const;
-
-type SortValue = (typeof SORTS)[number]['value'];
 
 const UPDATED_FMT = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
@@ -422,24 +503,15 @@ function PartnerNotice() {
 function Gallery() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string>(ALL);
-  const [sort, setSort] = useState<SortValue>('default');
 
+  const q = query.trim().toLowerCase();
   const visible = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const filtered = PORTALS.filter(
+    return PORTALS.filter(
       (p) =>
         (category === ALL || p.facets.some((f) => f.label === category)) &&
         (q === '' || haystack(p).includes(q)),
     );
-    if (sort === 'name') return [...filtered].sort((a, b) => a.title.localeCompare(b.title));
-    // Title tiebreak: every portal shares one release date today.
-    if (sort === 'updated') {
-      return [...filtered].sort(
-        (a, b) => b.updated.localeCompare(a.updated) || a.title.localeCompare(b.title),
-      );
-    }
-    return filtered;
-  }, [query, category, sort]);
+  }, [q, category]);
 
   return (
     <section aria-labelledby="gallery-heading">
@@ -488,25 +560,6 @@ function Gallery() {
             </label>
           ))}
         </fieldset>
-
-        <div className={styles.sort}>
-          {/* Without `items` the closed trigger shows the raw value. */}
-          <Select.Root
-            items={SORTS}
-            value={sort}
-            onValueChange={(value) => value && setSort(value)}
-            aria-label="Sort portals"
-          >
-            <Select.Trigger />
-            <Select.Popup>
-              {SORTS.map((option) => (
-                <Select.Item key={option.value} value={option.value}>
-                  {option.label}
-                </Select.Item>
-              ))}
-            </Select.Popup>
-          </Select.Root>
-        </div>
       </div>
 
       <p className={styles.count} role="status">
@@ -528,14 +581,49 @@ function Gallery() {
           </button>{' '}
           to see all {PORTALS.length}.
         </p>
+      ) : q !== '' ? (
+        <>
+          <h3 id="results-heading" className={styles.srOnly}>
+            Search results
+          </h3>
+          <ul className={`${styles.grid} ${styles.results}`} aria-labelledby="results-heading">
+            {visible.map((portal) => (
+              <li key={portal.slug}>
+                <PortalCard portal={portal} sectionLabel={SECTIONS[portal.section].heading} />
+              </li>
+            ))}
+          </ul>
+        </>
       ) : (
-        <ul className={styles.grid}>
-          {visible.map((portal) => (
-            <li key={portal.slug}>
-              <PortalCard portal={portal} />
-            </li>
-          ))}
-        </ul>
+        (Object.keys(SECTIONS) as SectionKey[]).map((key) => {
+          const section = SECTIONS[key];
+          const members = visible.filter((p) => p.section === key);
+          if (members.length === 0) return null;
+          const headingId = `section-${key}`;
+          return (
+            <section key={key} className={styles.section} aria-labelledby={headingId}>
+              <div>
+                <h3 id={headingId} className={`h3 ${styles.sectionHeading}`}>
+                  <section.icon
+                    size={18}
+                    weight="bold"
+                    aria-hidden="true"
+                    style={{ color: `var(--ct-${section.color})` }}
+                  />
+                  {section.heading}
+                </h3>
+                <p className={styles.sectionDescription}>{section.description}</p>
+              </div>
+              <ul className={styles.grid}>
+                {members.map((portal) => (
+                  <li key={portal.slug}>
+                    <PortalCard portal={portal} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })
       )}
     </section>
   );
@@ -557,7 +645,37 @@ function PortalSources({ sources }: { sources: string[] }) {
   );
 }
 
-function PortalCard({ portal }: { portal: Portal }) {
+function PortalCard({ portal, sectionLabel }: { portal: Portal; sectionLabel?: string }) {
+  const body = (
+    <>
+      <img
+        className={styles.shot}
+        src={`/portal-thumbs/${portal.slug}.webp`}
+        alt={`Screenshot of the ${portal.title} portal`}
+        width={640}
+        height={400}
+        loading="lazy"
+      />
+      <div className={styles.cardBody}>
+        {sectionLabel && <p className={styles.sectionLabel}>{sectionLabel}</p>}
+        <div className={styles.titleRow}>
+          <h4 className="h3">{portal.title}</h4>
+          <ArrowUpRight size={14} className={styles.go} aria-hidden="true" />
+        </div>
+
+        <p className={styles.blurb}>{portal.blurb}</p>
+
+        <div className={styles.facets}>
+          {portal.facets.map((facet) => (
+            <Chip key={facet.label} color={facet.color} onWhite label={facet.label} />
+          ))}
+        </div>
+
+        <p className={styles.topics}>{portal.topics.join(' · ')}</p>
+      </div>
+    </>
+  );
+
   return (
     <Frame padding={0} className={styles.card}>
       {/* The link wraps only what should be clickable: a disclosure inside an
@@ -567,32 +685,9 @@ function PortalCard({ portal }: { portal: Portal }) {
         href={`${PORTAL_BASE}${portal.slug}/`}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label={`Open the ${portal.title} portal (opens in a new tab)`}
+        aria-label={`Open the ${portal.title} portal${sectionLabel ? ` in ${sectionLabel}` : ''} (opens in a new tab)`}
       >
-        <img
-          className={styles.shot}
-          src={`/portal-thumbs/${portal.slug}.webp`}
-          alt={`Screenshot of the ${portal.title} portal`}
-          width={640}
-          height={400}
-          loading="lazy"
-        />
-        <div className={styles.cardBody}>
-          <div className={styles.titleRow}>
-            <h3 className="h3">{portal.title}</h3>
-            <ArrowUpRight size={14} className={styles.go} aria-hidden="true" />
-          </div>
-
-          <p className={styles.blurb}>{portal.blurb}</p>
-
-          <div className={styles.facets}>
-            {portal.facets.map((facet) => (
-              <Chip key={facet.label} color={facet.color} onWhite label={facet.label} />
-            ))}
-          </div>
-
-          <p className={styles.topics}>{portal.topics.join(' · ')}</p>
-        </div>
+        {body}
       </a>
 
       {portal.sources.length > 0 && <PortalSources sources={portal.sources} />}
