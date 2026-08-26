@@ -1,14 +1,6 @@
 import { useMemo, useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import {
-  Accordion,
-  ButtonLink,
-  Chip,
-  EmptyState,
-  Frame,
-  SearchBar,
-  Select,
-} from '@kbase/design-system';
+import { Accordion, ButtonLink, Chip, Frame, SearchBar, Select } from '@kbase/design-system';
 import type { ChipColor } from '@kbase/design-system';
 import { ArrowUpRight } from '@phosphor-icons/react';
 
@@ -51,7 +43,7 @@ interface Portal {
   version: string;
   /** ISO 8601: the commit date of this version's tag. */
   updated: string;
-  /** No screenshot in public/portal-thumbs yet. */
+  /** Not rendered: no public/portal-thumbs/<slug>.webp yet. */
   undeployed?: true;
 }
 
@@ -78,8 +70,9 @@ interface Portal {
 //                 gh api repos/kbaseincubator/<repo>/tags
 //                 gh api repos/kbaseincubator/<repo>/commits/<sha>
 //   undeployed  set when there is no public/portal-thumbs/<slug>.webp yet.
-//               The ONLY thing it changes is the thumbnail, which becomes an
-//               EmptyState. The card still links out, exactly like any other.
+//               The entry is kept out of PORTALS entirely, so the card, the
+//               count and the filter row do not see it. Deploy, capture the
+//               thumbnail, delete the flag.
 //
 // SOURCES
 //
@@ -114,7 +107,7 @@ interface Portal {
 // so an uncleared entry is readable whether or not it is rendered. Array
 // order is the `default` sort.
 // ══════════════════════════════════════════════════════════════════════════
-const PORTALS: readonly Portal[] = [
+const DECLARED: readonly Portal[] = [
   {
     slug: 'genknown',
     title: 'genKnown',
@@ -163,8 +156,8 @@ const PORTALS: readonly Portal[] = [
       'Microbe Atlas',
       'KBase KE-pangenome',
     ],
-    version: 'v0.1.4',
-    updated: '2026-08-11',
+    version: 'v0.2.0',
+    updated: '2026-08-21',
   },
   {
     slug: 'plant-terra',
@@ -189,8 +182,8 @@ const PORTALS: readonly Portal[] = [
       'SSURGO',
       'GBIF',
     ],
-    version: 'v0.1.3',
-    updated: '2026-08-11',
+    version: 'v0.2.2',
+    updated: '2026-08-25',
   },
   {
     slug: 'fungal-jungle',
@@ -286,10 +279,25 @@ const PORTALS: readonly Portal[] = [
     topics: ['Phage', 'Host range', 'Receptors'],
     // No sources registry yet; these are from the README and docs/STORAGE.md.
     sources: ['Phage Foundry (DOE BER)', 'GenomeDepot'],
-    version: 'v0.45.7',
-    updated: '2026-08-23',
+    version: 'v0.46.0',
+    updated: '2026-08-24',
+  },
+  {
+    slug: 'ideas-portal',
+    title: 'IDEAS Portal',
+    blurb:
+      'Open data releases from the IDEAS enzyme-design program — each published dataset as browsable tables mirroring the paper’s supplementary sheets, per-table CSV downloads, and a verifiable manifest over a typed relational schema.',
+    facets: [FACETS.proteins],
+    topics: ['Enzymes', 'Biomanufacturing', 'Data releases'],
+    // `ideas-portal sources --json`: the released dataset plus three enrichment providers.
+    sources: ['IDEAS program (Argonne)', 'PubChem', 'UniProt', 'RCSB PDB'],
+    version: 'v0.1.4',
+    updated: '2026-08-25',
+    undeployed: true,
   },
 ];
+
+const PORTALS = DECLARED.filter((p) => !p.undeployed);
 
 const ALL = 'all';
 
@@ -561,18 +569,14 @@ function PortalCard({ portal }: { portal: Portal }) {
         rel="noopener noreferrer"
         aria-label={`Open the ${portal.title} portal (opens in a new tab)`}
       >
-        {portal.undeployed ? (
-          <EmptyState title="No screenshot yet" className={styles.shotEmpty} />
-        ) : (
-          <img
-            className={styles.shot}
-            src={`/portal-thumbs/${portal.slug}.webp`}
-            alt={`Screenshot of the ${portal.title} portal`}
-            width={640}
-            height={400}
-            loading="lazy"
-          />
-        )}
+        <img
+          className={styles.shot}
+          src={`/portal-thumbs/${portal.slug}.webp`}
+          alt={`Screenshot of the ${portal.title} portal`}
+          width={640}
+          height={400}
+          loading="lazy"
+        />
         <div className={styles.cardBody}>
           <div className={styles.titleRow}>
             <h3 className="h3">{portal.title}</h3>
