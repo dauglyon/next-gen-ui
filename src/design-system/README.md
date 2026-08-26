@@ -31,8 +31,11 @@ generator that inlines CSS into self-contained HTML, or a Python UI framework
 handed a string. Install by pinned tag:
 
 ```toml
-"kbase-design-system @ git+https://github.com/kbase/next-gen-ui.git@ds-v0.6.0#subdirectory=src/design-system"
+"kbase-design-system @ git+https://github.com/kbase/next-gen-ui.git@ds-v0.5.0#subdirectory=src/design-system"
 ```
+
+Pin a released `ds-v` tag; [Releases](https://github.com/kbase/next-gen-ui/releases)
+lists them.
 
 ```python
 from importlib.resources import files
