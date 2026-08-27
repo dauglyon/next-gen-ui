@@ -214,10 +214,11 @@ const { icon, label, color } = STATUS[state];
 
       <div className={s.sub}>Loader</div>
       <p className={s.note}>
-        The KBase logo, animated. The circles composite where they overlap, so the blend follows the
-        theme background. On a surface that is not the theme background &mdash; a brand fill, an
-        image &mdash; set <code>blend</code> explicitly. Inline at size 14, standalone at 36 and
-        above.
+        The mini-logo&apos;s three dots, braided: each traces the same figure-eight a third of a lap
+        apart, sized by depth. Under reduced motion it runs smaller and slower, without the turn.
+        The circles composite where they overlap, so the blend follows the theme background; on a
+        surface that is not the theme background &mdash; a brand fill, an image &mdash; set{' '}
+        <code>blend</code> explicitly. Inline at size 14, standalone at 36 and above.
       </p>
       <div className={s.row}>
         <div className={s.cell} style={{ width: 80, height: 80 }}>
