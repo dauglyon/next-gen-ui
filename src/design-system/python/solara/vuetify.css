@@ -1,0 +1,778 @@
+/* ============================================================================
+   KBase design tokens, applied to Vuetify 3.
+
+   Solara renders its widgets with Vuetify, which ships Material Design's
+   palette: the default primary is #6200ee, so an unstyled button is Material
+   purple unless something says otherwise. This file applies the design tokens
+   to those widgets. Load it after tokens.css and before the portal's own
+   stylesheet.
+
+   Do not name a portal here -- not in a selector, not in a comment, not in a
+   value. Eight of them load this one file out of the kbase-design-system
+   wheel. A rule that suits only one belongs in that portal's own stylesheet.
+
+   Shape here, colour from the theme. Vuetify holds its theme in custom
+   properties that are comma-separated RGB triplets rather than colours
+   (`--v-theme-surface: 255,255,255`), because it consumes them as
+   `rgba(var(--v-theme-surface), var(--v-hover-opacity))`. CSS cannot
+   decompose a colour into three numbers, so those are set from Python:
+   ipyvuetify's ThemeColors traits sync to the front end, and resolve_tokens.py
+   beside this file produces the values. Vuetify then generates every triplet
+   itself, including the on-colours it derives by contrast.
+
+   Components this file never mentions take the tokens anyway, because their
+   internals are alpha blends against those triplets. What is left, and what
+   follows, is what a theme cannot express: type, casing, radius, density,
+   which surfaces float, and the places where the design system states a state
+   differently from Material.
+
+   FONTS
+   --f-sans is Oxygen and --f-mono is Fira Code. The pip package ships neither:
+   their @font-face imports are bare specifiers that need a bundler (see the
+   design system's README). Without them the stack falls back to system-ui,
+   correctly proportioned but not in the brand face.
+
+   The README's answer for a consumer with no bundler is a CDN, which is what
+   the @import below does. It is a third-party request on every page load, and
+   the four @imports here have to stay ahead of every rule in the file, because
+   a browser ignores an @import that follows one. A deployment that cannot
+   reach fonts.googleapis.com falls back to system-ui.
+   ============================================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Oxygen:wght@400;700&family=Fira+Code:wght@400;500&display=swap');
+/* The icon family, the same way. The design system uses Phosphor, which ships as npm
+   packages a Python app cannot build; @phosphor-icons/web is the same art as a webfont, one
+   stylesheet per weight. Three weights, because weight carries meaning: regular for chrome, bold
+   for emphasis, fill for an active state.
+
+   A deployment that cannot reach the CDN has no icons at all, where the type above falls back to
+   another typeface. */
+@import url('https://unpkg.com/@phosphor-icons/web@2.1.2/src/regular/style.css');
+@import url('https://unpkg.com/@phosphor-icons/web@2.1.2/src/bold/style.css');
+@import url('https://unpkg.com/@phosphor-icons/web@2.1.2/src/fill/style.css');
+
+/* --- Theme handoff --------------------------------------------------------
+   The tokens are light-dark() pairs, and `color-scheme` picks a side. Vuetify
+   stamps its own theme class onto the application root, so giving that class a
+   color-scheme makes the tokens follow Vuetify's theme: a portal that flips
+   `solara.lab.theme.dark` flips both, and one that never touches it stays in
+   the theme it has. No <html> attribute and no JavaScript. */
+.v-theme--light {
+  color-scheme: light;
+}
+.v-theme--dark {
+  color-scheme: dark;
+}
+
+/* --- Ground and ink -------------------------------------------------------
+   The theme carries the grounds -- Vuetify's `--v-theme-background` and
+   `--v-theme-surface` resolve to --c-bg and --c-surface -- but they are named
+   here as well, because Vuetify paints the application root with its own
+   `background` property.
+
+   Ink is the one thing the theme cannot carry. Vuetify derives every on-colour
+   from its ground by contrast and picks pure black or pure white:
+   `--v-theme-on-surface` measures rgb(0,0,0) in light and rgb(255,255,255) in
+   dark. The design system's ink is neither; every neutral carries a brown
+   undertone from the logo palette. Ink is therefore set on the surfaces that
+   matter, and Vuetify's internal `rgba(var(--v-theme-on-surface), a)` blends
+   stay neutral black. */
+.v-application,
+.v-main {
+  background: var(--c-bg);
+  color: var(--c-ink);
+  font-family: var(--f-sans);
+}
+
+/* v-sheet is Vuetify's generic surface, and the base of card, list and
+   toolbar. Its ink is on-surface at 87% alpha; the token is the right ink for
+   this ground, so it is set outright rather than faded. */
+.v-sheet {
+  background: var(--c-surface);
+  color: var(--c-ink);
+  border-color: var(--c-border);
+}
+
+/* A sheet used as the page's own backdrop should not read as a raised
+   surface. Solara wraps the app in one of these. */
+.v-application > .v-sheet,
+.v-main > .v-sheet {
+  background: transparent;
+}
+
+/* --- Named colours --------------------------------------------------------
+   No rules. A component given `color="primary"` gets a `bg-primary` class whose declarations carry
+   !important, and Vuetify generates `.bg-*`, `.text-*`, every `--v-theme-*` triplet and the derived
+   on-colours from the theme it is handed in Python. Those triplets are also what the alpha-blended
+   rules inside components this file never mentions resolve against. */
+
+/* --- Buttons --------------------------------------------------------------
+   Material sets buttons in uppercase with 1.25px of tracking. The design
+   system's are sentence case at the body size.
+
+   Vuetify's variants map to the design system's Button variants: elevated and
+   flat to primary, outlined to outline, text and plain to ghost, tonal to the
+   primary tint. Sizing stays with Vuetify, because height and padding are
+   layout and portals have arranged things around them. This file takes the
+   type, the radius, the colour and the states. */
+.v-btn {
+  font-family: var(--f-sans);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.01em;
+  text-transform: none;
+  border: 1px solid transparent;
+  border-radius: var(--r-button);
+  transition:
+    background var(--t-fast),
+    border-color var(--t-fast);
+}
+.v-btn--size-default {
+  font-size: var(--fs-5);
+}
+.v-btn--size-small,
+.v-btn--size-x-small {
+  font-size: var(--fs-3);
+}
+.v-btn--size-large,
+.v-btn--size-x-large {
+  font-size: var(--fs-7);
+}
+.v-btn:active {
+  transform: scale(0.97);
+}
+.v-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--c-focus);
+}
+
+/* Filled with no colour asked for: a raised surface, not a primary action.
+   Material's default fill is its theme's surface. A button becomes primary by
+   taking Vuetify's `bg-primary`, which the theme paints. */
+.v-btn--variant-elevated,
+.v-btn--variant-flat {
+  background: var(--c-surface);
+  color: var(--c-ink);
+  /* No shadow. --e-1..4 mean the element floats above the page, and in the design system they
+     appear on eight things, all layers: menu, select, autocomplete, dialog, popover, toast,
+     tooltip and the switch thumb. A button sits in the page, so it takes a border. */
+  box-shadow: none;
+  border-color: var(--c-border);
+}
+.v-btn--variant-elevated:hover,
+.v-btn--variant-flat:hover {
+  background: var(--c-raised);
+}
+/* Hover for the coloured fills. Vuetify darkens with an overlay; the design system has dimmed
+   companions for the two interactive hues, which is a different colour rather than the same one
+   under a scrim. */
+.v-btn.bg-primary:hover,
+.v-btn.bg-info:hover {
+  background-color: var(--c-primary-dim) !important;
+}
+.v-btn.bg-secondary:hover {
+  background-color: var(--c-teal-dim) !important;
+}
+
+/* Text and plain, which the header maps to the design system's ghost variant.
+   Vuetify tints these by overlaying the theme colour at --v-hover-opacity,
+   which resolves against a triplet this file cannot set, so hover is painted
+   directly. */
+.v-btn--variant-text,
+.v-btn--variant-plain {
+  color: var(--c-ink3);
+}
+.v-btn--variant-text:hover,
+.v-btn--variant-plain:hover {
+  background: var(--c-border);
+}
+
+.v-btn--variant-outlined {
+  background: transparent;
+  color: var(--c-ink2);
+  border-color: var(--c-border2);
+}
+.v-btn--variant-outlined:hover {
+  background: var(--c-raised);
+}
+
+/* Tonal draws its own tint in a `.v-btn__underlay` child at 12% of the text
+   colour, which is already a token by then, so only the text needs naming.
+   Painting the tint onto `.v-btn__overlay` instead covers the label: the
+   overlay is absolutely positioned and the content is not. */
+.v-btn--variant-tonal {
+  color: var(--ct-primary);
+}
+
+/* Two attributes, for the two kinds of unavailable the design system's own
+   Button distinguishes. */
+.v-btn--disabled,
+.v-btn[aria-disabled='true'] {
+  color: var(--c-ink5) !important;
+  background: var(--c-raised) !important;
+  border-color: var(--c-border);
+  box-shadow: none;
+  opacity: 1;
+  transform: none;
+}
+
+/* Vuetify draws hover and press as a full-bleed overlay child. Left alone it
+   lays Material's colour over the token colours above. */
+.v-btn__overlay {
+  background: currentcolor;
+}
+
+/* --- Controls wearing a design-system class -------------------------------
+   A Python UI framework cannot mount a React component, so a portal puts the
+   component's class on the widget the framework does render: a
+   SegmentedControl segment is a v-btn carrying .kb-segmented-control--btn. The
+   class owns the box, so Vuetify's box has to give way -- its 36px floor, 64px
+   min-width, ripple overlay and Material radius all fight the component's
+   padding and hairlines.
+
+   Only geometry is reset. Colour and type stay with components.css, which
+   loads after this file and wins on order, so a chosen segment
+   ([data-checked]) takes the primary fill without !important.
+
+   Named rather than applied to every .v-btn: a plain button in a portal is
+   still a Vuetify button and keeps Vuetify's sizing. */
+.v-btn:is(
+  .kb-tabs--tab,
+  .kb-segmented-control--btn,
+  .kb-button--btn,
+  .kb-row,
+  .kb-breadcrumbs--link
+) {
+  min-width: 0;
+  height: auto;
+  min-height: 0;
+  border-radius: inherit;
+  box-shadow: none;
+}
+.v-btn:is(
+    .kb-tabs--tab,
+    .kb-segmented-control--btn,
+    .kb-button--btn,
+    .kb-row,
+    .kb-breadcrumbs--link
+  )
+  .v-btn__content {
+  white-space: normal;
+}
+/* The ripple and the state overlay are Material's feedback. The component
+   states itself with a background and a border colour instead. */
+.v-btn:is(
+    .kb-tabs--tab,
+    .kb-segmented-control--btn,
+    .kb-button--btn,
+    .kb-row,
+    .kb-breadcrumbs--link
+  )
+  :is(.v-btn__overlay, .v-ripple__container) {
+  display: none;
+}
+
+/* Solara scrolls the routed content in a div of its own rather than the
+   document, and leaves scrollbar-gutter at auto, so the scrollbar appears on a
+   long view and vanishes on a short one, shifting the centred content sideways
+   by its width on each navigation -- around 15px where the platform draws
+   classic scrollbars. Reserving the gutter pays that width once.
+
+   Headless Chrome draws overlay scrollbars, which take no width, so this does
+   not appear in a screenshot. */
+.v-main > div:has(> .solara-autorouter-content) {
+  scrollbar-gutter: stable;
+}
+
+/* A framework that only renders buttons builds a dismissable overlay as a
+   full-viewport button behind the panel. Dialog's own scrim is a div, so
+   .kb-scrim carries the ground and the z-index and these rules strip the
+   button back to a bare hit area. */
+.v-btn.kb-scrim {
+  min-width: 0;
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  cursor: pointer;
+}
+.v-btn.kb-scrim :is(.v-btn__overlay, .v-ripple__container) {
+  display: none;
+}
+
+/* A text field inside a SearchBar or a Field: the box belongs to the
+   component, so the input fills the space the component gives it. The rules
+   after this one strip the field back to the input line -- its ground,
+   outline, 56px floor and floating label slot -- and are SearchBar-only,
+   because Field draws its own label and message row. */
+.kb-search-bar .v-input,
+.kb-field .v-input {
+  flex: 1;
+  min-width: 0;
+}
+.kb-search-bar .v-input__details {
+  display: none;
+}
+.kb-search-bar .v-field {
+  background: none;
+  border-radius: 0;
+  padding: 0;
+  min-height: 0;
+  --v-input-control-height: auto;
+}
+.kb-search-bar :is(.v-field__outline, .v-field__overlay, .v-field__loader) {
+  display: none;
+}
+.kb-search-bar .v-field__field {
+  min-height: 0;
+}
+.kb-search-bar .v-field__input {
+  padding: 0;
+  min-height: 0;
+  font-size: var(--fs-4);
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+/* Solara's InputText takes a label and Vuetify floats it above the input on
+   focus. A SearchBar has no slot for it to float into, because Field owns the
+   label, so it is drawn as the placeholder it reads as and removed once a
+   value would overlap it. */
+.kb-search-bar .v-field-label {
+  inset-inline-start: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--fs-4);
+  color: var(--c-ink5);
+}
+.kb-search-bar .v-field--active .v-field-label {
+  display: none;
+}
+
+/* --- Text fields ----------------------------------------------------------
+   The filled variant is Vuetify's default and the one Solara's inputs use.
+   Material gives it a tinted ground and an underline that grows on focus; the
+   design system's inputs are a bordered box on a raised ground. */
+.v-field {
+  border-radius: var(--r-md);
+  color: var(--c-ink);
+}
+.v-field--variant-filled .v-field__overlay {
+  background: var(--c-raised);
+  opacity: 1;
+  border-radius: var(--r-md);
+}
+.v-field--variant-filled .v-field__outline::before,
+.v-field--variant-filled .v-field__outline::after {
+  border-color: var(--c-border2);
+}
+.v-field--variant-outlined .v-field__outline {
+  --v-field-border-width: 1px;
+  color: var(--c-border2);
+}
+.v-field--focused .v-field__outline::after,
+.v-field--focused .v-field__outline {
+  color: var(--c-primary);
+  border-color: var(--c-primary);
+}
+.v-field__input {
+  font-family: var(--f-sans);
+  font-size: var(--fs-5);
+  color: var(--c-ink);
+}
+.v-field__input::placeholder {
+  color: var(--c-ink4);
+  opacity: 1;
+}
+.v-label,
+.v-field-label {
+  color: var(--c-ink4);
+  opacity: 1;
+  font-size: var(--fs-5);
+}
+.v-field--focused .v-field-label {
+  color: var(--c-primary);
+}
+.v-messages {
+  color: var(--c-ink4);
+  font-size: var(--fs-3);
+  opacity: 1;
+}
+
+/* --- Progress -------------------------------------------------------------
+   Solara's busy bar. Vuetify colours the track by lowering the bar's own
+   opacity, where the design system uses two tokens. */
+.v-progress-linear__background {
+  background: var(--c-border);
+  opacity: 1;
+}
+.v-progress-linear__determinate,
+.v-progress-linear__indeterminate {
+  background: var(--c-primary);
+}
+.v-progress-circular {
+  color: var(--c-primary);
+}
+
+/* --- Cards and lists ------------------------------------------------------
+   v-card is not a v-sheet in Vuetify 3, so it is named separately. Its ink is
+   on-surface at 87% alpha, a fade of pure black rather than a colour, so the
+   token is named instead.
+
+   A card is the design system's Frame: --c-surface, a 1px --c-border hairline,
+   --r-lg, and no shadow at any variant. Hover changes the ground to
+   --c-raised, as AppCard does. */
+.v-card {
+  background: var(--c-surface);
+  color: var(--c-ink);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  box-shadow: none;
+  transition: background var(--t-fast);
+}
+.v-card--variant-elevated,
+.v-card--variant-flat {
+  box-shadow: none;
+}
+.v-card--link:hover {
+  background: var(--c-raised);
+}
+/* AppCard sets its title at --fs-6 bold. --fs-9, the largest heading utility,
+   is a page's heading rather than a card's. */
+.v-card-title {
+  font-family: var(--f-sans);
+  font-size: var(--fs-6);
+  font-weight: var(--fw-bold);
+  letter-spacing: normal;
+  line-height: 1.3;
+}
+.v-card-subtitle {
+  color: var(--c-ink4);
+  font-size: var(--fs-4);
+  opacity: 1;
+}
+.v-card-text {
+  color: var(--c-ink3);
+  font-size: var(--fs-5);
+  line-height: 1.45;
+  opacity: 1;
+}
+
+.v-list {
+  background: var(--c-surface);
+  color: var(--c-ink);
+}
+.v-list-item {
+  color: var(--c-ink);
+  border-radius: var(--r-md);
+}
+.v-list-item-subtitle {
+  color: var(--c-ink4);
+  opacity: 1;
+}
+
+/* --- Tabs -----------------------------------------------------------------
+   A tab is a v-btn, so the button rules above already apply; casing and
+   tracking are restated because .v-tab sets its own. The rest is the selected
+   colour, the indicator under it, and the border under the strip. */
+.v-tab {
+  text-transform: none;
+  letter-spacing: 0.01em;
+}
+.v-tab.v-tab--selected {
+  color: var(--ct-primary);
+}
+.v-tab__slider {
+  background: var(--c-primary);
+}
+.v-tabs {
+  border-bottom: 1px solid var(--c-border);
+}
+
+/* --- Sliders and switches -------------------------------------------------
+   These take their colour from --v-theme-surface-variant, Material's #424242,
+   which reads as a stray dark grey against any of the tokens. */
+.v-slider-track__background {
+  background: var(--c-border2);
+  opacity: 1;
+}
+.v-slider-track__fill {
+  background: var(--c-primary);
+}
+.v-slider-thumb__surface {
+  background: var(--c-primary);
+  box-shadow: var(--e-1);
+}
+.v-slider-thumb__label {
+  background: var(--c-ink);
+  color: var(--c-bg);
+}
+.v-switch__track {
+  background: var(--c-border2);
+  opacity: 1;
+}
+.v-switch--inset .v-switch__track,
+.v-switch .v-selection-control--dirty .v-switch__track {
+  background: var(--c-primary);
+}
+.v-switch__thumb {
+  background: var(--c-surface);
+  box-shadow: var(--e-1);
+}
+
+/* Checkbox and radio: the mark is an icon, so the control's own colour
+   carries the checked state. */
+.v-selection-control__input {
+  color: var(--c-ink4);
+}
+.v-selection-control--dirty .v-selection-control__input {
+  color: var(--c-primary);
+}
+
+/* --- Alerts ---------------------------------------------------------------
+   The flat variant is filled by Vuetify's own bg- class. The tonal and
+   outlined variants tint instead, which the design system expresses as a
+   background, border and text token per hue. */
+.v-alert {
+  border-radius: var(--r-md);
+  font-size: var(--fs-5);
+}
+/* Both variants key off `text-<colour>`, not `bg-<colour>`: only the filled
+   variants get a bg- class, so keying these on bg- leaves a tonal alert with
+   no tint. */
+.v-alert:is(.v-alert--variant-tonal, .v-alert--variant-outlined).text-success {
+  background: var(--bg-green) !important;
+  border: 1px solid var(--bo-green);
+  color: var(--ct-green) !important;
+}
+.v-alert:is(.v-alert--variant-tonal, .v-alert--variant-outlined).text-warning {
+  background: var(--bg-yellow) !important;
+  border: 1px solid var(--bo-yellow);
+  color: var(--ct-yellow) !important;
+}
+.v-alert:is(.v-alert--variant-tonal, .v-alert--variant-outlined).text-error {
+  background: var(--bg-red) !important;
+  border: 1px solid var(--bo-red);
+  color: var(--ct-red) !important;
+}
+.v-alert:is(.v-alert--variant-tonal, .v-alert--variant-outlined):is(.text-info, .text-primary) {
+  background: var(--bg-primary) !important;
+  border: 1px solid var(--bo-primary);
+  color: var(--ct-primary) !important;
+}
+/* Vuetify tints the tonal variant a second way, with an absolutely-positioned
+   underlay at low alpha over the ground behind. The rules above supply the
+   tint as tokens, so the underlay would darken it twice. */
+.v-alert--variant-tonal .v-alert__underlay {
+  display: none;
+}
+
+/* --- Chips, dividers, tooltips, scrim -------------------------------------
+   One rule each. */
+.v-chip {
+  font-family: var(--f-sans);
+  font-size: var(--fs-3);
+  border-radius: var(--r-full);
+  background: var(--c-raised);
+  color: var(--c-ink2);
+  border-color: var(--c-border2);
+}
+.v-divider {
+  border-color: var(--c-border);
+  opacity: 1;
+}
+.v-tooltip > .v-overlay__content {
+  background: var(--c-ink);
+  color: var(--c-bg);
+  font-size: var(--fs-3);
+  border-radius: var(--r-md);
+  box-shadow: var(--e-2);
+}
+.v-overlay__scrim {
+  background: var(--c-scrim);
+  opacity: 1;
+}
+
+/* --- Menus, selects and autocompletes -------------------------------------
+   These float, so the elevation scale applies here: --e-3 is labelled
+   "menu, select" in tokens.css. The popup is a surface with a hairline; the
+   rows inside it are v-list-item, dressed above. */
+.v-overlay__content > .v-list,
+.v-menu > .v-overlay__content,
+.v-select__content,
+.v-autocomplete__content {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  box-shadow: var(--e-3);
+}
+.v-list-item--active,
+.v-list-item[aria-selected='true'] {
+  background: var(--bg-primary);
+  color: var(--ct-primary);
+}
+.v-list-item:hover:not(.v-list-item--active) {
+  background: var(--c-raised);
+}
+
+/* --- Tables ---------------------------------------------------------------
+   Vuetify draws every row divider with on-surface at 12% alpha. --c-border is
+   ink at low alpha already, so it takes the ground's temperature rather than
+   greying it. */
+.v-table {
+  background: var(--c-surface);
+  color: var(--c-ink);
+  font-size: var(--fs-5);
+}
+.v-table > .v-table__wrapper > table > thead > tr > th {
+  background: var(--c-raised);
+  color: var(--c-ink3);
+  font-size: var(--fs-4);
+  font-weight: 600;
+  border-bottom: 1px solid var(--c-border2) !important;
+}
+.v-table > .v-table__wrapper > table > tbody > tr > td,
+.v-table > .v-table__wrapper > table > tbody > tr > th {
+  border-bottom: 1px solid var(--c-border) !important;
+  color: var(--c-ink2);
+}
+.v-table > .v-table__wrapper > table > tbody > tr:hover > td {
+  background: var(--c-raised);
+}
+.v-data-table-footer {
+  color: var(--c-ink4);
+  font-size: var(--fs-4);
+  border-top: 1px solid var(--c-border);
+}
+
+/* --- Button toggles -------------------------------------------------------
+   Vuetify's segmented choice, dressed as the design system's SegmentedControl:
+   a bordered strip on --c-surface with hairlines between the segments, and the
+   chosen segment taking the primary fill. */
+.v-btn-group,
+.v-btn-toggle {
+  display: inline-flex;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border2);
+  border-radius: var(--r-button);
+  overflow: hidden;
+  padding: 0;
+  gap: 0;
+  box-shadow: none;
+}
+.v-btn-group > .v-btn,
+.v-btn-toggle > .v-btn {
+  min-width: 48px;
+  height: 28px;
+  padding: 0 var(--s-4);
+  background: var(--c-surface);
+  border: 0;
+  border-radius: 0;
+  color: var(--c-ink4);
+  font-size: var(--fs-4);
+  font-weight: var(--fw-bold);
+}
+.v-btn-group > .v-btn + .v-btn,
+.v-btn-toggle > .v-btn + .v-btn {
+  border-left: 1px solid var(--c-border);
+}
+.v-btn-group > .v-btn:hover:not(.v-btn--active),
+.v-btn-toggle > .v-btn:hover:not(.v-btn--active) {
+  color: var(--c-ink2);
+  background: var(--c-raised);
+}
+.v-btn-group > .v-btn--active,
+.v-btn-toggle > .v-btn--active {
+  background: var(--c-primary);
+  color: white;
+}
+
+/* --- Expansion panels -----------------------------------------------------
+   The Accordion idiom: items separated by a hairline, with no box of their
+   own. The container they sit in supplies that. */
+.v-expansion-panel {
+  background: var(--c-surface);
+  color: var(--c-ink);
+  box-shadow: none;
+}
+.v-expansion-panel-title {
+  font-size: var(--fs-5);
+  font-weight: var(--fw-bold);
+  color: var(--c-ink);
+  min-height: 0;
+}
+.v-expansion-panel-text {
+  font-size: var(--fs-5);
+  color: var(--c-ink2);
+}
+.v-expansion-panel:not(:first-child) {
+  border-top: 1px solid var(--c-border);
+}
+.v-expansion-panel__shadow {
+  display: none;
+}
+
+/* --- Rendered Markdown ----------------------------------------------------
+   Solara renders Markdown into a div carrying JupyterLab's `rendered_html`
+   classes, whose stylesheet sets `color: rgba(0, 0, 0, 0.87)`. That is black
+   in either theme, so Markdown is unreadable in the dark one. Only the colours
+   are corrected here; rendered_html's spacing and type are left alone. A
+   portal wanting the full prose treatment can load prose.css from the same
+   package and put `.prose` on the container. */
+.solara-markdown,
+.solara-markdown :is(h1, h2, h3, h4, h5, h6, p, li, td, th) {
+  color: var(--c-ink);
+}
+/* The design system's .link utility: weight 600, underlined at rest rather
+   than on hover, because a link marked only by colour is invisible to a reader
+   who does not see the colour. Hover thickens the underline for the same
+   reason. */
+.solara-markdown :is(a, a code) {
+  color: var(--ct-primary);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.solara-markdown a:hover {
+  text-decoration-thickness: 2px;
+}
+.solara-markdown :is(code, pre) {
+  font-family: var(--f-mono);
+  background: var(--c-raised);
+  color: var(--c-ink2);
+  border-radius: var(--r-sm);
+}
+.solara-markdown pre {
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+}
+.solara-markdown blockquote {
+  color: var(--c-ink3);
+  border-inline-start: 3px solid var(--c-border2);
+}
+.solara-markdown :is(td, th) {
+  border-color: var(--c-border);
+}
+.solara-markdown th {
+  background: var(--c-raised);
+}
+.solara-markdown hr {
+  border-color: var(--c-border);
+}
+
+/* --- Focus ----------------------------------------------------------------
+   The design system draws focus as a 3px --c-focus ring with the outline
+   suppressed; 19 of its components do it, and Button and Input are the models.
+   .v-btn takes it in the Buttons section, beside the rest of the button rules.
+
+   A field keys off Vuetify's --focused class rather than :focus-visible,
+   because Input shows focus on click as well as from the keyboard. The primary
+   border it also takes is in the Text fields section, which is the other half
+   of what Input does. */
+.v-field--focused {
+  box-shadow: 0 0 0 3px var(--c-focus);
+}
+.v-chip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--c-focus);
+}

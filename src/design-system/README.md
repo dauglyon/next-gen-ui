@@ -26,12 +26,12 @@ component imports from it.
 
 ### Without a bundler
 
-The stylesheets are also a pip package, for consumers that cannot run one — a
-generator that inlines CSS into self-contained HTML, or a Python UI framework
-handed a string. Install by pinned tag:
+There is also a pip package, for consumers that cannot run one — a generator
+that inlines CSS into self-contained HTML, or a Python UI framework handed a
+string. Install by pinned tag:
 
 ```toml
-"kbase-design-system @ git+https://github.com/kbase/next-gen-ui.git@ds-v0.5.0#subdirectory=src/design-system"
+"kbase-design-system @ git+https://github.com/kbase/next-gen-ui.git@ds-vX.Y.Z#subdirectory=src/design-system"
 ```
 
 Pin a released `ds-v` tag; [Releases](https://github.com/kbase/next-gen-ui/releases)
@@ -42,12 +42,37 @@ from importlib.resources import files
 css = (files("kbase_design_system") / "tokens.css").read_text()
 ```
 
-It carries `tokens.css`, `prose.css`, `utilities.css`, `prism.css` and
-`global.css` and nothing else: no Python code, no accessor helpers, no framework
-glue. `components.css` and `style.css` are build outputs and stay npm-only.
-`fonts.css` is excluded — see [Fonts](#fonts) for why it needs a bundler, and
-what a consumer without one has to do instead. Its version comes from the same
-`ds-vX.Y.Z` tag that publishes the npm package, so neither needs a bump.
+It carries seven stylesheets and a Solara adapter:
+
+|                                                                   |                                                                                                                                                                                                    |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tokens.css` `prose.css` `utilities.css` `prism.css` `global.css` | the same files the npm package ships                                                                                                                                                               |
+| `components.css`                                                  | every component in `components/`, compiled from its `.module.scss` during the wheel build, with stable class names — see [Class names for CSS-only consumers](#class-names-for-css-only-consumers) |
+| `chrome.css`                                                      | the app bar, masthead, mark and tinted ground, which the showcase builds as layout rather than as components; Frame's default padding, which is set in a TSX; and the scrim under a neutral name   |
+| `solara/`                                                         | `vuetify.css`, `icons.py` and `resolve_tokens.py`. Solara renders its widgets with Vuetify, whose theme is set from Python                                                                         |
+
+`style.css` is a bundler output and stays npm-only. `fonts.css` is excluded —
+see [Fonts](#fonts) for why it needs a bundler, and what a consumer without one
+has to do instead. The wheel takes its version from the same `ds-vX.Y.Z` tag
+that publishes the npm package, so neither needs a bump.
+
+Building the wheel compiles Sass, so `dart-sass` is installed into the build
+environment. It is not a runtime dependency.
+
+## Class names for CSS-only consumers
+
+A React consumer never writes a component's class name; the bundler rewrites
+it to a content hash. A consumer holding only `components.css` writes it by
+hand, so the names in that file follow one rule and do not change:
+
+```
+root, or a local named after its component  ->  kb-<component>
+every other local                           ->  kb-<component>--<local>
+```
+
+Frame's root is `kb-frame`. Button's root local is `btn`, so it is
+`kb-button--btn`. State is an attribute rather than a class: `[data-active]`,
+`[data-checked]`, `[data-selected]`.
 
 ## Use
 

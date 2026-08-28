@@ -20,6 +20,13 @@ raw-options = { root = "../..", tag_regex = '^ds-v(?P<version>\d+\.\d+\.\d+)$', 
   "git", "describe", "--dirty", "--tags", "--long", "--match", "ds-v*",
 ] }
 
+# Compiles components/*/<Name>.module.scss into the wheel. dart-sass is declared here rather than
+# in [build-system].requires because hatchling installs hook dependencies into the build
+# environment: it is not a runtime dependency, and nothing else in the build sees it.
+[tool.hatch.build.hooks.custom]
+path = "python/hatch_build.py"
+dependencies = ["dart-sass>=0.5.2"]
+
 [tool.hatch.build.targets.wheel]
 bypass-selection = true      # no package to detect; the payload is force-included
 
@@ -29,3 +36,11 @@ bypass-selection = true      # no package to detect; the payload is force-includ
 "utilities.css" = "kbase_design_system/utilities.css"
 "prism.css" = "kbase_design_system/prism.css"
 "global.css" = "kbase_design_system/global.css"
+# Makes the wheel a regular package rather than a namespace one, so importlib.resources
+# .files() works on the 3.9 floor this package declares.
+"python/__init__.py" = "kbase_design_system/__init__.py"
+"python/chrome.css" = "kbase_design_system/chrome.css"
+# The Solara adapter: a stylesheet and two modules, imported as kbase_design_system.solara.*.
+# It stays a namespace subpackage -- importing works without an __init__.py, and vuetify.css is
+# read by traversing from the parent, which has one.
+"python/solara" = "kbase_design_system/solara"

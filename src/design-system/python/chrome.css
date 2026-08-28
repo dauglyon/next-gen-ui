@@ -1,0 +1,112 @@
+/* ============================================================================
+   Rules a portal needs that components.css does not carry.
+
+   components.css is generated from the .module.scss sources, so it holds what
+   the components style and nothing more. A rule lands here for one of three
+   reasons, and each entry says which:
+
+     the showcase builds the thing as layout rather than as a component --
+     the app bar, masthead, mark and tinted ground;
+
+     the value is set in a TSX rather than a SCSS -- Frame's padding;
+
+     a component does style it, but under a name tied to that component --
+     the scrim, which Dialog ships as .kb-dialog--backdrop.
+
+   Keep the file small. Each entry of the first kind is a component this design
+   system does not have.
+
+   Do not name a portal here. Eight of them load this file.
+   ============================================================================ */
+
+/* --- Tint -----------------------------------------------------------------
+   A tinted ground (--bg-*) is darker than --c-surface, so not every ink tier
+   that clears AA on a plain surface clears it here. These set the tiers one
+   step darker inside such a ground.
+
+   No component covers this: the tinted grounds in the showcase are Alert and
+   Frame, which set their own ink. A portal that tints a region itself, such as
+   a hero or a callout band, has nothing to inherit it from, and choosing the
+   ink by hand is how the contrast ends up below AA. */
+.kb-tint {
+  color: var(--c-ink2);
+}
+.kb-tint :is(.caption, .note, .kb-stat--label, .kb-field--description) {
+  color: var(--c-ink3);
+}
+.kb-tint :is(.byline, .body, .section-label) {
+  color: var(--c-ink2);
+}
+/* Chip is excluded: neutral has no tint of its own, so it keeps the
+   --c-surface ground and the ink that goes with it. */
+
+/* --- Frame padding --------------------------------------------------------
+   Frame.module.scss sets no padding. The React component applies it inline from
+   a prop defaulting to 7 (`padding = 7` in Frame.tsx), so a consumer holding
+   only the stylesheet gets an edge-to-edge card.
+
+   These restate that default and the `padding={0}` case. They are the only
+   values here taken from a TSX rather than a SCSS, which is why they are not in
+   the generated file. */
+.kb-frame {
+  padding: var(--s-7);
+}
+.kb-frame--flush {
+  padding: 0;
+}
+
+/* --- App bar --------------------------------------------------------------
+   The strip across the top of a portal: the masthead, then whatever the portal
+   puts on the right. A row with a border under it; the parts inside are
+   components. */
+.kb-appbar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--c-border);
+}
+
+/* --- Masthead -------------------------------------------------------------
+   The mark, then whatever names the page. */
+.kb-masthead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+}
+/* Children centre on the row rather than on their own text baseline. Without
+   this, an inline wrapper around the mark takes its height from line-height and
+   the mark sits a few pixels above the words beside it. */
+.kb-masthead > * {
+  display: flex;
+  align-items: center;
+}
+
+/* --- Mark -----------------------------------------------------------------
+   The KBase mini-logo as an inline element. The SVG is drawn in
+   python/solara/icons.py, because its three circles are also the Loader's three
+   dots and the two have to stay in step. These rules only stop the surrounding
+   line box from clipping or shifting it; overflow:visible because the animated
+   form extends outside the viewBox. */
+.kb-mark {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+.kb-mark svg {
+  display: block;
+  overflow: visible;
+}
+
+/* --- Scrim ----------------------------------------------------------------
+   The dimmed ground behind a Dialog. Dialog draws the same four declarations
+   in its own stylesheet, so components.css already ships them as
+   .kb-dialog--backdrop; this is the same ground under a name that does not
+   claim to belong to Dialog, which a portal needs for a drawer or a custom
+   overlay. vuetify.css also targets .v-btn.kb-scrim, because a framework that
+   only renders buttons builds its dismissable overlay out of one. */
+.kb-scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--c-scrim);
+  z-index: var(--z-scrim);
+}
