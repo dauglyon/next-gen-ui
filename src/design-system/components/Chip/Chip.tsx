@@ -51,12 +51,15 @@ export function Chip({
         className,
       )}
     >
-      {Glyph && <Glyph size={9} weight="bold" aria-hidden />}
+      {/* em rather than px, so the glyph tracks the chip's text: 1.15 is the ratio Button holds
+          between its icon and its label. Bold because that text is 11px, where a regular stroke is
+          too fine to hold a shape. */}
+      {Glyph && <Glyph size="1.15em" weight="bold" aria-hidden />}
       {/* Hidden, not removed, so the name survives iconOnly. */}
       {label && <span className={cx(iconOnly && Glyph && styles.srOnly)}>{label}</span>}
       {onDismiss && (
         <button type="button" className={styles.dismiss} onClick={onDismiss} aria-label="Remove">
-          <X size={8} weight="bold" aria-hidden />
+          <X size="1em" weight="bold" aria-hidden />
         </button>
       )}
     </span>

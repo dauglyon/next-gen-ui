@@ -49,7 +49,24 @@ It carries seven stylesheets and a Solara adapter:
 | `tokens.css` `prose.css` `utilities.css` `prism.css` `global.css` | the same files the npm package ships                                                                                                                                                               |
 | `components.css`                                                  | every component in `components/`, compiled from its `.module.scss` during the wheel build, with stable class names — see [Class names for CSS-only consumers](#class-names-for-css-only-consumers) |
 | `chrome.css`                                                      | the app bar, masthead, mark and tinted ground, which the showcase builds as layout rather than as components; Frame's default padding, which is set in a TSX; and the scrim under a neutral name   |
-| `solara/`                                                         | `vuetify.css`, `icons.py` and `resolve_tokens.py`. Solara renders its widgets with Vuetify, whose theme is set from Python                                                                         |
+| `solara/`                                                         | `vuetify.css`, `icons.py`, `loader.js` and `resolve_tokens.py`. Solara renders its widgets with Vuetify, whose theme is set from Python                                                            |
+
+`loader.js` is the one script in the package, and like `components.css` it is
+assembled during the wheel build rather than committed. The Loader's enter is
+CSS — `data-active` on `.kb-loader--loader` plays it — but its exit needs the
+pose the animations hold at the instant it is asked for, which is known only at
+runtime. `Loader.tsx` builds that exit in React; `loader.js` builds it for a
+document with none, and both take the math from
+`components/Loader/pose.js`, which `python/gen_loader_js.py` joins to
+`python/loader_driver.js` for the wheel.
+
+Include it once with `icons.loader_script()`, and put `data-loading` on a loader
+or on any ancestor, set to `"false"` when the work ends. Presence hands the
+loader to the script, the value is the state, and a loader with no
+`data-loading` above it is left as rendered — which is how a document keeps one
+that runs for as long as it is on screen. Emit the mark with
+`icons.loader(size, active=...)`; without the script, clearing `active` pauses
+the braid where it stands and the dots jump to the row.
 
 `style.css` is a bundler output and stays npm-only. `fonts.css` is excluded —
 see [Fonts](#fonts) for why it needs a bundler, and what a consumer without one

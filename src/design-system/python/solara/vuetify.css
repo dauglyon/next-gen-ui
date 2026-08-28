@@ -247,6 +247,7 @@
   border-radius: inherit;
   box-shadow: none;
 }
+
 .v-btn:is(
     .kb-tabs--tab,
     .kb-segmented-control--btn,
@@ -268,6 +269,15 @@
   )
   :is(.v-btn__overlay, .v-ripple__container) {
   display: none;
+}
+
+/* A trail step is an <a> or a <span>, and a v-btn where its target is a
+   callback, since that is the only control Solara renders for one. Breadcrumbs
+   puts a trail's whole spacing on the separator, so a step contributes none
+   and Vuetify's 16px of side padding is 16px too much. The other classes above
+   set padding of their own and keep it. */
+.v-btn.kb-breadcrumbs--link {
+  padding: 0;
 }
 
 /* Solara scrolls the routed content in a div of its own rather than the
