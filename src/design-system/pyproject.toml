@@ -6,9 +6,12 @@ build-backend = "hatchling.build"
 name = "kbase-design-system"
 description = "KBase design system stylesheets, for consumers without a bundler"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 dynamic = ["version"]
+# solara/theme.py parses tokens.css and a portal's skin for custom properties.
+# parse_blocks_contents is 1.4.
+dependencies = ["tinycss2>=1.4"]
 
 [project.urls]
 Source = "https://github.com/kbase/next-gen-ui"
@@ -36,11 +39,7 @@ bypass-selection = true      # no package to detect; the payload is force-includ
 "utilities.css" = "kbase_design_system/utilities.css"
 "prism.css" = "kbase_design_system/prism.css"
 "global.css" = "kbase_design_system/global.css"
-# Makes the wheel a regular package rather than a namespace one, so importlib.resources
-# .files() works on the 3.9 floor this package declares.
-"python/__init__.py" = "kbase_design_system/__init__.py"
 "python/chrome.css" = "kbase_design_system/chrome.css"
-# The Solara adapter: a stylesheet and two modules, imported as kbase_design_system.solara.*.
-# It stays a namespace subpackage -- importing works without an __init__.py, and vuetify.css is
-# read by traversing from the parent, which has one.
+# The Solara adapter, imported as kbase_design_system.solara.*. Neither it nor its parent carries
+# an __init__.py; files() traverses a namespace package on the 3.10 floor.
 "python/solara" = "kbase_design_system/solara"

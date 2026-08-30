@@ -35,7 +35,9 @@ string. Install by pinned tag:
 ```
 
 Pin a released `ds-v` tag; [Releases](https://github.com/kbase/next-gen-ui/releases)
-lists them.
+lists them. The repository is public and pip clones it directly, so this route
+needs no credentials — the `read:packages` token above belongs to the npm
+registry.
 
 ```python
 from importlib.resources import files
@@ -49,7 +51,7 @@ It carries seven stylesheets and a Solara adapter:
 | `tokens.css` `prose.css` `utilities.css` `prism.css` `global.css` | the same files the npm package ships                                                                                                                                                               |
 | `components.css`                                                  | every component in `components/`, compiled from its `.module.scss` during the wheel build, with stable class names — see [Class names for CSS-only consumers](#class-names-for-css-only-consumers) |
 | `chrome.css`                                                      | the app bar, masthead, mark and tinted ground, which the showcase builds as layout rather than as components; Frame's default padding, which is set in a TSX; and the scrim under a neutral name   |
-| `solara/`                                                         | `vuetify.css`, `icons.py`, `loader.js` and `resolve_tokens.py`. Solara renders its widgets with Vuetify, whose theme is set from Python                                                            |
+| `solara/`                                                         | `vuetify.css`, `icons.py`, `loader.js`, `theme.py` and `oklch.py`. Solara renders its widgets with Vuetify, whose theme is set from Python                                                         |
 
 `loader.js` is the one script in the package, and like `components.css` it is
 assembled during the wheel build rather than committed. The Loader's enter is
@@ -67,6 +69,17 @@ loader to the script, the value is the state, and a loader with no
 that runs for as long as it is on screen. Emit the mark with
 `icons.loader(size, active=...)`; without the script, clearing `active` pauses
 the braid where it stands and the dots jump to the row.
+
+`theme.py` answers the one question a stylesheet cannot: what colour is this,
+as a number. Vuetify holds its theme as comma-separated RGB triplets, and CSS
+cannot decompose a colour into three, so `theme.vuetify(skin_css)` returns the
+thirteen traits ipyvuetify syncs, per scheme, resolved against the portal's own
+skin.
+
+Most of `tokens.css` is `oklch(from var(--c-base) L C H)` — arithmetic with one
+answer, which `oklch.py` computes. `theme.py` reads the stylesheet the wheel
+already carries and resolves it on the first call, so there is no browser, no
+build step and nothing generated.
 
 `style.css` is a bundler output and stays npm-only. `fonts.css` is excluded —
 see [Fonts](#fonts) for why it needs a bundler, and what a consumer without one
@@ -177,11 +190,11 @@ from cannot go inside it. Those sit in `:root` as pairs — `--tl-bg` and
 
 ---
 
-## Branding
+## Skins
 
-A brand may set **any** color token. There are 67 of them and every one is a
-custom property, so a brand stylesheet loaded after `tokens.css` replaces
-whatever it names:
+A skin is a stylesheet of token overrides, loaded after `tokens.css`, carrying
+whatever brand it expresses. It may set **any** color token — there are 67, and
+every one is a custom property, so a skin replaces whatever it names:
 
 | Group          | Tokens                                                                                                                         |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------ |
@@ -210,7 +223,14 @@ properties: name one and the derivation gives way. `example-brand.css` in this
 directory does exactly that — its page is a tinted mid-light rather than an
 off-white, which no hue change can produce, so it sets the ground, ink ramp,
 tints and text-on-tint outright. It is not exported and not packaged; the
-design system supports branded themes rather than carrying anyone's brand.
+design system supports skins rather than carrying anyone's brand.
+
+A skin scoped to an attribute rather than a bare `:root` lets several ship
+alongside each other with one value choosing between them. `example-brand.css`
+opens `:root[data-skin='example']`, so the page wears KBase's palette while the
+attribute is absent and the example brand while it reads `example`. An app
+stamps the attribute once in its own HTML; the showcase toggles it, which is how
+both palettes appear against the same components.
 
 ### What the derivation gives you
 
@@ -235,7 +255,7 @@ that uses them, with no stylesheet holding a hardcoded value:
 
 | Lever           | Tokens                                     | Notes                                                                                                                                             |
 | --------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Typeface        | `--f-sans`, `--f-mono`                     | the design system serves only its own two faces; a brand pointing these elsewhere serves that font itself                                         |
+| Typeface        | `--f-sans`, `--f-mono`                     | the design system serves only its own two faces; a skin pointing these elsewhere serves that font itself                                          |
 | Corner rounding | `--r-sm`, `--r-button`, `--r-md`, `--r-lg` | box corners                                                                                                                                       |
 |                 | `--r-full`                                 | **leave alone.** Radio and the Switch track use it to stay circular, and a square radio reads as a checkbox. Shape is carrying meaning, not style |
 | Type scale      | `--fs-1`–`--fs-11`, `--fs-hero`            | sequential, smallest to largest                                                                                                                   |
@@ -243,14 +263,14 @@ that uses them, with no stylesheet holding a hardcoded value:
 | Density         | `--s-1`–`--s-12`                           | the whole spacing scale                                                                                                                           |
 | Motion          | `--t-fast`, `--t-base`, `--t-slow`         |                                                                                                                                                   |
 
-`--z-raised`, `--z-scrim`, `--z-modal` and `--z-toast` are not brand levers.
+`--z-raised`, `--z-scrim`, `--z-modal` and `--z-toast` are not skin levers.
 They carry no identity, and changing them only breaks the layering of modals
 and toasts.
 
 `fonts.css` serves 400 and 700, so there are two weight tokens and no more.
 Stylesheets used to write 400, 500, 600 and 700, but CSS resolves a request to
-the nearest face available: 500 drew as regular and 600 as bold. A brand
-serving a family with real intermediate weights adds the faces to its own
+the nearest face available: 500 drew as regular and 600 as bold. A skin whose
+brand serves a family with real intermediate weights adds the faces to its own
 stylesheet and a token to match.
 
 `example-brand.css` sets the typeface and the box radii as well as its colors.
@@ -387,9 +407,11 @@ The artifact's version label falls back to root `package.json`.
 
 ## Layering
 
-The combined `style.css` concatenates the layers in this order. Use
-the granular entries instead if a specific layer needs to be skipped
-or replaced.
+This is the npm package. The combined `style.css` concatenates the layers in
+this order; use the granular entries instead if a specific layer needs to be
+skipped or replaced. The wheel carries a different set — see
+[Without a bundler](#without-a-bundler) for what it holds, and the
+`solara/MIGRATING.md` it ships for the order a Solara portal loads them in.
 
 1. `tokens.css`: design tokens (`--c-*`, `--s-*`, `--r-*`, …)
 2. `prism.css`: Prism syntax theme
