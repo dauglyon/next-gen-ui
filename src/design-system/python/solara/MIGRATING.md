@@ -1,11 +1,11 @@
 # Migrating a Solara portal onto the KBase design system
 
-The wheel ships two kinds of stylesheet. `tokens.css` and `solara/vuetify.css` carry colour,
-type and Vuetify widget styling, and apply to any markup. `components.css` and `chrome.css` are
-about 4,000 lines that select `kb-*` class names and match nothing else. A skin — a stylesheet
-of token overrides — reaches an element only through those names: an element carrying none of
-them keeps whatever the portal painted, under every skin, however small the component's rules
-behind the name.
+The wheel ships two kinds of stylesheet. `tokens.css`, `utilities.css`, `prose.css` and
+`solara/vuetify.css` carry the tokens, type utilities, long-form text styling and Vuetify
+widget styling. `components.css` and `chrome.css` are about 4,000 lines that select `kb-*`
+class names and match nothing else. A skin — a stylesheet of token overrides — reaches an
+element only through those names: an element carrying none of them keeps whatever the portal
+painted, under every skin, however small the component's rules behind the name.
 
 Migration puts the names on the markup and deletes the portal rules that painted it. Every stage
 is checked against one render: **the page with the portal's own rules stripped, standing on the
@@ -23,10 +23,11 @@ replaces.
 
 This file holds the procedure. The components themselves are documented by their source — React
 in `kbase/next-gen-ui` under `src/design-system/`, compiled into the classes a Solara portal
-consumes. The wheel carries only the compiled CSS, so the sources come from the repository, at
-the tag the installed version names:
+consumes. The wheel is installed first; it carries only the compiled CSS, so the sources come
+from the repository, at the tag the installed version names:
 
 ```
+pip install "kbase-design-system @ git+https://github.com/kbase/next-gen-ui.git@ds-vX.Y.Z#subdirectory=src/design-system"
 git clone --branch ds-v$(python -c "from importlib.metadata import version; print(version('kbase-design-system'))") \
     https://github.com/kbase/next-gen-ui
 ```
@@ -72,8 +73,8 @@ signature has crashed the app bar, which no test renders.
   them, so a portal rule wins any property it states at equal specificity. A component rule that
   is wrong for this portal — a border on the wrong edge, a padding the layout rejects — is one
   cancelling line in the app sheet, under the component's own name. An element declines a name
-  on two grounds: it means something else, or no component exists — and the grep above settles
-  the second.
+  on two grounds: it means something else, or no component exists — and the `components.css`
+  grep in _Sources of truth_ settles the second.
 - **One app sheet, one brand file, split by what a brand swap replaces.** The brand file holds
   the identity — the token literals the README's skin section names, plus the treatments that
   are the brand: signature paint, brand state fills. The app sheet holds what every brand
@@ -179,24 +180,30 @@ page. The icons module is imported plainly — a missing package raises `ImportE
 where a soft-import shim serves the page with no icons and no styling.
 
 A portal migrating across many PRs may hold the pin in an optional extra while its own rules
-still paint everything; in that window the app runs complete without the package. The window
-closes at the stop-line: the PR that deletes the last portal rule moves the pin into
-`[project.dependencies]` in the same change, because past it the markup carries `kb-*` names
-alone and the sheets are load-bearing.
+still paint everything. The window's loading code guards on the package's presence — a
+`has_design_system()` check around the sheet loading and theme wiring; when the
+import fails, the guarded block loads nothing — and the stop-line PR deletes the guard along
+with the extra. The plain import
+above is the end state; the condemned shim is the _permanent_ soft import, which leaves a
+`kb-*`-named page unstyled forever rather than for a bounded window. The window closes at the
+stop-line: the PR that deletes the last portal rule moves the pin into `[project.dependencies]`
+in the same change, because past it the sheets are load-bearing.
 
 The stop-line is also where the pre-migration appearance ceases to exist — it lived in the
 deleted rules. A frozen "legacy" stylesheet kept past that point snapshots nothing and drifts
 with every later change. Reversibility comes from the brand file instead: a brand is one file —
 palette block and treatments — under version control, and any past brand is a checkout away.
-`<APP>_SKIN`, else the fleet-wide `KBASE_SKIN`, is read at startup and selects the brand file
-by name or path; an unmatched value (`legacy`, say) falls to the default brand.
+The portal implements one lookup: `<APP>_SKIN`, else the fleet-wide `KBASE_SKIN`, read at
+startup, selects the brand file by name or path — the string §3 loads as `BRAND_CSS` — and an
+unmatched value (`legacy`, say) falls to the default brand.
 
 ---
 
 ## §3 · Load the sheets
 
 A portal carrying its own copy of the sheets keeps resolving to that copy; Function Junction
-deleted 5,250 vendored lines before the packaged sheets took effect. Vendored copies go first.
+deleted 5,250 vendored lines before the packaged sheets took effect. Vendored copies are
+deleted before anything loads.
 
 Six sheets, read from the installed package, in this order, ahead of the portal's own:
 
@@ -231,8 +238,10 @@ SHEETS = ("tokens.css", "utilities.css", "prose.css",
 for name in SHEETS:
     solara.Style(files("kbase_design_system").joinpath(name).read_text())
 solara.Style(APP_CSS)      # shared by every brand: layout, bridge corrections
-solara.Style(BRAND_CSS)    # the brand file: palette block + brand treatments
+solara.Style(BRAND_CSS)    # the brand file §2's skin lookup selected
 ```
+
+The block above is the end state; during §2's window it sits behind the window guard.
 
 ### The brand file
 
@@ -276,14 +285,16 @@ further wiring.
 argument and renders into a fixed `<div class="solara-markdown">`, so the sheet does not reach
 it on its own. Two shapes work: the few long-form blocks wrapped in
 `solara.Div(classes=["prose"])`, or the sheet rescoped at load time — `.prose` →
-`:is(.prose, .solara-markdown)` — as the migrated portals do. A rescope also releases
-`max-width` on Markdown outside running prose: `prose.css` sets a 68ch measure for columns of
-text, and rescoped onto every Markdown string it clamps the whole page. (Scoping
+`:is(.prose, .solara-markdown)` — as the migrated portals do. `prose.css` sets a 68ch measure
+meant for columns of text, so a rescope pairs with one release rule —
+`.solara-markdown:not(.prose) { max-width: none }` — and the measure applies only where an
+explicit `.prose` asks for it. (Scoping
 `.solara-markdown` upstream in `prose.css` is an open ask; the rescope machinery is checked
 against it before being duplicated.)
 
 §3 closes on a screenshot of the landing page — widgets in the brand's primary, the brand
-typeface loaded — and on `pip uninstall` restoring the previous rendering exactly.
+typeface loaded — and, while §2's window is open, on `pip uninstall` restoring the previous
+rendering exactly (the §2 guard skips the loading and the portal's own rules still paint).
 
 ---
 
@@ -315,7 +326,8 @@ Conversion runs three steps per painted element, each separately checkable:
 
 Steps 1–2 ship in bulk, swept by declaration family across the whole codebase — every muted
 caption, then every secondary label — because a family shares one rule and one review. Step 3
-is a queue tracked in the plan, and §4 closes when the queue is empty or each remaining entry
+is a queue tracked in the plan; a family that renders only in data-bearing views queues its
+step 3 under §7, and §4's queue holds the rest. §4 closes when the queue is empty or each remaining entry
 carries one of three reasons: a genuine gap with its upstream ask filed (§1), a user-granted
 exclusion by name (§ Decisions), or portal-specific paint per the §1 routing. An entry with any
 other reason keeps the stage open. A migration that stops after step 2 has adopted
@@ -325,7 +337,9 @@ The bulk sweep follows a pilot: one element family taken through all three steps
 middle complexity — the easiest family exercises nothing the rest will hit. What the pilot
 taught is written down and applied in bulk.
 
-One muted caption among dozens:
+`utilities.css` is the one unprefixed vocabulary — `.caption`, `.note`, `.section-label` and
+the other type utilities carry no `kb-`, and the intro's name count does not see them: one more
+reason the render, not the count, measures progress. One muted caption among dozens:
 
 ```python
 # before
@@ -393,10 +407,11 @@ wanted, `kb-frame` is the component.
 
 Loading states belong to this stage even in a portal that has none. Skeleton defaults to
 `variant='text'`, and a `kb-skeleton` with no variant has no height; a card placeholder is a
-composition of variants, which the showcase holds. The Loader plays its entry from
-`data-active` in CSS; its exit starts from the pose its animations hold when asked to stop,
-which exists only at runtime, so `loader.js` beside this file builds it — emitted once via
-`icons.loader_script()`, driven by `data-loading` on the loader or an ancestor. Every state of
+composition of variants, which the showcase holds. The Loader's entry plays from CSS; its exit
+starts from the pose its animations hold when asked to stop, which exists only at runtime, so
+the wheel ships `loader.js`, emitted once via `icons.loader_script()`. Portal code sets one
+attribute — `data-loading` on the loader or an ancestor; presence hands the loader to the
+script, and `"false"` ends it. Every state of
 one region occupies one box: a spinner that replaces a control row, or a loader appended below
 streaming content, moves everything beneath it on each transition.
 
@@ -435,8 +450,13 @@ The matrix, per stage and in full before the PR:
 every view  ×  design-system-only and branded  ×  light and dark
 ```
 
-plus, while §2's window is open, the degraded pass: the app served with the package genuinely
-unimportable — not a monkeypatched flag — and clicked through. Unit tests around the helpers
+The first axis is a temporary switch the migration adds and the stop-line PR removes:
+design-system-only withholds the brand file and the app sheet's lifted rules — the intro's
+acceptance render; branded loads both.
+
+While §2's window is open, the matrix gains a degraded pass: the app served with the package
+genuinely unimportable — not a monkeypatched flag — and clicked through. Unit tests around the
+helpers
 have missed a widget handed `children=None` and a status glyph degrading to an empty string; a
 render catches both.
 
