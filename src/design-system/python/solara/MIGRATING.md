@@ -246,10 +246,12 @@ solara.Style(BRAND_CSS)    # the brand file §2's skin lookup selected
 ```
 
 The block above is the end state. During §2's window it sits behind the window guard, and a
-third string, `TRANSITIONAL_CSS`, loads between `APP_CSS` and `BRAND_CSS`: wiring the loading
-splits the portal's existing stylesheet — paint rules routed for deletion (§1) into
-`TRANSITIONAL_CSS`; portal-specific paint that stays, layout and bridge corrections into
-`APP_CSS`. §4 step 1 lifts into the same string, step 3 empties it, and the stop-line PR
+third string, `TRANSITIONAL_CSS`, loads last, after `BRAND_CSS`, so a rule in it outranks every
+brand treatment until step 3 deletes it — steps 1–2's identical rendering depends on that
+position. Wiring the loading splits the portal's existing stylesheet — paint rules routed for
+deletion (§1) into `TRANSITIONAL_CSS`; portal-specific paint that stays, layout and bridge
+corrections into `APP_CSS` — and the split is checked like a lift: the page renders identically
+before and after. §4 step 1 lifts into the same string, step 3 empties it, and the stop-line PR
 deletes the constant.
 
 ### The brand file
@@ -353,7 +355,7 @@ reason the render, not the count, measures progress. One muted caption among doz
 ```python
 # before
 solara.HTML("span", "updated daily", style="font-size:11px;color:#8a93a3")
-# after step 2 (app sheet holds: .app-cap { font-size:11px; color:#8a93a3 })
+# after step 2 (TRANSITIONAL_CSS holds: .app-cap { font-size:11px; color:#8a93a3 })
 solara.HTML("span", "updated daily", classes=["app-cap", "caption"])
 # after step 3 (the .app-cap rule is deleted; utilities.css paints it)
 solara.HTML("span", "updated daily", classes=["caption"])
