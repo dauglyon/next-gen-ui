@@ -8,8 +8,8 @@ element only through those names: an element carrying none of them keeps whateve
 painted, under every skin, however small the component's rules behind the name.
 
 Migration puts the names on the markup and deletes the portal rules that painted it. Every stage
-is checked against one render: **the page with the portal's own rules stripped, standing on the
-packaged sheets alone.** `grep -rohE '\bkb-[a-z0-9-]+' src/ | sort -u | wc -l` counts names
+is checked against one render: **the page with every portal paint rule the migration will
+delete withheld, standing on the packaged sheets.** `grep -rohE '\bkb-[a-z0-9-]+' src/ | sort -u | wc -l` counts names
 whether or not a portal rule still paints the element underneath, so the count rises while that
 render stays broken.
 
@@ -79,8 +79,9 @@ signature has crashed the app bar, which no test renders.
 - **One app sheet, one brand file, split by what a brand swap replaces.** The brand file holds
   the identity — the token literals the README's skin section names, plus the treatments that
   are the brand: signature paint, brand state fills. The app sheet holds what every brand
-  shares — layout, geometry the markup depends on, bridge corrections — plus, during §2's
-  window only, the transitional paint block §4 fills and step 3 empties. A second token family
+  shares: layout, geometry the markup depends on, bridge corrections. During §2's window only,
+  a third string — the transitional paint block (§3) — carries the portal's paint until §4
+  step 3 empties it. A second token family
   (`--<app>-*`), a `var(--c-x, var(--app-y))` fallback, or a fresh class restyling a named
   component each hides part of the brand from `theme.vuetify()` and from every future skin.
 - **A component is chosen by what its element means**, with the showcase section as the cite,
@@ -244,7 +245,12 @@ solara.Style(APP_CSS)      # shared by every brand: layout, bridge corrections
 solara.Style(BRAND_CSS)    # the brand file §2's skin lookup selected
 ```
 
-The block above is the end state; during §2's window it sits behind the window guard.
+The block above is the end state. During §2's window it sits behind the window guard, and a
+third string, `TRANSITIONAL_CSS`, loads between `APP_CSS` and `BRAND_CSS`: wiring the loading
+splits the portal's existing stylesheet — paint rules routed for deletion (§1) into
+`TRANSITIONAL_CSS`; portal-specific paint that stays, layout and bridge corrections into
+`APP_CSS`. §4 step 1 lifts into the same string, step 3 empties it, and the stop-line PR
+deletes the constant.
 
 ### The brand file
 
@@ -317,9 +323,8 @@ the component's `.tsx`.
 
 Conversion runs three steps per painted element, each separately checkable:
 
-1. **Lift.** The element's inline declarations move, verbatim, into a named rule in the app
-   sheet's transitional block — the marked section holding the portal's paint rules, original
-   and lifted alike, which §9's switch withholds and step 3 empties. Renders byte-identically.
+1. **Lift.** The element's inline declarations move, verbatim, into a named rule in
+   `TRANSITIONAL_CSS` (§3). Renders byte-identically.
 2. **Name.** The `kb-*` class joins the portal's own class on the element. Still renders
    identically — the portal's rule loads later and wins what it states — and the element is now
    reachable by the system. This step is additive and belongs in the first PR that touches the
@@ -455,9 +460,10 @@ every view  ×  design-system-only and branded  ×  light and dark
 ```
 
 The first axis is a temporary switch the migration adds and the stop-line PR removes.
-Design-system-only withholds the brand file and the app sheet's transitional block (§4) — every
-portal paint rule, original and lifted — leaving the packaged sheets, the layout and the bridge
-rules: the intro's acceptance render, at any point in the window. Branded loads everything.
+Design-system-only withholds `BRAND_CSS` and `TRANSITIONAL_CSS` (§3) — every rule routed for
+deletion, original and lifted — leaving the packaged sheets, the layout and bridge rules, and
+the portal-specific paint that stays: the intro's acceptance render, at any point in the
+window. Branded loads everything.
 
 While §2's window is open, the matrix gains a degraded pass: the app served with the package
 genuinely unimportable — not a monkeypatched flag — and clicked through. Unit tests around the
