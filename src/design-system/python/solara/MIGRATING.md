@@ -23,8 +23,9 @@ replaces.
 
 This file holds the procedure. The components themselves are documented by their source — React
 in `kbase/next-gen-ui` under `src/design-system/`, compiled into the classes a Solara portal
-consumes. The wheel is installed first; it carries only the compiled CSS, so the sources come
-from the repository, at the tag the installed version names:
+consumes. The wheel is installed first — the newest `ds-v` release unless the user has pinned
+one; §2 records the pin. It carries only the compiled CSS, so the sources come from the
+repository, at the tag the installed version names:
 
 ```
 pip install "kbase-design-system @ git+https://github.com/kbase/next-gen-ui.git@ds-vX.Y.Z#subdirectory=src/design-system"
@@ -78,7 +79,8 @@ signature has crashed the app bar, which no test renders.
 - **One app sheet, one brand file, split by what a brand swap replaces.** The brand file holds
   the identity — the token literals the README's skin section names, plus the treatments that
   are the brand: signature paint, brand state fills. The app sheet holds what every brand
-  shares: layout, geometry the markup depends on, bridge corrections. A second token family
+  shares — layout, geometry the markup depends on, bridge corrections — plus, during §2's
+  window only, the transitional paint block §4 fills and step 3 empties. A second token family
   (`--<app>-*`), a `var(--c-x, var(--app-y))` fallback, or a fresh class restyling a named
   component each hides part of the brand from `theme.vuetify()` and from every future skin.
 - **A component is chosen by what its element means**, with the showcase section as the cite,
@@ -181,7 +183,8 @@ where a soft-import shim serves the page with no icons and no styling.
 
 A portal migrating across many PRs may hold the pin in an optional extra while its own rules
 still paint everything. The window's loading code guards on the package's presence — a
-`has_design_system()` check around the sheet loading and theme wiring; when the
+portal-defined `has_design_system()`, a try/except around the package import, gating the sheet
+loading and theme wiring; when the
 import fails, the guarded block loads nothing — and the stop-line PR deletes the guard along
 with the extra. The plain import
 above is the end state; the condemned shim is the _permanent_ soft import, which leaves a
@@ -314,8 +317,9 @@ the component's `.tsx`.
 
 Conversion runs three steps per painted element, each separately checkable:
 
-1. **Lift.** The element's inline declarations move into a named rule in the app sheet,
-   verbatim. Renders byte-identically.
+1. **Lift.** The element's inline declarations move, verbatim, into a named rule in the app
+   sheet's transitional block — the marked section holding the portal's paint rules, original
+   and lifted alike, which §9's switch withholds and step 3 empties. Renders byte-identically.
 2. **Name.** The `kb-*` class joins the portal's own class on the element. Still renders
    identically — the portal's rule loads later and wins what it states — and the element is now
    reachable by the system. This step is additive and belongs in the first PR that touches the
@@ -450,9 +454,10 @@ The matrix, per stage and in full before the PR:
 every view  ×  design-system-only and branded  ×  light and dark
 ```
 
-The first axis is a temporary switch the migration adds and the stop-line PR removes:
-design-system-only withholds the brand file and the app sheet's lifted rules — the intro's
-acceptance render; branded loads both.
+The first axis is a temporary switch the migration adds and the stop-line PR removes.
+Design-system-only withholds the brand file and the app sheet's transitional block (§4) — every
+portal paint rule, original and lifted — leaving the packaged sheets, the layout and the bridge
+rules: the intro's acceptance render, at any point in the window. Branded loads everything.
 
 While §2's window is open, the matrix gains a degraded pass: the app served with the package
 genuinely unimportable — not a monkeypatched flag — and clicked through. Unit tests around the
