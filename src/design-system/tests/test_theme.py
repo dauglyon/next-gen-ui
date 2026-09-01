@@ -1,0 +1,174 @@
+"""theme.skin(), theme.tokens() and theme.vuetify(), against the installed wheel.
+
+The wheel is the unit under test: the tests import the package as a portal does, so `pip install .`
+comes before `pytest`. Nothing here reads the source tree.
+"""
+from pathlib import Path
+
+import pytest
+
+from kbase_design_system.solara import theme
+
+KBASE = ":root { --c-primary: #5e9732; }"
+LEGACY = ":root { --c-primary: #0e7490; }\n.legacy-hero { background: teal; }"
+
+
+@pytest.fixture
+def resources(tmp_path: Path) -> Path:
+    d = tmp_path / "resources"
+    d.mkdir()
+    (d / "kbase.css").write_text(KBASE)
+    (d / "legacy.css").write_text(LEGACY)
+    return d
+
+
+def select(resources, environ, default="kbase"):
+    return theme.skin(resources, default, "PORTAL_SKIN", "KBASE_SKIN", environ=environ)
+
+
+def test_unset_selects_the_default(resources):
+    active = select(resources, {})
+    assert active == theme.Skin("kbase", KBASE, None, None, None)
+
+
+def test_default_is_an_alias_for_unset(resources):
+    active = select(resources, {"KBASE_SKIN": "Default"})
+    assert (active.name, active.css, active.note) == ("kbase", KBASE, None)
+    assert (active.variable, active.requested) == ("KBASE_SKIN", "Default")
+
+
+def test_the_portals_own_variable_wins(resources):
+    active = select(resources, {"PORTAL_SKIN": "legacy", "KBASE_SKIN": "none"})
+    assert (active.name, active.css, active.variable) == ("legacy", LEGACY, "PORTAL_SKIN")
+
+
+def test_a_blank_variable_is_unset(resources):
+    active = select(resources, {"PORTAL_SKIN": "  ", "KBASE_SKIN": "none"})
+    assert (active.name, active.variable) == ("none", "KBASE_SKIN")
+
+
+def test_none_mounts_nothing(resources):
+    active = select(resources, {"KBASE_SKIN": "NONE"})
+    assert active == theme.Skin("none", "", "KBASE_SKIN", "NONE", None)
+
+
+def test_a_name_is_its_sheet_in_resources(resources):
+    active = select(resources, {"KBASE_SKIN": "Legacy"})
+    assert (active.name, active.css, active.note) == ("legacy", LEGACY, None)
+
+
+def test_a_path_is_read_from_the_filesystem(resources, tmp_path):
+    sheet = tmp_path / "elsewhere" / "partner.css"
+    sheet.parent.mkdir()
+    sheet.write_text(":root { --c-primary: #66489d; }")
+    active = select(resources, {"KBASE_SKIN": str(sheet)})
+    assert (active.name, active.css, active.note) == (str(sheet), sheet.read_text(), None)
+
+
+def test_a_path_is_read_on_every_call(resources, tmp_path):
+    sheet = tmp_path / "live.css"
+    sheet.write_text(":root { --c-primary: #111111; }")
+    environ = {"KBASE_SKIN": str(sheet)}
+    first = select(resources, environ).css
+    sheet.write_text(":root { --c-primary: #222222; }")
+    assert first != select(resources, environ).css == sheet.read_text()
+
+
+def test_an_unknown_name_falls_to_the_default_and_says_so(resources):
+    active = select(resources, {"PORTAL_SKIN": "partner"})
+    assert (active.name, active.css) == ("kbase", KBASE)
+    assert (active.variable, active.requested) == ("PORTAL_SKIN", "partner")
+    assert active.note == f"PORTAL_SKIN=partner: {resources / 'partner.css'} does not exist"
+
+
+def test_an_unreadable_path_falls_to_the_default_and_says_so(resources, tmp_path):
+    active = select(resources, {"KBASE_SKIN": str(tmp_path / "gone.css")})
+    assert (active.name, active.css) == ("kbase", KBASE)
+    assert active.note == f"KBASE_SKIN={tmp_path / 'gone.css'}: No such file or directory"
+
+
+def test_a_missing_default_sheet_raises(resources):
+    with pytest.raises(FileNotFoundError):
+        select(resources, {}, default="partner")
+    with pytest.raises(FileNotFoundError):
+        select(resources, {"KBASE_SKIN": "partner"}, default="also-missing")
+
+
+def test_none_can_be_the_default(resources):
+    assert select(resources, {}, default="none") == theme.Skin("none", "", None, None, None)
+
+
+# --- tokens ---------------------------------------------------------------------------------------
+
+# Chromium's own numbers for the same tokens.css: each token painted as `color`, read back through
+# a 1px canvas, in a page under each colour scheme. Every token agreed within one unit per channel.
+BROWSER = {
+    ("c-bg", "light"): "#f5f2ee", ("c-bg", "dark"): "#18140f",
+    ("c-ink", "light"): "#1a1714", ("c-ink", "dark"): "#f6f3ef",
+    ("bg-primary", "light"): "#e1ebf3", ("bg-primary", "dark"): "#192c3c",
+    ("bgw-green", "light"): "#e4eddf", ("bgw-green", "dark"): "#293621",
+    ("ct-yellow", "light"): "#8c5200", ("ct-yellow", "dark"): "#f8d13f",
+    ("bo-yellow", "light"): "#ecdda4", ("bo-yellow", "dark"): "#5f4f00",
+    ("c-teal-dim", "light"): "#007368", ("c-teal-dim", "dark"): "#42ac9e",
+}
+
+
+def channels(hex_colour):
+    return tuple(int(hex_colour[i:i + 2], 16) for i in (1, 3, 5))
+
+
+@pytest.mark.parametrize("name,scheme", sorted(BROWSER))
+def test_tokens_agree_with_the_browser(name, scheme):
+    mine, theirs = channels(theme.tokens(scheme=scheme)[name]), channels(BROWSER[name, scheme])
+    assert max(abs(a - b) for a, b in zip(mine, theirs)) <= 1
+
+
+def test_tokens_cover_every_opaque_colour_token():
+    families = {n for n in theme._packaged() if n.startswith(theme._COLOUR_FAMILIES)}
+    translucent = {"c-border", "c-border2", "c-focus", "c-scrim"}
+    assert set(theme.tokens()) == families - translucent
+    assert set(theme.tokens(scheme="dark")) == families - translucent
+
+
+def test_tokens_are_the_literals_the_stylesheet_states():
+    light = theme.tokens()
+    assert (light["c-primary"], light["c-green"], light["c-neutral"]) == ("#007dc3", "#5e9732", "#6a6158")
+
+
+def test_tokens_follow_the_skin_through_the_derivation():
+    base, skinned = theme.tokens(), theme.tokens(":root { --c-primary: #5e9732; }")
+    assert skinned["c-primary"] == "#5e9732"
+    assert skinned["ct-primary"] != base["ct-primary"]
+    assert skinned["bg-primary"] != base["bg-primary"]
+    assert skinned["c-red"] == base["c-red"]
+
+
+def test_a_skin_can_set_a_derived_token_outright():
+    assert theme.tokens(":root { --c-bg: #ffffff; }")["c-bg"] == "#ffffff"
+
+
+def test_a_colour_form_the_resolver_cannot_evaluate_is_an_error():
+    with pytest.raises(ValueError, match="--c-primary"):
+        theme.tokens(":root { --c-primary: rgb(0 125 195); }")
+
+
+# --- vuetify --------------------------------------------------------------------------------------
+
+def test_vuetify_is_thirteen_traits_per_scheme():
+    palette = theme.vuetify()
+    assert set(palette) == {"light", "dark"}
+    for colours in palette.values():
+        assert set(colours) == set(theme.VUETIFY)
+        assert all(len(v) == 7 and v.startswith("#") for v in colours.values())
+
+
+def test_vuetify_reads_the_same_tokens():
+    for scheme in ("light", "dark"):
+        resolved = theme.tokens(scheme=scheme)
+        assert theme.vuetify()[scheme] == {t: resolved[n] for t, n in theme.VUETIFY.items()}
+
+
+def test_vuetify_follows_the_skin():
+    palette = theme.vuetify(":root { --c-primary: #5e9732; }")
+    assert palette["light"]["primary"] == palette["dark"]["primary"] == "#5e9732"
+    assert palette["light"]["primary_darken_1"] != theme.vuetify()["light"]["primary_darken_1"]
