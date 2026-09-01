@@ -89,7 +89,7 @@ pre[class*='language-'] {
 
 .token.important,
 .token.bold {
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 
 .token.italic {

@@ -38,7 +38,7 @@
    a browser ignores an @import that follows one. A deployment that cannot
    reach fonts.googleapis.com falls back to system-ui.
    ============================================================================ */
-@import url('https://fonts.googleapis.com/css2?family=Oxygen:wght@400;700&family=Fira+Code:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Oxygen:wght@400;700&family=Fira+Code:wght@400;700&display=swap');
 /* The icon family, the same way. The design system uses Phosphor, which ships as npm
    packages a Python app cannot build; @phosphor-icons/web is the same art as a webfont, one
    stylesheet per weight. Three weights, because weight carries meaning: regular for chrome, bold
@@ -721,7 +721,7 @@ details[open] .kb-alert--chevron {
   background: var(--c-raised);
   color: var(--c-ink3);
   font-size: var(--fs-4);
-  font-weight: 600;
+  font-weight: var(--fw-bold);
   border-bottom: 1px solid var(--c-border2) !important;
 }
 .v-table > .v-table__wrapper > table > tbody > tr > td,
@@ -816,13 +816,13 @@ details[open] .kb-alert--chevron {
 .solara-markdown :is(h1, h2, h3, h4, h5, h6, p, li, td, th) {
   color: var(--c-ink);
 }
-/* The design system's .link utility: weight 600, underlined at rest rather
+/* The design system's .link utility: bold, underlined at rest rather
    than on hover, because a link marked only by colour is invisible to a reader
    who does not see the colour. Hover thickens the underline for the same
    reason. */
 .solara-markdown :is(a, a code) {
   color: var(--ct-primary);
-  font-weight: 600;
+  font-weight: var(--fw-bold);
   text-decoration: underline;
   text-underline-offset: 2px;
 }

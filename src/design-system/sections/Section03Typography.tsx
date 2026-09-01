@@ -122,7 +122,7 @@ export function Section03Typography() {
             <tr>
               <td className={s.typeSize}>--fs-6</td>
               <td className="h3">h3</td>
-              <td className={s.typeUse}>600</td>
+              <td className={s.typeUse}>700</td>
               <td className={s.typeUse}>ink</td>
               <td className={s.typeUse}>
                 <code>"h3"</code>
@@ -132,7 +132,7 @@ export function Section03Typography() {
             <tr>
               <td className={s.typeSize}>--fs-5</td>
               <td className="h4">h4</td>
-              <td className={s.typeUse}>600</td>
+              <td className={s.typeUse}>700</td>
               <td className={s.typeUse}>ink</td>
               <td className={s.typeUse}>
                 <code>"h4"</code>
@@ -152,7 +152,7 @@ export function Section03Typography() {
             <tr>
               <td className={s.typeSize}>--fs-4</td>
               <td className="label">label</td>
-              <td className={s.typeUse}>600</td>
+              <td className={s.typeUse}>700</td>
               <td className={s.typeUse}>ink3</td>
               <td className={s.typeUse}>
                 <code>"label"</code>
@@ -172,7 +172,7 @@ export function Section03Typography() {
             <tr>
               <td className={s.typeSize}>--fs-4</td>
               <td className="section-label">section-label</td>
-              <td className={s.typeUse}>600</td>
+              <td className={s.typeUse}>700</td>
               <td className={s.typeUse}>ink2</td>
               <td className={s.typeUse}>
                 <code>"section-label"</code>
@@ -192,7 +192,7 @@ export function Section03Typography() {
             <tr>
               <td className={s.typeSize}>--fs-4</td>
               <td className="sub">sub</td>
-              <td className={s.typeUse}>600</td>
+              <td className={s.typeUse}>700</td>
               <td className={s.typeUse}>ink3</td>
               <td className={s.typeUse}>
                 <code>"sub"</code>

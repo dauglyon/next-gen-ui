@@ -55,19 +55,19 @@
 
 .prose h1 {
   font-size: var(--fs-9);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   margin-block: var(--s-9) var(--s-6);
 }
 
 .prose h2 {
   font-size: var(--fs-7);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   margin-block: var(--s-9) var(--s-6);
 }
 
 .prose h3 {
   font-size: var(--fs-6);
-  font-weight: 600;
+  font-weight: var(--fw-bold);
   margin-block: var(--s-8) var(--s-3);
 }
 
@@ -75,7 +75,7 @@
 .prose h5,
 .prose h6 {
   font-size: var(--fs-5);
-  font-weight: 600;
+  font-weight: var(--fw-bold);
   margin-block: var(--s-8) var(--s-2);
 }
 
@@ -113,7 +113,7 @@
 /* Matching the .link utility. */
 .prose a {
   color: var(--ct-primary);
-  font-weight: 600;
+  font-weight: var(--fw-bold);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -124,7 +124,7 @@
 
 .prose strong {
   color: var(--c-ink);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 
 /* `:not(pre) >` keeps this off code inside a fenced block, and at (0,1,2)
@@ -224,7 +224,7 @@
 
 .prose th {
   color: var(--c-ink);
-  font-weight: 600;
+  font-weight: var(--fw-bold);
   background: var(--c-raised);
 }
 
@@ -281,7 +281,7 @@
 
 .prose summary {
   cursor: pointer;
-  font-weight: 600;
+  font-weight: var(--fw-bold);
   color: var(--c-ink);
 }
 
@@ -307,7 +307,7 @@
 }
 
 .prose dt {
-  font-weight: 600;
+  font-weight: var(--fw-bold);
   color: var(--c-ink);
   margin-top: var(--s-5);
 }
