@@ -71,9 +71,10 @@ that runs for as long as it is on screen. Emit the mark with
 the braid where it stands and the dots jump to the row.
 
 `theme.py` resolves the skin. `theme.skin()` reads a portal's skin setting out of
-the environment and returns the sheet in effect — see
-[A portal's skins](#a-portals-skins). The other two functions answer the
-question a stylesheet cannot: what colour is this, as a number. Vuetify holds
+the environment and returns the sheet in effect; what a portal's skins are and
+how the setting is wired is `solara/MIGRATING.md` §2. The other two functions
+answer the question a stylesheet cannot: what colour is this, as a number.
+Vuetify holds
 its theme as comma-separated RGB triplets, and CSS cannot decompose a colour
 into three, so `theme.vuetify(skin_css)` returns the thirteen traits
 ipyvuetify syncs, per scheme, resolved against the skin.
@@ -242,24 +243,6 @@ opens `:root[data-skin='example']`, so the page wears KBase's palette while the
 attribute is absent and the example brand while it reads `example`. An app
 stamps the attribute once in its own HTML; the showcase toggles it, which is how
 both palettes appear against the same components.
-
-### A portal's skins
-
-A portal serves three kinds of look through one setting, which `theme.skin()`
-in the wheel reads (`solara/MIGRATING.md` §2 has the wiring):
-
-- `none` — the design system as shipped. Nothing is mounted over the packaged
-  sheets, and the widgets take the packaged palette.
-- `kbase` — the portal's KBase sheet, which the portal authors: KBase's palette
-  with the portal's own colour in `--c-primary`, and nothing else — no other
-  token, no treatment. That is a convention checked by eye when the sheet is
-  reviewed; the package does not test it.
-- any other name — a brand: the portal's own palette and treatments, in a file
-  of that name. A portal ships as many as it has looks to serve.
-
-A name selects `resources/<name>.css` in the portal's package; a path selects a
-sheet outside it. The setting is read when the page renders, so one process can
-answer a later request with a different skin.
 
 ### What the derivation gives you
 
