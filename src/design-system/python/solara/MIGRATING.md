@@ -93,6 +93,11 @@ signature has crashed the app bar, which no test renders.
 - **A colour that encodes a datum stays a literal.** A heat ramp in a table cell belongs to the
   figure; no token stands behind it. Inline styles that state only layout — a `max-width` on a
   Select, a `gap` on a Row — block no skin and stay.
+- **A weight is `--fw-normal` or `--fw-bold`.** The package loads two faces of each family, 400
+  and 700, and Oxygen has no others. A literal `500`, `600` or `800` asks for a face nothing
+  serves, and the browser draws the nearest one it has: 500 renders as 400, 600 and 800 as 700.
+  The tokens state what renders, so converting a literal changes no pixel, and a step the sheet
+  claimed and the page never drew is gone from the sheet.
 
 ---
 
@@ -541,10 +546,10 @@ the user has added, each item checked — and three audits close the migration, 
   re-running the §1 lookup against the end state.
 
 Each invariant becomes a behavioral test where the portal can express it — sheet order, no
-hexes in the app sheet, and that the sheet `theme.skin()` returns is the one mounted and the one
-handed to `theme.vuetify()`. The selection itself — precedence, `none`, name, path, fallback —
-is tested once, in the package, and not again per portal. A test that counts selectors in a
-packaged file pins the package, not the portal, and does not ship.
+hexes and no literal weights in the app sheet, and that the sheet `theme.skin()` returns is the
+one mounted and the one handed to `theme.vuetify()`. The selection itself — precedence, `none`,
+name, path, fallback — is tested once, in the package, and not again per portal. A test that
+counts selectors in a packaged file pins the package, not the portal, and does not ship.
 
 The PR's base is the upstream default branch at its current tip — a stale fork base makes the
 diff describe changes nobody made. The PR body opens with what the PR leaves outstanding — a
