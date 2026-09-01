@@ -70,11 +70,17 @@ that runs for as long as it is on screen. Emit the mark with
 `icons.loader(size, active=...)`; without the script, clearing `active` pauses
 the braid where it stands and the dots jump to the row.
 
-`theme.py` answers the one question a stylesheet cannot: what colour is this,
-as a number. Vuetify holds its theme as comma-separated RGB triplets, and CSS
-cannot decompose a colour into three, so `theme.vuetify(skin_css)` returns the
-thirteen traits ipyvuetify syncs, per scheme, resolved against the portal's own
-skin.
+`theme.py` holds the skin. `theme.skin()` reads a portal's skin setting out of
+the environment and returns the sheet in effect — see
+[A portal's skins](#a-portals-skins). The other two functions answer the
+question a stylesheet cannot: what colour is this, as a number. Vuetify holds
+its theme as comma-separated RGB triplets, and CSS cannot decompose a colour
+into three, so `theme.vuetify(skin_css)` returns the thirteen traits
+ipyvuetify syncs, per scheme, resolved against the skin.
+`theme.tokens(skin_css, scheme)` returns every opaque colour token as hex, for
+a figure a browser never paints: a plot's accent, ink and ground follow the
+skin as the page does. Borders, the focus ring and the scrim carry an alpha
+and are not in it.
 
 Most of `tokens.css` is `oklch(from var(--c-base) L C H)` — arithmetic with one
 answer, which `oklch.py` computes. `theme.py` reads the stylesheet the wheel
@@ -88,6 +94,10 @@ that publishes the npm package, so neither needs a bump.
 
 Building the wheel compiles Sass, so `dart-sass` is installed into the build
 environment. It is not a runtime dependency.
+
+The Python side's tests run against an install, because the wheel's layout is
+not the source tree's: in `src/design-system`, `pip install '.[dev]'`, then
+`pytest`. The wheel job in CI does the same with the wheel it just built.
 
 ## Class names for CSS-only consumers
 
@@ -232,6 +242,24 @@ attribute is absent and the example brand while it reads `example`. An app
 stamps the attribute once in its own HTML; the showcase toggles it, which is how
 both palettes appear against the same components.
 
+### A portal's skins
+
+A portal serves three kinds of look through one setting, which `theme.skin()`
+in the wheel reads (`solara/MIGRATING.md` §2 has the wiring):
+
+- `none` — the design system as shipped. Nothing is mounted over the packaged
+  sheets, and the widgets take the packaged palette.
+- `kbase` — the portal's KBase sheet, which the portal authors: KBase's palette
+  with the portal's own colour in `--c-primary`, and nothing else — no other
+  token, no treatment. That is a convention checked by eye when the sheet is
+  reviewed; the package does not test it.
+- any other name — a brand: the portal's own palette and treatments, in a file
+  of that name. A portal ships as many as it has looks to serve.
+
+A name selects `resources/<name>.css` in the portal's package; a path selects a
+sheet outside it. The setting is read when the page renders, so one process can
+answer a later request with a different skin.
+
 ### What the derivation gives you
 
 Derived tokens read a base's hue and chroma and pin their own lightness, so a
@@ -261,6 +289,7 @@ that uses them, with no stylesheet holding a hardcoded value:
 | Type scale      | `--fs-1`–`--fs-11`, `--fs-hero`            | sequential, smallest to largest                                                                                                                   |
 | Weight          | `--fw-normal`, `--fw-bold`                 | two, because `fonts.css` serves two faces                                                                                                         |
 | Density         | `--s-1`–`--s-12`                           | the whole spacing scale                                                                                                                           |
+| Page column     | `--w-page`                                 | the width a portal centres its content in. It is the portals gallery's own, so a portal opened from the gallery keeps the same edges              |
 | Motion          | `--t-fast`, `--t-base`, `--t-slow`         |                                                                                                                                                   |
 
 `--z-raised`, `--z-scrim`, `--z-modal` and `--z-toast` are not skin levers.
