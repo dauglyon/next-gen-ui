@@ -109,6 +109,11 @@
 .solid.red .fallback {
   background: var(--c-red);
 }
+/* Neutral: an identity that means nothing by its colour -- Chip's neutral,
+   as an Avatar. */
+.solid.neutral .fallback {
+  background: var(--c-ink3);
+}
 
 /* Tint: washed bg + tint-contrast text + mono (data-type markers). */
 .tint .fallback {
@@ -140,4 +145,8 @@
 .tint.red .fallback {
   background: var(--bgw-red);
   color: var(--ct-red);
+}
+.tint.neutral .fallback {
+  background: var(--c-raised);
+  color: var(--c-ink3);
 }

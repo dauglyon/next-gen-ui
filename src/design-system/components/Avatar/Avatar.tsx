@@ -3,7 +3,15 @@ import { Avatar as BaseAvatar } from '@base-ui/react/avatar';
 import styles from './Avatar.module.scss';
 import { cx } from '../../util/cx';
 
-export type AvatarColor = 'primary' | 'teal' | 'ocean' | 'green' | 'purple' | 'orange' | 'red';
+export type AvatarColor =
+  | 'primary'
+  | 'teal'
+  | 'ocean'
+  | 'green'
+  | 'purple'
+  | 'orange'
+  | 'red'
+  | 'neutral';
 
 export type AvatarShape = 'circle' | 'square';
 

@@ -280,6 +280,73 @@
   padding: 0;
 }
 
+/* The reset outranks a component's own box (it must, to beat Vuetify's
+   later-injected sheet), so a component whose geometry the reset erases is
+   restated here at the same weight. The segment is the one such component:
+   `height: auto` collapses a glyph-only segment to its content. Values from
+   SegmentedControl.module.scss. */
+.v-btn.kb-segmented-control--btn {
+  min-width: 48px;
+  height: 28px;
+  padding: 0 var(--s-4);
+}
+
+/* The reset's `box-shadow: none` also erases the focus ring set above. Four
+   of the five named classes restore :focus-visible in their own modules; a
+   trail step has no module rule, so without this restatement the masthead's
+   first tab stop shows no focus state. */
+.v-btn.kb-breadcrumbs--link:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--c-focus);
+}
+
+/* An Accordion trigger mounted as a v-btn: Vuetify wraps the children in a
+   shrink-to-fit centred content div, which defeats the trigger anatomy --
+   title at the left edge, summary and chevron at the right. */
+.v-btn.kb-accordion--trigger .v-btn__content {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+/* A tree row's label mounted as a v-btn grows to the row and centres its
+   text; a tree reads left-aligned. */
+.kb-tree--item > .v-btn {
+  flex: 0 0 auto;
+}
+
+/* State for a fold built on <details>: Base UI sets data-panel-open, which
+   the chevron rotations key on, but a portal with no JS state naturally
+   reaches for <details>, where nothing sets it. The element's own open
+   attribute is the same state. */
+details[open] > summary .kb-accordion--chevron,
+details[open] .kb-alert--chevron {
+  transform: rotate(180deg);
+}
+
+/* A hover-shown popup for a consumer that cannot mount Base UI's positioner:
+   the host anchors, the packaged box paints, and this pair shows it. The box
+   is Popover's or Tooltip's, chosen by content length as Section08 draws the
+   line. Width is a default; a host may restate it. */
+.kb-pophost {
+  position: relative;
+  cursor: help;
+}
+.kb-pophost > :is(.kb-popover--popup, .kb-tooltip--popup) {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: calc(100% + var(--s-3));
+  width: 300px;
+  max-width: 74vw;
+  z-index: var(--z-anchored);
+  text-align: left;
+  white-space: normal;
+}
+.kb-pophost:hover > :is(.kb-popover--popup, .kb-tooltip--popup),
+.kb-pophost:focus-visible > :is(.kb-popover--popup, .kb-tooltip--popup) {
+  display: block;
+}
+
 /* Solara scrolls the routed content in a div of its own rather than the
    document, and leaves scrollbar-gutter at auto, so the scrollbar appears on a
    long view and vanishes on a short one, shifting the centred content sideways

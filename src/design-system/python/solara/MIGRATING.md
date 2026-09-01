@@ -178,7 +178,10 @@ whole batch.
 ## §2 · Declare the dependency
 
 The package belongs in `[project.dependencies]`, pinned to a `ds-v` tag: a missing install then
-fails in pip, at install time. In an optional extra it fails in the browser, as an unstyled
+fails in pip, at install time. `ipyvuetify>=3` belongs beside it: `vuetify.css` styles Vuetify 3's
+markup, and an environment that already holds ipyvuetify 1.x satisfies Solara's own pin and
+renders Vuetify 2 markup no packaged rule matches — dark mode, text fields and buttons all fail,
+each looking like a portal bug. In an optional extra it fails in the browser, as an unstyled
 page. The icons module is imported plainly — a missing package raises `ImportError` naming it,
 where a soft-import shim serves the page with no icons and no styling.
 
@@ -330,7 +333,10 @@ Conversion runs three steps per painted element, each separately checkable:
 2. **Name.** The `kb-*` class joins the portal's own class on the element. Still renders
    identically — the portal's rule loads later and wins what it states — and the element is now
    reachable by the system. This step is additive and belongs in the first PR that touches the
-   element.
+   element. Two things break the identity: a layout style a component's TSX sets inline (Frame's
+   padding) outranks the portal's rule and joins at step 3 instead; and a compound packaged
+   selector (`.kb-chip--x.kb-chip--on-white`) out-specifies a single-class portal rule, which
+   restates itself as a compound to keep winning.
 3. **Delete.** The portal's rule goes and the component paints. The only step that changes
    pixels. It runs per element family, screenshotted before and after, judged against the
    showcase.
@@ -422,7 +428,9 @@ composition of variants, which the showcase holds. The Loader's entry plays from
 starts from the pose its animations hold when asked to stop, which exists only at runtime, so
 the wheel ships `loader.js`, emitted once via `icons.loader_script()`. Portal code sets one
 attribute — `data-loading` on the loader or an ancestor; presence hands the loader to the
-script, and `"false"` ends it. Every state of
+script, and `"false"` ends it. A loader that unmounts with its region needs none of this — the
+exit machinery exists for a loader that stays on screen after its work ends, and both migrated
+portals ship the unmount form. Every state of
 one region occupies one box: a spinner that replaces a control row, or a loader appended below
 streaming content, moves everything beneath it on each transition.
 
@@ -438,7 +446,11 @@ be different roles — a caption and a footnote, a label and a byline — and an
 matching sizes welds them together under every future skin.
 
 Icons come from the three Phosphor weights `vuetify.css` imports — regular for chrome, bold for
-emphasis, fill for an active state — one icon per meaning across the portal. Emoji ignore
+emphasis, fill for an active state — one icon per meaning across the portal. An emoji carries a
+colour of its own, and a conversion that keeps only the shape drains the page: each replacement
+keeps its family's hue (Section10's category rule — hue for scanning, shape for the meaning),
+stated on the glyph so the words beside it keep the text's ink; chrome glyphs stay in the ink
+ramp. Emoji ignore
 `currentColor`, render differently per platform, and sit where no skin reaches. Substitution
 splits in two: the mechanical set — warnings, checks, crosses, carets, external-link arrows,
 mapped by `icons.STATUS` — converts directly, with every glyph name checked against the
@@ -478,6 +490,11 @@ renames that class away, so readiness keys on a `kb-*` selector; a view list tha
 the app screenshots the wrong screens; a headless browser without emoji fonts draws tofu; a
 mid-render snapshot shows gaps. The last two are artifacts, and neither is a finding. An empty
 box where a Phosphor icon was placed is a wrong glyph name (§8), in every browser.
+
+A portal that caches rendered card HTML re-serves the pre-migration markup under the migrated
+sheets until its cache version moves: the watched instance shows the old app for exactly the
+taxa a reviewer reaches for, and every code-level check still passes. Bumping that version is
+part of the change, not of deployment.
 
 A stage closes against the full standing list — this file's invariants plus every constraint
 the user has added, each item checked — and three audits close the migration, each a fresh pass:
@@ -528,6 +545,10 @@ Symptom, mechanism, fix.
    `allow-same-origin`) and SVG/canvas renderers see no CSS variables. The portal's Python
    colour constants are a deliberate third carrier of the brand — one module, synced with the
    brand file — and those surfaces stay out of the class conversion.
-10. **A crash in chrome no test caught.** A call site copied from a reference portal whose
+10. **A full-page screenshot stops at one viewport.** Solara scrolls the routed content in a
+    div of its own, so a headless browser's full-page capture measures the document, which is
+    viewport-sized. The content's height is `.solara-autorouter-content`'s scrollHeight; size
+    the viewport to it before the shot.
+11. **A crash in chrome no test caught.** A call site copied from a reference portal whose
     helper takes a different shape, and nothing renders chrome in CI. The local signature is
     read first; the page renders before shipping (§9).
