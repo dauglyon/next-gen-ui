@@ -84,7 +84,7 @@
   color: var(--c-ink4);
 }
 
-/* Section label, for inside forms and panels; not uppercase like .label. */
+/* Section label, used inside forms/panels (not uppercase like .label) */
 .section-label {
   font-size: var(--fs-4);
   font-weight: var(--fw-bold);

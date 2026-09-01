@@ -16,7 +16,7 @@ render stays broken.
 The finished portal is **base + skin**: the packaged sheets, one app sheet holding what every
 skin of this portal shares, and skin sheets — one file per look — each holding what a swap
 replaces. Every portal serves three kinds of look through one setting (§2): the design system
-as shipped, a KBase sheet the portal authors, and any number of brands.
+as shipped, a KBase look that sets only the portal's gallery colour, and any number of brands.
 
 ---
 
@@ -96,8 +96,8 @@ signature has crashed the app bar, which no test renders.
 - **A weight is `--fw-normal` or `--fw-bold`.** The package loads two faces of each family, 400
   and 700, and Oxygen has no others. A literal `500`, `600` or `800` asks for a face nothing
   serves, and the browser draws the nearest one it has: 500 renders as 400, 600 and 800 as 700.
-  The tokens state what renders, so converting a literal changes no pixel, and a step the sheet
-  claimed and the page never drew is gone from the sheet.
+  Converting a literal to the token it rendered as changes no pixel; the sheet then states the
+  weight the page drew.
 
 ---
 
@@ -195,13 +195,14 @@ An optional extra behind a guard — a `has_design_system()`, a try/except aroun
 lets the portal's own rules go on painting while the migration is partial, and leaves a
 `kb-*`-named page unstyled with nothing raised whenever the extra is not installed. The extra,
 the guard and the switch that withheld the sheets then wait on a closing PR that nothing forces
-anyone to write. The dependency is required from the start: in every PR the page stands on the
-packaged sheets, or pip refuses the install.
+anyone to write. Pinned in `[project.dependencies]`, every PR's page stands on the packaged
+sheets, or pip refuses the install.
 
 ### The skin setting
 
-Every portal exposes one setting — its own name first, the fleet-wide `KBASE_SKIN` second — with
-a default that is a constant in the portal's repo. `theme.skin()` reads it:
+Every portal reads two environment variables, its own `<APP>_SKIN` first and the fleet-wide
+`KBASE_SKIN` second, with a default that is a constant in the portal's repo. `theme.skin()` reads
+them:
 
 ```python
 from importlib.resources import files
@@ -216,28 +217,26 @@ def active_skin() -> theme.Skin:
 A value is one of three kinds of look, or a path:
 
 - `none` — the design system as shipped. Nothing is mounted over the packaged sheets and the
-  widgets take the packaged palette. It is the acceptance render (§9), and the one value with
-  no file.
+  widgets take the packaged palette. It is the acceptance render (§9).
 - `kbase` — the portal's KBase sheet, `resources/kbase.css`, which the portal authors. It sets
   `--c-primary` to the portal's colour in the gallery's facet palette
   (`src/routes/portals.tsx`) and nothing else: no other token, no treatment. That is a
   convention checked by eye when the sheet is reviewed, not a test.
 - any other name — a brand, `resources/<name>.css`: the portal's own palette and treatments. A
   portal ships as many as it has looks to serve, and adding one is adding a file.
-- a path — a sheet outside the package, read from disk on every render; the portal's repo
-  does not hold it.
+- a path — a stylesheet anywhere on disk, read on every render, for trying a skin the portal
+  does not ship.
 
 An unknown name falls to the default, and the returned `Skin` carries the request and the
 reason, for the portal's `doctor` to print. The setting is read where the page renders, not
-where the module is imported, so nothing in the portal precludes serving a different skin to a
-later request.
+where the module is imported, so a running process can serve a different skin to a later
+request.
 
 The pre-migration appearance ceases to exist with the rules that painted it. A frozen copy of
 the old stylesheet kept as a skin targets markup the migration removes, so it paints less with
-every converted element and nothing at the end; it is not a brand. A brand that re-expresses the
-old look on the tokens — the old primary in `--c-primary`, the old treatments rewritten over the
-packaged names — is one, and keeps working as the components change under it. Any past skin
-sheet is a checkout away.
+every converted element and nothing at the end. A brand re-expresses the old look on the tokens
+— the old primary in `--c-primary`, the old treatments rewritten over the packaged names — and
+keeps working as the components change under it. Any past skin sheet is a checkout away.
 
 ---
 
@@ -553,8 +552,8 @@ counts selectors in a packaged file pins the package, not the portal, and does n
 
 The PR's base is the upstream default branch at its current tip — a stale fork base makes the
 diff describe changes nobody made. The PR body opens with what the PR leaves outstanding — a
-stage not finished, a string not yet emptied — named as required follow-up, in its first lines;
-an exclusion the user granted is listed apart from it, with its owner. Then the before/after
+stage not finished, a string not yet emptied — named as required follow-up; an exclusion the
+user granted is listed apart from it, with its owner. Then the before/after
 matrix for every accessible view and the open upstream asks. Outstanding work written beside
 the exclusions under one heading has been read as decided, and stayed undone.
 

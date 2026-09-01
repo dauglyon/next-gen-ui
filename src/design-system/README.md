@@ -70,18 +70,22 @@ that runs for as long as it is on screen. Emit the mark with
 `icons.loader(size, active=...)`; without the script, clearing `active` pauses
 the braid where it stands and the dots jump to the row.
 
-`theme.py` resolves the skin. `theme.skin()` reads a portal's skin setting out of
-the environment and returns the sheet in effect; what a portal's skins are and
-how the setting is wired is `solara/MIGRATING.md` §2. The other two functions
-answer the question a stylesheet cannot: what colour is this, as a number.
-Vuetify holds
-its theme as comma-separated RGB triplets, and CSS cannot decompose a colour
-into three, so `theme.vuetify(skin_css)` returns the thirteen traits
-ipyvuetify syncs, per scheme, resolved against the skin.
-`theme.tokens(skin_css, scheme)` returns every opaque colour token as hex, for
-a figure a browser never paints: a plot's accent, ink and ground follow the
-skin as the page does. Borders, the focus ring and the scrim carry an alpha
-and are not in it.
+`theme.py` answers the one question a stylesheet cannot: what colour is this,
+as a number. Vuetify holds its theme as comma-separated RGB triplets, and CSS
+cannot decompose a colour into three, so `theme.vuetify(skin_css)` returns the
+thirteen traits ipyvuetify syncs, per scheme, resolved against the portal's own
+skin. `theme.tokens(skin_css, scheme)` returns every opaque colour token as
+hex, for code that draws outside the page's CSS — a plot rendered on the
+server, an SVG in a sandboxed iframe — so a figure's accent, ink and background
+change with the skin as the page does. The borders, the focus ring and the
+scrim carry an alpha and are not in it.
+
+`theme.skin(resources, default, *variables)` reads the named environment
+variables and returns the skin stylesheet the first non-blank one selects: a
+file under `resources` by name, or a path on disk. A name with no file falls
+back to `default`, and the returned `Skin.note` says so for the portal's
+doctor command. Which skins a portal ships and how it wires the variables is
+`solara/MIGRATING.md` §2.
 
 Most of `tokens.css` is `oklch(from var(--c-base) L C H)` — arithmetic with one
 answer, which `oklch.py` computes. `theme.py` reads the stylesheet the wheel
@@ -273,7 +277,7 @@ that uses them, with no stylesheet holding a hardcoded value:
 | Type scale      | `--fs-1`–`--fs-11`, `--fs-hero`            | sequential, smallest to largest                                                                                                                   |
 | Weight          | `--fw-normal`, `--fw-bold`                 | two, because `fonts.css` serves two faces                                                                                                         |
 | Density         | `--s-1`–`--s-12`                           | the whole spacing scale                                                                                                                           |
-| Page column     | `--w-page`                                 | the width a portal centres its content in. It is the portals gallery's own, so a portal opened from the gallery keeps the same edges              |
+| Page column     | `--w-page`                                 | the width a portal centres its content in. The default matches the portals gallery, so a portal opened from the gallery keeps the same edges      |
 | Motion          | `--t-fast`, `--t-base`, `--t-slow`         |                                                                                                                                                   |
 
 `--z-raised`, `--z-scrim`, `--z-modal` and `--z-toast` are not skin levers.

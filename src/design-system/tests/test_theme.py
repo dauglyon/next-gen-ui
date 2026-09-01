@@ -1,6 +1,4 @@
-"""theme.skin(), theme.tokens() and theme.vuetify(), against the installed wheel.
-
-The wheel is the unit under test: the tests import the package as a portal does, so `pip install .`
+"""theme.skin(), theme.tokens() and theme.vuetify(), imported from the installed wheel: `pip install .`
 comes before `pytest`. Nothing here reads the source tree.
 """
 from pathlib import Path

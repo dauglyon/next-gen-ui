@@ -301,10 +301,11 @@
   border-radius: 0;
 }
 
-/* The reset's `border-radius: inherit` reaches a row the same way. A list
-   is Rows inside one flush Frame, whose radius and `overflow: hidden` round
-   the list's ends; a row that is a button inherits that radius and is rounded
-   inside the list. Row.module.scss sets no radius, so a row is square. */
+/* The reset's `border-radius: inherit` gives a row its parent's radius. A
+   list is Rows inside one flush Frame, whose radius and `overflow: hidden`
+   already round the list's ends; a row that is a button would inherit that
+   radius and be rounded inside the list as well. Row.module.scss sets no
+   radius, so a row is square. */
 .v-btn.kb-row {
   border-radius: 0;
 }

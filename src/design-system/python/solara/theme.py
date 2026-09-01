@@ -1,8 +1,9 @@
-"""A portal's skin: which sheet is in effect, and the palette it produces, as numbers.
+"""Vuetify's theme, resolved from tokens.css and a skin, and the skin an environment variable picks.
 
-skin() reads the portal's selector out of the environment and returns the sheet in effect.
-vuetify() turns that sheet into the thirteen colours ipyvuetify syncs, so the widgets follow the
-skin. tokens() turns it into every opaque colour token as hex, for a figure a browser never paints.
+skin() reads the environment variables a portal names, finds the skin stylesheet they select and
+returns its text. vuetify() evaluates tokens.css with that stylesheet's overrides applied and
+returns the thirteen theme colours ipyvuetify syncs. tokens() evaluates the same way and returns
+every opaque colour token as hex, for code that draws outside the page's CSS.
 
 Solara renders its widgets with Vuetify, which holds its theme as comma-separated RGB triplets and
 consumes them as `rgba(var(--v-theme-surface), <alpha>)`. CSS cannot decompose a colour into three
@@ -15,18 +16,17 @@ this palette rather than Material's.
     from kbase_design_system.solara import theme
 
     active = theme.skin(files("portal") / "resources", "kbase", "PORTAL_SKIN", "KBASE_SKIN")
-    solara.Style(active.css)
+    if active.css:
+        solara.Style(active.css)
     for scheme, colours in theme.vuetify(active.css).items():
         target = getattr(solara.lab.theme.themes, scheme)
         for trait, value in colours.items():
             setattr(target, trait, value)
 
-A skin is a stylesheet of token overrides carrying whatever brand it expresses, the same string
-the page loads. Its declarations land on top of tokens.css exactly as the cascade would place them,
-so a skin that moves the ground, the ink ramp or a semantic colour moves the widgets with it.
-Called with nothing, vuetify() and tokens() give the package's own palette. A portal ships each of
-its skins as `resources/<name>.css` and selects one by name; `none` is the one name with no file,
-and mounts nothing.
+`skin_css` is a portal's skin -- a stylesheet of token overrides carrying whatever brand it
+expresses, the same string it loads into the page. Its declarations land on top of tokens.css
+exactly as the cascade would place them, so a skin that moves the ground, the ink ramp or a semantic
+colour moves the widgets with it. Called with nothing, the palette is the package's own.
 
 tokens.css states most of the palette as `oklch(from var(--c-base) L C H)`, which is arithmetic with
 one answer (see oklch.py), so this reads the stylesheets and computes. Nothing is generated and no
@@ -50,9 +50,7 @@ from . import oklch
 if TYPE_CHECKING:
     from importlib.resources.abc import Traversable
 
-# The selector value that mounts nothing: the design system as it ships.
 NONE = "none"
-# The selector value that asks for the portal's default, the same as leaving the selector unset.
 DEFAULT = "default"
 
 # The traits ipyvuetify syncs, and the token each takes. accent and anchor are ColorNotAvailable in
@@ -74,8 +72,8 @@ VUETIFY = {
     "warning": "c-orange",
 }
 
-# The families tokens() resolves: the literal and derived colours, text on tint, and the three
-# tint families. Every other family is a number, a length, a duration, a face or a shadow list.
+# The prefixes tokens.css puts colours under; every other prefix names a length, a number, a
+# duration, a font or a shadow.
 _COLOUR_FAMILIES = ("c-", "ct-", "bg-", "bo-", "bgw-")
 
 _LIGHT_DARK = re.compile(r"light-dark\(\s*(.+?)\s*,\s*(.+?)\s*\)", re.S)
@@ -85,37 +83,40 @@ _HUE = r"(?:h|calc\(\s*h\s*[+-]\s*[\d.]+\s*\))"
 _OKLCH = re.compile(
     rf"oklch\(\s*from\s+var\(\s*--([a-z0-9-]+)\s*\)\s+({_CHANNEL})\s+({_CHANNEL})\s+({_HUE})\s*\)",
     re.S)
-# A colour at an alpha: the borders, the focus ring and the scrim.
+# The form tokens.css writes a translucent colour in: the borders, the focus ring and the scrim.
 _RGB_ALPHA = re.compile(r"rgb\(\s*from\s+var\([^)]*\)\s+r\s+g\s+b\s*/.*\)", re.S)
 
 
 @dataclass(frozen=True)
 class Skin:
-    """What the selector resolved to.
-
-    `note` says why `name` is not what was asked for, in words a doctor command prints as they
-    are; it is None when the request was honoured.
-    """
-    name: str  # NONE, a sheet's name, or the path that was read
-    css: str  # the sheet's text; "" for NONE
-    variable: str | None  # the selector that was set, or None when none was
-    requested: str | None  # that selector's value
+    """What skin() chose, and from what."""
+    name: str  # NONE, the name of a file under resources, or the path that was read
+    css: str  # the stylesheet's text; "" for NONE
+    variable: str | None  # the environment variable that was set, or None if none was
+    requested: str | None  # its value
+    # Why `name` is not what `requested` asked for, worded for a doctor command to print as is;
+    # None when the request was honoured.
     note: str | None
 
 
 def skin(resources: Path | Traversable, default: str, *variables: str,
          environ: Mapping[str, str] | None = None) -> Skin:
-    """The skin the environment selects, read at the moment of the call.
+    """Read the environment and return the skin it selects.
 
-    `variables` are the selector names in precedence order -- the portal's own, then the
-    fleet-wide `KBASE_SKIN` -- and the first one with a non-blank value wins. Its value is a name,
-    `none`, `default` or a path. A name selects `<name>.css` under `resources`, the portal's
-    package directory; a value containing a separator or ending in `.css` is a path, read from
-    the filesystem. A name with no sheet or a path that cannot be read falls to `default`, and
-    the Skin says so. `default` has to resolve: a missing default sheet raises.
+    `variables` are environment variable names, the portal's own first and the fleet-wide
+    KBASE_SKIN after it, so an operator can set one skin for every portal and a portal's own
+    variable overrides it. `resources` is the portal's package directory: a name in the variable
+    is a file there, and a path is read from anywhere on disk, so a skin can be tried without
+    being shipped.
 
-    Nothing here remembers a previous answer, so a process can serve a different skin to a later
-    request. Call it where the page is rendered, not where the module is imported.
+    A name with no file, or a path that cannot be read, is a configuration mistake rather than a
+    reason to refuse the page: the default skin is used and `Skin.note` records what was asked
+    for and why it was not used, for the portal's doctor command. The default itself must exist;
+    a missing default file raises.
+
+    Nothing is cached. The environment and the files are read on every call, so a running process
+    can serve a different skin to a later request. Call this where the page renders, not at
+    import.
     """
     env = os.environ if environ is None else environ
     variable = requested = None
@@ -134,7 +135,8 @@ def skin(resources: Path | Traversable, default: str, *variables: str,
 
 
 def _sheet(resources: Path | Traversable, value: str) -> tuple[str, str]:
-    """A selector value as (name, sheet text). Raises OSError when there is nothing to read."""
+    """One variable value as (name, stylesheet text). Raises OSError when the file is missing or
+    unreadable."""
     if value.lower() == NONE:
         return NONE, ""
     if "/" in value or os.sep in value or value.lower().endswith(".css"):
@@ -180,7 +182,7 @@ def _tokens(skin_css: str) -> dict[str, str]:
 
 
 def _branch(value: str, scheme: str) -> str:
-    """The side of a `light-dark()` pair the scheme takes; a value that is no pair, unchanged."""
+    """The light or dark half of a `light-dark(a, b)` value; any other value unchanged."""
     pair = _LIGHT_DARK.fullmatch(value)
     return pair.group(1 if scheme == "light" else 2) if pair else value
 
@@ -247,14 +249,16 @@ def vuetify(skin_css: str = "") -> dict[str, dict[str, str]]:
 
 
 def tokens(skin_css: str = "", scheme: str = "light") -> dict[str, str]:
-    """Every opaque colour token as hex, keyed without its `--`, under a skin, in one scheme.
+    """Every opaque colour token as hex, keyed without its `--`, for one scheme, with `skin_css`
+    applied.
 
-    For a colour no browser resolves: a figure drawn server-side reads its accent, ink and ground
-    here and follows the skin as the page does. A palette that carries data -- a categorical set,
-    a ramp, a hue with a meaning -- is the figure's own and is not a token.
+    For code that draws outside the page's CSS -- a plot rendered on the server, an SVG inside a
+    sandboxed iframe -- where `var(--c-primary)` resolves to nothing. It takes the skin's accent,
+    ink and background from here, so the figure changes colour with the page. A palette that
+    encodes data, a categorical set or a heat ramp, has no token and stays the figure's own.
 
-    The borders, the focus ring and the scrim are left out: each is a colour at an alpha, and has
-    no hex until it is composited on something.
+    The borders, the focus ring and the scrim are omitted: each carries an alpha, so it has no
+    single hex until it is drawn over something.
     """
     resolved = _tokens(skin_css)
     return {
