@@ -125,8 +125,7 @@ jobs:
           print(f"{chunks} components, {len(stray) == 0 and 'all classes prefixed'}")
           EOF
 
-      # The tests import the package as a portal does, so they run against the wheel just built
-      # rather than the source tree.
+      # The tests import the package as a portal does, so they run against the wheel just built.
       - name: The tests pass against the wheel
         working-directory: src/design-system
         run: |

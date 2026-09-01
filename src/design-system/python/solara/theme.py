@@ -72,7 +72,7 @@ VUETIFY = {
 }
 
 # The families tokens() resolves: the literal and derived colours, text on tint, and the three
-# tint families. Every other family is a length, a number, a face or a shadow list.
+# tint families. Every other family is a number, a length, a duration, a face or a shadow list.
 _COLOUR_FAMILIES = ("c-", "ct-", "bg-", "bo-", "bgw-")
 
 _LIGHT_DARK = re.compile(r"light-dark\(\s*(.+?)\s*,\s*(.+?)\s*\)", re.S)
@@ -105,7 +105,7 @@ def skin(resources: Path | Traversable, default: str, *variables: str,
     """The skin the environment selects, read at the moment of the call.
 
     `variables` are the selector names in precedence order -- the portal's own, then the
-    fleet-wide `KBASE_SKIN` -- and the first one set to anything wins. Its value is a name,
+    fleet-wide `KBASE_SKIN` -- and the first one with a non-blank value wins. Its value is a name,
     `none`, `default` or a path. A name selects `<name>.css` under `resources`, the portal's
     package directory; a value containing a separator or ending in `.css` is a path, read from
     the filesystem. A name with no sheet or a path that cannot be read falls to `default`, and

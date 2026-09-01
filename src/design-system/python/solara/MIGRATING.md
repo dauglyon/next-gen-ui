@@ -80,9 +80,10 @@ signature has crashed the app bar, which no test renders.
 - **One app sheet and the skin sheets, split by what a skin swap replaces.** A skin sheet holds
   the identity — the token literals the README's skin section names, plus the treatments that
   are the brand: signature paint, brand state fills. The app sheet holds what every skin
-  shares: layout, geometry the markup depends on, bridge corrections. Inside a migration PR
-  only, a third string — the transitional paint block (§3) — carries the portal's paint until
-  §4 step 3 empties it; it does not outlive the PR. A second token family
+  shares: layout, geometry the markup depends on, bridge corrections. While a migration PR
+  converts elements, a third string — the transitional paint block (§3) — carries the portal's
+  paint until §4 step 3 empties it; what it still holds when the PR closes is named as required
+  follow-up at the top of the PR body (§9). A second token family
   (`--<app>-*`), a `var(--c-x, var(--app-y))` fallback, or a fresh class restyling a named
   component each hides part of the brand from `theme.vuetify()` and from every future skin.
 - **A component is chosen by what its element means**, with the showcase section as the cite,
@@ -190,7 +191,7 @@ lets the portal's own rules go on painting while the migration is partial, and l
 `kb-*`-named page unstyled with nothing raised whenever the extra is not installed. The extra,
 the guard and the switch that withheld the sheets then wait on a closing PR that nothing forces
 anyone to write. The dependency is required from the start: in every PR the page stands on the
-packaged sheets or fails loudly.
+packaged sheets, or pip refuses the install.
 
 ### The skin setting
 
@@ -218,7 +219,8 @@ A value is one of three kinds of look, or a path:
   convention checked by eye when the sheet is reviewed, not a test.
 - any other name — a brand, `resources/<name>.css`: the portal's own palette and treatments. A
   portal ships as many as it has looks to serve, and adding one is adding a file.
-- a path — a brand sheet outside the package, read from disk. Its author holds it.
+- a path — a sheet outside the package, read from disk on every render; the portal's repo
+  does not hold it.
 
 An unknown name falls to the default, and the returned `Skin` carries the request and the
 reason, for the portal's `doctor` to print. The setting is read where the page renders, not
@@ -226,10 +228,11 @@ where the module is imported, so nothing in the portal precludes serving a diffe
 later request.
 
 The pre-migration appearance ceases to exist with the rules that painted it. A frozen copy of
-the old stylesheet kept as a skin snapshots nothing and drifts with every later change; it is
-not a brand. A brand that re-expresses the old look on the tokens — the old primary in
-`--c-primary`, the old treatments rewritten over the packaged names — is one, and keeps
-working as the components change under it. Any past skin sheet is a checkout away.
+the old stylesheet kept as a skin targets markup the migration removes, so it paints less with
+every converted element and nothing at the end; it is not a brand. A brand that re-expresses the
+old look on the tokens — the old primary in `--c-primary`, the old treatments rewritten over the
+packaged names — is one, and keeps working as the components change under it. Any past skin
+sheet is a checkout away.
 
 ---
 
@@ -318,8 +321,9 @@ for scheme, colours in theme.vuetify(skin.css).items():
 ```
 
 `skin.css` is the same string the page loads, and `""` under `none` gives the packaged palette.
-`theme.vuetify()` lays its declarations over the packaged tokens as the cascade would, evaluates the `oklch(from …)` expressions as arithmetic,
-and returns thirteen traits per scheme. Passing a colour instead of the stylesheet leaves ten
+`theme.vuetify()` lays its declarations over the packaged tokens as the cascade would, evaluates
+the `oklch(from …)` expressions as arithmetic, and returns thirteen traits per scheme. Passing a
+colour instead of the stylesheet leaves ten
 of the thirteen on the packaged palette — a brand that moves the page background, the
 text-colour ramp or a semantic colour moves tokens no single hue carries — so the sheets follow
 the brand and the widgets do not.
@@ -415,8 +419,8 @@ trail; the reference portals gained theirs during migration. `chrome.css` holds 
 and mark; `components.css` holds Breadcrumbs.
 
 Elements that are the brand — a logo, a signature motif — keep their markup and take their
-paint from the skin sheet, so a swapped skin swaps them too and `none` and the KBase sheet
-leave them unpainted; their geometry stays app-side.
+paint from the skin sheet, so a swapped skin swaps them too, and under `none` and the KBase
+sheet they carry only what the packaged sheets paint; their geometry stays app-side.
 
 ---
 
@@ -512,7 +516,7 @@ The skin axis is the §2 setting, and the matrix outlives the migration: `none` 
 acceptance render — the packaged sheets, the layout and bridge rules, and the portal-specific
 paint that stays — and each shipped sheet is a look the portal serves. While a PR holds rules
 in `TRANSITIONAL_CSS` (§3), `none` withholds that string too, so the render shows what the
-packaged sheets paint without the portal's help.
+packaged sheets paint without the portal's paint rules.
 
 Screenshot tooling fails in known shapes: readiness keyed on a portal class times out when §4
 renames that class away, so readiness keys on a `kb-*` selector; a view list that drifted from

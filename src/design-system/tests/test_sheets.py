@@ -16,7 +16,7 @@ def sheet(name: str) -> str:
 def test_every_weight_is_one_of_the_two_tokens(name):
     """fonts.css and vuetify.css load two faces per family, 400 and 700, and tokens.css names them.
     A literal weight either restates a token or asks for a face nothing serves, which the browser
-    quietly renders as the nearest one it has."""
+    renders as the nearest one it has."""
     weights = re.findall(r"font-weight\s*:\s*([^;}]+)", sheet(name))
     assert set(weights) <= {"var(--fw-normal)", "var(--fw-bold)"}, weights
 

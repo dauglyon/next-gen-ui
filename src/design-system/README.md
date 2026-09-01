@@ -70,7 +70,7 @@ that runs for as long as it is on screen. Emit the mark with
 `icons.loader(size, active=...)`; without the script, clearing `active` pauses
 the braid where it stands and the dots jump to the row.
 
-`theme.py` holds the skin. `theme.skin()` reads a portal's skin setting out of
+`theme.py` resolves the skin. `theme.skin()` reads a portal's skin setting out of
 the environment and returns the sheet in effect — see
 [A portal's skins](#a-portals-skins). The other two functions answer the
 question a stylesheet cannot: what colour is this, as a number. Vuetify holds
@@ -95,9 +95,10 @@ that publishes the npm package, so neither needs a bump.
 Building the wheel compiles Sass, so `dart-sass` is installed into the build
 environment. It is not a runtime dependency.
 
-The Python side's tests run against an install, because the wheel's layout is
-not the source tree's: in `src/design-system`, `pip install '.[dev]'`, then
-`pytest`. The wheel job in CI does the same with the wheel it just built.
+The Python side's tests run against an install, because the name they import,
+`kbase_design_system`, exists only in one: in `src/design-system`,
+`pip install '.[dev]'`, then `pytest`. The wheel job in CI does the same with
+the wheel it just built.
 
 ## Class names for CSS-only consumers
 
