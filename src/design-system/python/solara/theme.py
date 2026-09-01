@@ -4,16 +4,12 @@ skin() reads the portal's selector out of the environment and returns the sheet 
 vuetify() turns that sheet into the thirteen colours ipyvuetify syncs, so the widgets follow the
 skin. tokens() turns it into every opaque colour token as hex, for a figure a browser never paints.
 
-A skin is a stylesheet of token overrides carrying whatever brand it expresses, loaded after the
-packaged sheets. A portal ships each of its own as `resources/<name>.css` and selects one by name;
-`none` is the one name with no file, and mounts nothing.
-
-Vuetify holds its theme as comma-separated RGB triplets and consumes them as
-`rgba(var(--v-theme-surface), <alpha>)`. CSS cannot decompose a colour into three numbers, so the
-theme is set from Python: ipyvuetify's ThemeColors traits sync to the front end, and Vuetify
-generates every `--v-theme-*` variable itself, including the on-colours it derives by contrast.
-That is what makes the alpha blends inside components no stylesheet mentions resolve to this
-palette rather than Material's.
+Solara renders its widgets with Vuetify, which holds its theme as comma-separated RGB triplets and
+consumes them as `rgba(var(--v-theme-surface), <alpha>)`. CSS cannot decompose a colour into three
+numbers, so the theme is set from Python: ipyvuetify's ThemeColors traits sync to the front end, and
+Vuetify generates every `--v-theme-*` variable itself, including the on-colours it derives by
+contrast. That is what makes the alpha blends inside components no stylesheet mentions resolve to
+this palette rather than Material's.
 
     from importlib.resources import files
     from kbase_design_system.solara import theme
@@ -24,6 +20,13 @@ palette rather than Material's.
         target = getattr(solara.lab.theme.themes, scheme)
         for trait, value in colours.items():
             setattr(target, trait, value)
+
+A skin is a stylesheet of token overrides carrying whatever brand it expresses, the same string
+the page loads. Its declarations land on top of tokens.css exactly as the cascade would place them,
+so a skin that moves the ground, the ink ramp or a semantic colour moves the widgets with it.
+Called with nothing, vuetify() and tokens() give the package's own palette. A portal ships each of
+its skins as `resources/<name>.css` and selects one by name; `none` is the one name with no file,
+and mounts nothing.
 
 tokens.css states most of the palette as `oklch(from var(--c-base) L C H)`, which is arithmetic with
 one answer (see oklch.py), so this reads the stylesheets and computes. Nothing is generated and no
