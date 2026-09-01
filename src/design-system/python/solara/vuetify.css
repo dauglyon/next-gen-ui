@@ -301,6 +301,14 @@
   border-radius: 0;
 }
 
+/* A row loses its corners the same way: the list's Frame rounds and clips
+   its ends, and `border-radius: inherit` hands that radius to every row that
+   is a button, which rounds each one inside the list. Row.module.scss sets no
+   radius, so a row is square. */
+.v-btn.kb-row {
+  border-radius: 0;
+}
+
 /* The reset's `box-shadow: none` also erases the focus ring set above. Five
    of the seven named classes restore :focus-visible in their own modules,
    which match this file's specificity and win by loading later. The other two
