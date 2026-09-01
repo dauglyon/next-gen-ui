@@ -288,12 +288,12 @@
 
 /* The reset outranks a component's own box (it must, to beat Vuetify's
    later-injected sheet), so a component whose geometry the reset erases is
-   restated here at the same weight. The segment is the one such component:
-   `height: auto` collapses a glyph-only segment to its content, and
-   `border-radius: inherit` hands each segment the radius the control wears
-   while clipping them, which rounds the filled segment inside the strip. A
-   segment starts from `all: unset`, so its own radius is zero. Values from
-   SegmentedControl.module.scss. */
+   restated here at the same weight. The segment is the only named class with
+   a box of its own to lose: `height: auto` collapses a glyph-only segment to
+   its content, and `border-radius: inherit` gives it the radius the control
+   carries to clip its ends, which rounds the filled segment inside the strip.
+   Size and padding are SegmentedControl.module.scss's; the radius is zero
+   there, dropped with everything else by `all: unset`. */
 .v-btn.kb-segmented-control--btn {
   min-width: 48px;
   height: 28px;
@@ -302,20 +302,21 @@
 }
 
 /* The reset's `box-shadow: none` also erases the focus ring set above. Five
-   of the seven named classes restore :focus-visible in their own modules, at
-   a specificity this file ties and components.css breaks by loading later.
-   The other two carry no module rule: a trail step is an <a> in React, and a
-   tree's label takes focus through the tree root's roving tabindex. Mounted
-   as buttons here, both take focus directly and need a ring of their own. */
+   of the seven named classes restore :focus-visible in their own modules,
+   which match this file's specificity and win by loading later. The other two
+   have no rule to restore: in React a trail step is an <a>, and a tree label
+   is not a tab stop at all -- the tree root is the only one. Both are buttons
+   here, and take focus directly. */
 .v-btn:is(.kb-breadcrumbs--link, .kb-tree--label):focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px var(--c-focus);
 }
 
 /* Vuetify wraps a button's children in a shrink-to-fit centred content div.
-   Two components are anatomies rather than labels and read left-aligned: a
-   trigger sets its title at the left edge and its summary and chevron at the
-   right, and a tree label sits at the head of its row. */
+   Two of the named classes hold a layout rather than a word -- a trigger sets
+   its title at the left edge and its summary and chevron at the right, and a
+   tree label sits at the head of its row -- so the wrapper takes the full
+   width and starts at the left. */
 .v-btn:is(.kb-accordion--trigger, .kb-tree--label) .v-btn__content {
   width: 100%;
   justify-content: flex-start;
@@ -333,10 +334,10 @@ details[open] .kb-alert--chevron {
 /* A hover-shown popup for a consumer that cannot mount Base UI's positioner:
    the host anchors, the packaged box paints, and this pair shows it. The box
    is Popover's or Tooltip's, chosen by content length as Section08 draws the
-   line. The positioner picks a side from the room available; a stylesheet
-   cannot measure, so the side is the host's to declare. Below the host is the
-   default; --left is for a host in a column too narrow to hold the popup, or
-   at the foot of a scroll region. Width is `--pophost-width`. */
+   line. The positioner picks its side from the room available; a stylesheet
+   cannot measure, so the side is the host's to declare: below by default,
+   `.kb-pophost--left` where the room is beside the host rather than under it.
+   Width is `--pophost-width`. */
 .kb-pophost {
   position: relative;
   cursor: help;
