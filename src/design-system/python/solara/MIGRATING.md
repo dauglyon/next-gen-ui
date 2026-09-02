@@ -200,10 +200,11 @@ sheets, or pip refuses the install.
 
 ### The skin setting
 
-The portal implements one lookup: `<APP>_SKIN`, else the fleet-wide `KBASE_SKIN`, read where the
-page renders, with a default that is a constant in the portal's repo. The lookup is the portal's
-— which variables, whether a config file or a user's choice joins them later — and the value it
-produces goes to `theme.skin()`, which turns it into a sheet:
+The portal implements one lookup: its own `<APP>_SKIN`, read where the page renders, with a
+default that is a constant in the portal's repo. The lookup is the portal's — whether a config
+file or a user's choice joins it later — and the value it produces goes to `theme.skin()`, which
+turns it into a sheet. There is no shared variable that every portal reads: nothing in the mesh
+sets one, and a portal reading one would be claiming a selection layer that does not exist.
 
 ```python
 import os
@@ -213,7 +214,7 @@ from kbase_design_system.solara import theme
 DEFAULT_SKIN = "kbase"
 
 def active_skin() -> theme.Skin:
-    requested = os.environ.get("PORTAL_SKIN") or os.environ.get("KBASE_SKIN")
+    requested = os.environ.get("PORTAL_SKIN")
     return theme.skin(files("portal") / "resources", DEFAULT_SKIN, requested)
 ```
 
