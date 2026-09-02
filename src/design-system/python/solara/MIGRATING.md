@@ -200,10 +200,11 @@ sheets, or pip refuses the install.
 
 ### The skin setting
 
-The portal implements one lookup: `<APP>_SKIN`, else the fleet-wide `KBASE_SKIN`, read where the
-page renders, with a default that is a constant in the portal's repo. The lookup is the portal's
-— which variables, whether a config file or a user's choice joins them later — and the value it
-produces goes to `theme.skin()`, which turns it into a sheet:
+The portal implements one lookup: its own `<APP>_SKIN`, read where the page renders, with a
+default that is a constant in the portal's repo. The lookup is the portal's — whether a config
+file or a user's choice joins it later — and the value it produces goes to `theme.skin()`, which
+turns it into a sheet. There is no shared variable that every portal reads: nothing in the mesh
+sets one, and a portal reading one would be claiming a selection layer that does not exist.
 
 ```python
 import os
@@ -213,7 +214,7 @@ from kbase_design_system.solara import theme
 DEFAULT_SKIN = "kbase"
 
 def active_skin() -> theme.Skin:
-    requested = os.environ.get("PORTAL_SKIN") or os.environ.get("KBASE_SKIN")
+    requested = os.environ.get("PORTAL_SKIN")
     return theme.skin(files("portal") / "resources", DEFAULT_SKIN, requested)
 ```
 
@@ -301,7 +302,9 @@ the top of the PR body (§9).
 
 A `:root` block of token overrides, then the brand's own treatments. `tokens.css` declares
 `--c-primary` outside any `light-dark()` and derives `--ct-primary` from it once per scheme, so
-one hue stated in the block produces both schemes and every primary-family token follows. The
+one hue stated in the block produces both schemes and every primary-family token follows.
+Links do not: they paint from `--c-link`, KBase's blue held apart from the primary, so a portal
+whose colour lands near visited-purple does not get a page of links that read as followed. The
 README's skin section lists the literal-carrying tokens and the derived rest; any of them may
 be set, and a derived token gives way when named directly. `theme.vuetify()` reads the `:root`
 block and ignores the treatments, so the widget palette follows the same file. A hex anywhere

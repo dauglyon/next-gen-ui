@@ -26,3 +26,18 @@ def test_the_loaded_faces_are_the_weights_the_tokens_name():
     assert faces == [("Oxygen", "400;700"), ("Fira+Code", "400;700")]
     tokens = sheet("tokens.css")
     assert re.search(r"--fw-normal:\s*400;", tokens) and re.search(r"--fw-bold:\s*700;", tokens)
+
+
+LINK_RULES = (("utilities.css", r"\.link\s*\{"), ("prose.css", r"\.prose a\s*\{"),
+              ("solara/vuetify.css", r"\.solara-markdown :is\(a, a code\)\s*\{"),
+              ("components.css", r"\.kb-button--btn\.kb-button--link\s*\{"),
+              ("components.css", r"\.kb-collapsible--trigger\s*\{"))
+
+
+@pytest.mark.parametrize("name,opener", LINK_RULES)
+def test_link_text_paints_from_the_link_tier(name, opener):
+    """Everything drawn as link text -- bold, underlined -- takes --ct-link, not --ct-primary, so a
+    skin that moves the primary leaves links blue."""
+    m = re.search(opener + r"([^}]*)\}", sheet(name))
+    assert m, f"{name}: {opener} is gone"
+    assert "var(--ct-link)" in m.group(1) and "var(--ct-primary)" not in m.group(1), m.group(1)

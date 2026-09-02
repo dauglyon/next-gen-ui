@@ -81,6 +81,11 @@
 
   /* semantic colors. 4 colors, distinguishable under deuteranopia + protanopia. */
   --c-primary: #007dc3; /* freshwater blue, official brand guide */
+  /* Links, stated apart from --c-primary: a skin that moves the primary keeps
+     blue links, because link colour is a convention readers carry between
+     sites, not a brand's to spend. Purple in particular has meant "visited"
+     since Mosaic. */
+  --c-link: #007dc3;
   --c-green: #5e9732;
   --c-yellow: #ffd200;
   --c-red: #d2232a;
@@ -99,6 +104,10 @@
   --ct-primary: light-dark(
     oklch(from var(--c-primary) 0.5186 calc(c * 0.909) h),
     oklch(from var(--c-primary) 0.8 0.105 h)
+  );
+  --ct-link: light-dark(
+    oklch(from var(--c-link) 0.5186 calc(c * 0.909) h),
+    oklch(from var(--c-link) 0.8 0.105 h)
   );
   --ct-green: light-dark(
     oklch(from var(--c-green) 0.484 calc(c * 0.925) h),
