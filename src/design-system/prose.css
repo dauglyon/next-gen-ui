@@ -40,8 +40,10 @@
   margin-block: var(--s-7);
 }
 
-/* Matching .h1-.h4. h5 and h6 stop at h4's size: past four levels the
-   difference has to come from position, not from more sizes. */
+/* Matching .h1-.h4. h5 and h6 have no utility: four levels is the scale,
+   and Markdown that reaches a fifth gets a fallback rather than a fifth
+   style -- h5 a step under the body size, h6 the same size in the next ink,
+   so the levels stay distinct where the parser emits them. */
 .prose h1,
 .prose h2,
 .prose h3,
@@ -71,12 +73,21 @@
   margin-block: var(--s-8) var(--s-3);
 }
 
-.prose h4,
-.prose h5,
-.prose h6 {
+.prose h4 {
   font-size: var(--fs-5);
   font-weight: var(--fw-bold);
   margin-block: var(--s-8) var(--s-2);
+}
+
+.prose h5,
+.prose h6 {
+  font-size: var(--fs-4);
+  font-weight: var(--fw-bold);
+  margin-block: var(--s-7) var(--s-2);
+}
+
+.prose h6 {
+  color: var(--c-ink3);
 }
 
 .prose p {
