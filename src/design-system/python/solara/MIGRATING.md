@@ -302,7 +302,9 @@ the top of the PR body (§9).
 
 A `:root` block of token overrides, then the brand's own treatments. `tokens.css` declares
 `--c-primary` outside any `light-dark()` and derives `--ct-primary` from it once per scheme, so
-one hue stated in the block produces both schemes and every primary-family token follows. The
+one hue stated in the block produces both schemes and every primary-family token follows.
+Links do not: they paint from `--c-link`, KBase's blue held apart from the primary, so a portal
+whose colour lands near visited-purple does not get a page of links that read as followed. The
 README's skin section lists the literal-carrying tokens and the derived rest; any of them may
 be set, and a derived token gives way when named directly. `theme.vuetify()` reads the `:root`
 block and ignores the treatments, so the widget palette follows the same file. A hex anywhere

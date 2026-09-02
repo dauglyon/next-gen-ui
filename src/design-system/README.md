@@ -209,21 +209,22 @@ from cannot go inside it. Those sit in `:root` as pairs — `--tl-bg` and
 ## Skins
 
 A skin is a stylesheet of token overrides, loaded after `tokens.css`, carrying
-whatever brand it expresses. It may set **any** color token — there are 67, and
+whatever brand it expresses. It may set **any** color token — there are 69, and
 every one is a custom property, so a skin replaces whatever it names:
 
 | Group          | Tokens                                                                                                                         |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | Ground and ink | `--c-neutral`, `--c-bg`, `--c-raised`, `--c-surface`, `--c-border`, `--c-border2`, `--c-ink`–`--c-ink5`, `--c-neutral-200/300` |
 | Semantic       | `--c-primary`, `--c-green`, `--c-yellow`, `--c-red`                                                                            |
+| Links          | `--c-link`, `--ct-link` — KBase's blue, held apart from `--c-primary` so a skin that moves the primary keeps blue links        |
 | Auxiliary      | `--c-purple`, `--c-teal`, `--c-ocean`, `--c-orange`, `--c-grellow`, `--c-frost`                                                |
-| Text on tint   | `--ct-primary` … `--ct-orange`                                                                                                 |
+| Text on tint   | `--ct-primary` … `--ct-orange`, `--ct-link`                                                                                    |
 | Tints          | `--bg-*`, `--bo-*`, `--bgw-*` (8 families each)                                                                                |
 | Interactive    | `--c-primary-dim`, `--c-teal-btn`, `--c-teal-dim`, `--c-purple-btn`, `--c-purple-dim`, `--c-focus`                             |
 | Elevation      | `--c-shadow`, `--c-scrim`, `--e-1`–`--e-4`                                                                                     |
 
-Twelve of those carry literal color and the other 55 derive from them, so a
-partner who hands over twelve colors re-skins the whole system:
+Thirteen of those carry literal color and the other 56 derive from them, so a
+partner who hands over thirteen colors re-skins the whole system:
 
 ```css
 :root {

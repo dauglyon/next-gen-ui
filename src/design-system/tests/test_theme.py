@@ -124,6 +124,15 @@ def test_tokens_follow_the_skin_through_the_derivation():
     assert skinned["c-red"] == base["c-red"]
 
 
+def test_links_keep_their_colour_when_the_primary_moves():
+    """--c-link is KBase's blue stated apart from --c-primary, so a skin's hue never reaches a
+    link; --ct-link is its text tier, derived like --ct-primary."""
+    base, skinned = theme.tokens(), theme.tokens(":root { --c-primary: #66489d; }")
+    assert base["c-link"] == base["c-primary"] == "#007dc3"
+    assert base["ct-link"] == base["ct-primary"]
+    assert skinned["ct-link"] == base["ct-link"] != skinned["ct-primary"]
+
+
 def test_a_skin_can_set_a_derived_token_outright():
     assert theme.tokens(":root { --c-bg: #ffffff; }")["c-bg"] == "#ffffff"
 

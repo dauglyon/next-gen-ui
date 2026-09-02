@@ -830,7 +830,7 @@ details[open] .kb-alert--chevron {
    who does not see the colour. Hover thickens the underline for the same
    reason. */
 .solara-markdown :is(a, a code) {
-  color: var(--ct-primary);
+  color: var(--ct-link);
   font-weight: var(--fw-bold);
   text-decoration: underline;
   text-underline-offset: 2px;
