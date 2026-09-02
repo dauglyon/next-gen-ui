@@ -200,18 +200,21 @@ sheets, or pip refuses the install.
 
 ### The skin setting
 
-Every portal reads two environment variables, its own `<APP>_SKIN` first and the fleet-wide
-`KBASE_SKIN` second, with a default that is a constant in the portal's repo. `theme.skin()` reads
-them:
+The portal implements one lookup: `<APP>_SKIN`, else the fleet-wide `KBASE_SKIN`, read where the
+page renders, with a default that is a constant in the portal's repo. The lookup is the portal's
+— which variables, whether a config file or a user's choice joins them later — and the value it
+produces goes to `theme.skin()`, which turns it into a sheet:
 
 ```python
+import os
 from importlib.resources import files
 from kbase_design_system.solara import theme
 
 DEFAULT_SKIN = "kbase"
 
 def active_skin() -> theme.Skin:
-    return theme.skin(files("portal") / "resources", DEFAULT_SKIN, "PORTAL_SKIN", "KBASE_SKIN")
+    requested = os.environ.get("PORTAL_SKIN") or os.environ.get("KBASE_SKIN")
+    return theme.skin(files("portal") / "resources", DEFAULT_SKIN, requested)
 ```
 
 A value is one of three kinds of look, or a path:
@@ -228,9 +231,9 @@ A value is one of three kinds of look, or a path:
   does not ship.
 
 An unknown name falls to the default, and the returned `Skin` carries the request and the
-reason, for the portal's `doctor` to print. The setting is read where the page renders, not
-where the module is imported, so a running process can serve a different skin to a later
-request.
+reason, for the portal's `doctor` to print after the variable's name. Reading the lookup where
+the page renders, not where the module is imported, is what lets a running process serve a
+different skin to a later request.
 
 The pre-migration appearance ceases to exist with the rules that painted it. A frozen copy of
 the old stylesheet kept as a skin targets markup the migration removes, so it paints less with
@@ -546,8 +549,9 @@ the user has added, each item checked — and three audits close the migration, 
 
 Each invariant becomes a behavioral test where the portal can express it — sheet order, no
 hexes and no literal weights in the app sheet, and that the sheet `theme.skin()` returns is the
-one mounted and the one handed to `theme.vuetify()`. The selection itself — precedence, `none`,
-name, path, fallback — is tested once, in the package, and not again per portal. A test that
+one mounted and the one handed to `theme.vuetify()`. Resolving a value — `none`, name, path,
+fallback — is tested once, in the package, and not again per portal; the lookup is the
+portal's to test. A test that
 counts selectors in a packaged file pins the package, not the portal, and does not ship.
 
 The PR's base is the upstream default branch at its current tip — a stale fork base makes the

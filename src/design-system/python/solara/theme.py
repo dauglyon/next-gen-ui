@@ -1,9 +1,9 @@
-"""Vuetify's theme, resolved from tokens.css and a skin, and the skin an environment variable picks.
+"""Vuetify's theme, resolved from tokens.css and a skin, and the skin a setting's value names.
 
-skin() reads the environment variables a portal names, finds the skin stylesheet they select and
-returns its text. vuetify() evaluates tokens.css with that stylesheet's overrides applied and
-returns the thirteen theme colours ipyvuetify syncs. tokens() evaluates the same way and returns
-every opaque colour token as hex, for code that draws outside the page's CSS.
+skin() takes the value of the portal's skin setting, finds the stylesheet it names and returns its
+text. vuetify() evaluates tokens.css with that stylesheet's overrides applied and returns the
+thirteen theme colours ipyvuetify syncs. tokens() evaluates the same way and returns every opaque
+colour token as hex, for code that draws outside the page's CSS.
 
 Solara renders its widgets with Vuetify, which holds its theme as comma-separated RGB triplets and
 consumes them as `rgba(var(--v-theme-surface), <alpha>)`. CSS cannot decompose a colour into three
@@ -12,10 +12,12 @@ Vuetify generates every `--v-theme-*` variable itself, including the on-colours 
 contrast. That is what makes the alpha blends inside components no stylesheet mentions resolve to
 this palette rather than Material's.
 
+    import os
     from importlib.resources import files
     from kbase_design_system.solara import theme
 
-    active = theme.skin(files("portal") / "resources", "kbase", "PORTAL_SKIN", "KBASE_SKIN")
+    requested = os.environ.get("PORTAL_SKIN")  # the portal's own lookup, whatever it is
+    active = theme.skin(files("portal") / "resources", "kbase", requested)
     if active.css:
         solara.Style(active.css)
     for scheme, colours in theme.vuetify(active.css).items():
@@ -41,7 +43,7 @@ import re
 from dataclasses import dataclass
 from importlib.resources import files
 from pathlib import Path
-from typing import TYPE_CHECKING, Mapping
+from typing import TYPE_CHECKING
 
 import tinycss2
 
@@ -51,7 +53,6 @@ if TYPE_CHECKING:
     from importlib.resources.abc import Traversable
 
 NONE = "none"
-DEFAULT = "default"
 
 # The traits ipyvuetify syncs, and the token each takes. accent and anchor are ColorNotAvailable in
 # Vuetify 3. warning is orange rather than yellow, because yellow is the one fill that cannot carry
@@ -92,50 +93,37 @@ class Skin:
     """What skin() chose, and from what."""
     name: str  # NONE, the name of a file under resources, or the path that was read
     css: str  # the stylesheet's text; "" for NONE
-    variable: str | None  # the environment variable that was set, or None if none was
-    requested: str | None  # its value
-    # Why `name` is not what `requested` asked for, worded for a doctor command to print as is;
-    # None when the request was honoured.
+    requested: str | None  # the value skin() was given, None or blank meaning unset
+    # Why `name` is not what `requested` asked for, for a doctor command to print after the
+    # setting's name; None when the request was honoured.
     note: str | None
 
 
-def skin(resources: Path | Traversable, default: str, *variables: str,
-         environ: Mapping[str, str] | None = None) -> Skin:
-    """Read the environment and return the skin it selects.
+def skin(resources: Path | Traversable, default: str, requested: str | None) -> Skin:
+    """The skin a setting's value names.
 
-    `variables` are environment variable names, the portal's own first and the fleet-wide
-    KBASE_SKIN after it, so an operator can set one skin for every portal and a portal's own
-    variable overrides it. `resources` is the portal's package directory: a name in the variable
-    is a file there, and a path is read from anywhere on disk, so a skin can be tried without
-    being shipped.
+    How the value is obtained -- which variable, which file, whose request -- is the portal's;
+    this takes the value. `resources` is the portal's package directory: a name is a file there,
+    and a path is read from anywhere on disk, so a skin can be tried without being shipped.
 
     A name with no file, or a path that cannot be read, is a configuration mistake rather than a
-    reason to refuse the page: the default skin is used and `Skin.note` records what was asked
-    for and why it was not used, for the portal's doctor command. The default itself must exist;
-    a missing default file raises.
+    reason to refuse the page: the default skin is used and `Skin.note` records why the request
+    was not honoured, for the portal's doctor command. The default itself must exist; a missing
+    default file raises.
 
-    Nothing is cached. The environment and the files are read on every call, so a running process
-    can serve a different skin to a later request. Call this where the page renders, not at
-    import.
+    Nothing is cached: the file is read on every call.
     """
-    env = os.environ if environ is None else environ
-    variable = requested = None
-    for candidate in variables:
-        value = (env.get(candidate) or "").strip()
-        if value:
-            variable, requested = candidate, value
-            break
-    if requested is None or requested.lower() == DEFAULT:
-        return Skin(*_sheet(resources, default), variable, requested, None)
+    value = (requested or "").strip()
+    if not value:
+        return Skin(*_sheet(resources, default), requested, None)
     try:
-        return Skin(*_sheet(resources, requested), variable, requested, None)
+        return Skin(*_sheet(resources, value), requested, None)
     except OSError as exc:
-        note = f"{variable}={requested}: {exc.strerror or exc}"
-        return Skin(*_sheet(resources, default), variable, requested, note)
+        return Skin(*_sheet(resources, default), requested, exc.strerror or str(exc))
 
 
 def _sheet(resources: Path | Traversable, value: str) -> tuple[str, str]:
-    """One variable value as (name, stylesheet text). Raises OSError when the file is missing or
+    """One value as (name, stylesheet text). Raises OSError when the file is missing or
     unreadable."""
     if value.lower() == NONE:
         return NONE, ""

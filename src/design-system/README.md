@@ -80,12 +80,12 @@ server, an SVG in a sandboxed iframe — so a figure's accent, ink and backgroun
 change with the skin as the page does. The borders, the focus ring and the
 scrim carry an alpha and are not in it.
 
-`theme.skin(resources, default, *variables)` reads the named environment
-variables and returns the skin stylesheet the first non-blank one selects: a
-file under `resources` by name, or a path on disk. A name with no file falls
-back to `default`, and the returned `Skin.note` says so for the portal's
-doctor command. Which skins a portal ships and how it wires the variables is
-`solara/MIGRATING.md` §2.
+`theme.skin(resources, default, requested)` takes the value of a portal's skin
+setting and returns the stylesheet it names: a file under `resources` by name,
+or a path on disk. A name with no file falls back to `default`, and the
+returned `Skin.note` says why, for the portal's doctor command. The setting
+itself — its lookup and its default — is the portal's; which skins a portal
+ships is `solara/MIGRATING.md` §2.
 
 Most of `tokens.css` is `oklch(from var(--c-base) L C H)` — arithmetic with one
 answer, which `oklch.py` computes. `theme.py` reads the stylesheet the wheel

@@ -1,5 +1,5 @@
-"""theme.skin(), theme.tokens() and theme.vuetify(), imported from the installed wheel: `pip install .`
-comes before `pytest`. Nothing here reads the source tree.
+"""theme.skin(), theme.tokens() and theme.vuetify(), imported from the installed wheel:
+`pip install .` comes before `pytest`. Nothing here reads the source tree.
 """
 from pathlib import Path
 
@@ -20,80 +20,63 @@ def resources(tmp_path: Path) -> Path:
     return d
 
 
-def select(resources, environ, default="kbase"):
-    return theme.skin(resources, default, "PORTAL_SKIN", "KBASE_SKIN", environ=environ)
+def select(resources, requested, default="kbase"):
+    return theme.skin(resources, default, requested)
 
 
 def test_unset_selects_the_default(resources):
-    active = select(resources, {})
-    assert active == theme.Skin("kbase", KBASE, None, None, None)
+    assert select(resources, None) == theme.Skin("kbase", KBASE, None, None)
 
 
-def test_default_is_an_alias_for_unset(resources):
-    active = select(resources, {"KBASE_SKIN": "Default"})
-    assert (active.name, active.css, active.note) == ("kbase", KBASE, None)
-    assert (active.variable, active.requested) == ("KBASE_SKIN", "Default")
-
-
-def test_the_portals_own_variable_wins(resources):
-    active = select(resources, {"PORTAL_SKIN": "legacy", "KBASE_SKIN": "none"})
-    assert (active.name, active.css, active.variable) == ("legacy", LEGACY, "PORTAL_SKIN")
-
-
-def test_a_blank_variable_is_unset(resources):
-    active = select(resources, {"PORTAL_SKIN": "  ", "KBASE_SKIN": "none"})
-    assert (active.name, active.variable) == ("none", "KBASE_SKIN")
+def test_a_blank_value_is_unset(resources):
+    assert select(resources, "  ") == theme.Skin("kbase", KBASE, "  ", None)
 
 
 def test_none_mounts_nothing(resources):
-    active = select(resources, {"KBASE_SKIN": "NONE"})
-    assert active == theme.Skin("none", "", "KBASE_SKIN", "NONE", None)
+    assert select(resources, "NONE") == theme.Skin("none", "", "NONE", None)
 
 
 def test_a_name_is_its_sheet_in_resources(resources):
-    active = select(resources, {"KBASE_SKIN": "Legacy"})
-    assert (active.name, active.css, active.note) == ("legacy", LEGACY, None)
+    assert select(resources, "Legacy") == theme.Skin("legacy", LEGACY, "Legacy", None)
 
 
 def test_a_path_is_read_from_the_filesystem(resources, tmp_path):
     sheet = tmp_path / "elsewhere" / "partner.css"
     sheet.parent.mkdir()
     sheet.write_text(":root { --c-primary: #66489d; }")
-    active = select(resources, {"KBASE_SKIN": str(sheet)})
+    active = select(resources, str(sheet))
     assert (active.name, active.css, active.note) == (str(sheet), sheet.read_text(), None)
 
 
 def test_a_path_is_read_on_every_call(resources, tmp_path):
     sheet = tmp_path / "live.css"
     sheet.write_text(":root { --c-primary: #111111; }")
-    environ = {"KBASE_SKIN": str(sheet)}
-    first = select(resources, environ).css
+    first = select(resources, str(sheet)).css
     sheet.write_text(":root { --c-primary: #222222; }")
-    assert first != select(resources, environ).css == sheet.read_text()
+    assert first != select(resources, str(sheet)).css == sheet.read_text()
 
 
-def test_an_unknown_name_falls_to_the_default_and_says_so(resources):
-    active = select(resources, {"PORTAL_SKIN": "partner"})
+def test_an_unknown_name_falls_to_the_default_and_says_why(resources):
+    active = select(resources, "partner")
+    assert (active.name, active.css, active.requested) == ("kbase", KBASE, "partner")
+    assert active.note == f"{resources / 'partner.css'} does not exist"
+
+
+def test_an_unreadable_path_falls_to_the_default_and_says_why(resources, tmp_path):
+    active = select(resources, str(tmp_path / "gone.css"))
     assert (active.name, active.css) == ("kbase", KBASE)
-    assert (active.variable, active.requested) == ("PORTAL_SKIN", "partner")
-    assert active.note == f"PORTAL_SKIN=partner: {resources / 'partner.css'} does not exist"
-
-
-def test_an_unreadable_path_falls_to_the_default_and_says_so(resources, tmp_path):
-    active = select(resources, {"KBASE_SKIN": str(tmp_path / "gone.css")})
-    assert (active.name, active.css) == ("kbase", KBASE)
-    assert active.note == f"KBASE_SKIN={tmp_path / 'gone.css'}: No such file or directory"
+    assert active.note == "No such file or directory"
 
 
 def test_a_missing_default_sheet_raises(resources):
     with pytest.raises(FileNotFoundError):
-        select(resources, {}, default="partner")
+        select(resources, None, default="partner")
     with pytest.raises(FileNotFoundError):
-        select(resources, {"KBASE_SKIN": "partner"}, default="also-missing")
+        select(resources, "partner", default="also-missing")
 
 
 def test_none_can_be_the_default(resources):
-    assert select(resources, {}, default="none") == theme.Skin("none", "", None, None, None)
+    assert select(resources, None, default="none") == theme.Skin("none", "", None, None)
 
 
 # --- tokens ---------------------------------------------------------------------------------------
