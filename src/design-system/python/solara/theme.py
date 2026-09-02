@@ -1,4 +1,9 @@
-"""Vuetify's theme, resolved from tokens.css and a skin.
+"""Vuetify's theme, resolved from tokens.css and a skin, and the skin a setting's value names.
+
+skin() takes the value of the portal's skin setting, finds the stylesheet it names and returns its
+text. vuetify() evaluates tokens.css with that stylesheet's overrides applied and returns the
+thirteen theme colours ipyvuetify syncs. tokens() evaluates the same way and returns every opaque
+colour token as hex, for code that draws outside the page's CSS.
 
 Solara renders its widgets with Vuetify, which holds its theme as comma-separated RGB triplets and
 consumes them as `rgba(var(--v-theme-surface), <alpha>)`. CSS cannot decompose a colour into three
@@ -7,8 +12,15 @@ Vuetify generates every `--v-theme-*` variable itself, including the on-colours 
 contrast. That is what makes the alpha blends inside components no stylesheet mentions resolve to
 this palette rather than Material's.
 
+    import os
+    from importlib.resources import files
     from kbase_design_system.solara import theme
-    for scheme, colours in theme.vuetify(skin_css).items():
+
+    requested = os.environ.get("PORTAL_SKIN")  # the portal's own lookup, whatever it is
+    active = theme.skin(files("portal") / "resources", "kbase", requested)
+    if active.css:
+        solara.Style(active.css)
+    for scheme, colours in theme.vuetify(active.css).items():
         target = getattr(solara.lab.theme.themes, scheme)
         for trait, value in colours.items():
             setattr(target, trait, value)
@@ -26,12 +38,21 @@ browser is involved.
 from __future__ import annotations
 
 import functools
+import os
 import re
+from dataclasses import dataclass
 from importlib.resources import files
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 import tinycss2
 
 from . import oklch
+
+if TYPE_CHECKING:
+    from importlib.resources.abc import Traversable
+
+NONE = "none"
 
 # The traits ipyvuetify syncs, and the token each takes. accent and anchor are ColorNotAvailable in
 # Vuetify 3. warning is orange rather than yellow, because yellow is the one fill that cannot carry
@@ -52,11 +73,67 @@ VUETIFY = {
     "warning": "c-orange",
 }
 
+# The prefixes tokens.css puts colours under; every other prefix names a length, a number, a
+# duration, a font or a shadow.
+_COLOUR_FAMILIES = ("c-", "ct-", "bg-", "bo-", "bgw-")
+
 _LIGHT_DARK = re.compile(r"light-dark\(\s*(.+?)\s*,\s*(.+?)\s*\)", re.S)
-# A channel is `calc(...)`, which carries spaces, or one bare token.
-_CHANNEL = r"(?:calc\([^)]*\)|[^\s)]+)"
+# A channel is `calc(...)` or `var(...)`, which carry spaces and parentheses, or one bare token.
+_CHANNEL = r"(?:calc\([^)]*\)|var\([^)]*\)|[^\s)]+)"
+_HUE = r"(?:h|calc\(\s*h\s*[+-]\s*[\d.]+\s*\))"
 _OKLCH = re.compile(
-    rf"oklch\(\s*from\s+var\(\s*--([a-z0-9-]+)\s*\)\s+({_CHANNEL})\s+({_CHANNEL})\s+h\s*\)", re.S)
+    rf"oklch\(\s*from\s+var\(\s*--([a-z0-9-]+)\s*\)\s+({_CHANNEL})\s+({_CHANNEL})\s+({_HUE})\s*\)",
+    re.S)
+# The form tokens.css writes a translucent colour in: the borders, the focus ring and the scrim.
+_RGB_ALPHA = re.compile(r"rgb\(\s*from\s+var\([^)]*\)\s+r\s+g\s+b\s*/.*\)", re.S)
+
+
+@dataclass(frozen=True)
+class Skin:
+    """What skin() chose, and from what."""
+    name: str  # NONE, the name of a file under resources, or the path that was read
+    css: str  # the stylesheet's text; "" for NONE
+    requested: str | None  # the value skin() was given, None or blank meaning unset
+    # Why `name` is not what `requested` asked for, for a doctor command to print after the
+    # setting's name; None when the request was honoured.
+    note: str | None
+
+
+def skin(resources: Path | Traversable, default: str, requested: str | None) -> Skin:
+    """The skin a setting's value names.
+
+    How the value is obtained -- which variable, which file, whose request -- is the portal's;
+    this takes the value. `resources` is the portal's package directory: a name is a file there,
+    and a path is read from anywhere on disk, so a skin can be tried without being shipped.
+
+    A name with no file, or a path that cannot be read, is a configuration mistake rather than a
+    reason to refuse the page: the default skin is used and `Skin.note` records why the request
+    was not honoured, for the portal's doctor command. The default itself must exist; a missing
+    default file raises.
+
+    Nothing is cached: the file is read on every call.
+    """
+    value = (requested or "").strip()
+    if not value:
+        return Skin(*_sheet(resources, default), requested, None)
+    try:
+        return Skin(*_sheet(resources, value), requested, None)
+    except OSError as exc:
+        return Skin(*_sheet(resources, default), requested, exc.strerror or str(exc))
+
+
+def _sheet(resources: Path | Traversable, value: str) -> tuple[str, str]:
+    """One value as (name, stylesheet text). Raises OSError when the file is missing or
+    unreadable."""
+    if value.lower() == NONE:
+        return NONE, ""
+    if "/" in value or os.sep in value or value.lower().endswith(".css"):
+        return value, Path(value).expanduser().read_text(encoding="utf-8")
+    name = value.lower()
+    sheet = resources / f"{name}.css"
+    if not sheet.is_file():
+        raise FileNotFoundError(f"{sheet} does not exist")
+    return name, sheet.read_text(encoding="utf-8")
 
 
 def _custom_properties(css: str) -> dict[str, str]:
@@ -84,17 +161,44 @@ def _packaged() -> dict[str, str]:
     return _custom_properties((files("kbase_design_system") / "tokens.css").read_text())
 
 
-def _channel(spec: str, chroma: float) -> float:
-    """A lightness or chroma slot: a number, `c`, or `calc(c * n)`."""
+def _tokens(skin_css: str) -> dict[str, str]:
+    """The packaged tokens with the skin's declarations laid over them, as the cascade would."""
+    tokens = dict(_packaged())
+    if skin_css:
+        tokens.update(_custom_properties(skin_css))
+    return tokens
+
+
+def _branch(value: str, scheme: str) -> str:
+    """The light or dark half of a `light-dark(a, b)` value; any other value unchanged."""
+    pair = _LIGHT_DARK.fullmatch(value)
+    return pair.group(1 if scheme == "light" else 2) if pair else value
+
+
+def _channel(spec: str, chroma: float, tokens: dict[str, str]) -> float:
+    """A lightness or chroma slot: a number, `c`, `calc(c * n)`, or `var(--x)` naming a number."""
     if spec == "c":
         return chroma
     calc = re.fullmatch(r"calc\(\s*c\s*\*\s*([\d.]+)\s*\)", spec)
     if calc:
         return chroma * float(calc.group(1))
+    ref = re.fullmatch(r"var\(\s*--([a-z0-9-]+)\s*\)", spec)
+    if ref:
+        if ref.group(1) not in tokens:
+            raise ValueError(f"no --{ref.group(1)} in the tokens or the skin")
+        return _channel(tokens[ref.group(1)], chroma, tokens)
     try:
         return float(spec)
     except ValueError:
         raise ValueError(f"unsupported oklch channel {spec!r}")
+
+
+def _hue(spec: str, hue: float) -> float:
+    """The hue slot: `h`, or `calc(h + n)` and `calc(h - n)`."""
+    if spec == "h":
+        return hue
+    offset = re.fullmatch(r"calc\(\s*h\s*([+-])\s*([\d.]+)\s*\)", spec)
+    return hue + float(offset.group(1) + offset.group(2))
 
 
 def _oklch_of(name: str, scheme: str, tokens: dict[str, str]) -> tuple[float, float, float]:
@@ -107,17 +211,15 @@ def _oklch_of(name: str, scheme: str, tokens: dict[str, str]) -> tuple[float, fl
     value = tokens.get(name)
     if value is None:
         raise ValueError(f"no --{name} in the tokens or the skin")
-    branch = _LIGHT_DARK.fullmatch(value)
-    if branch:
-        value = branch.group(1 if scheme == "light" else 2)
+    value = _branch(value, scheme)
     if value.startswith("#"):
         return oklch.to_oklch(value)
     m = _OKLCH.fullmatch(value)
     if not m:
         raise ValueError(f"unsupported value for --{name}: {value!r}")
-    base, lightness, chroma = m.groups()
+    base, lightness, chroma, hue = m.groups()
     _, base_c, base_h = _oklch_of(base, scheme, tokens)
-    return _channel(lightness, base_c), _channel(chroma, base_c), base_h
+    return _channel(lightness, base_c, tokens), _channel(chroma, base_c, tokens), _hue(hue, base_h)
 
 
 def vuetify(skin_css: str = "") -> dict[str, dict[str, str]]:
@@ -126,11 +228,29 @@ def vuetify(skin_css: str = "") -> dict[str, dict[str, str]]:
     `skin_css` is a skin stylesheet's text, whose declarations override the packaged tokens. Omit
     it for the design system's own palette.
     """
-    tokens = dict(_packaged())
-    if skin_css:
-        tokens.update(_custom_properties(skin_css))
+    tokens = _tokens(skin_css)
     return {
         scheme: {trait: oklch.to_hex(*_oklch_of(token, scheme, tokens))
                  for trait, token in VUETIFY.items()}
         for scheme in ("light", "dark")
+    }
+
+
+def tokens(skin_css: str = "", scheme: str = "light") -> dict[str, str]:
+    """Every opaque colour token as hex, keyed without its `--`, for one scheme, with `skin_css`
+    applied.
+
+    For code that draws outside the page's CSS -- a plot rendered on the server, an SVG inside a
+    sandboxed iframe -- where `var(--c-primary)` resolves to nothing. It takes the skin's accent,
+    ink and background from here, so the figure changes colour with the page. A palette that
+    encodes data, a categorical set or a heat ramp, has no token and stays the figure's own.
+
+    The borders, the focus ring and the scrim are omitted: each carries an alpha, so it has no
+    single hex until it is drawn over something.
+    """
+    resolved = _tokens(skin_css)
+    return {
+        name: oklch.to_hex(*_oklch_of(name, scheme, resolved))
+        for name, value in resolved.items()
+        if name.startswith(_COLOUR_FAMILIES) and not _RGB_ALPHA.fullmatch(_branch(value, scheme))
     }

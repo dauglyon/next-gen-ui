@@ -43,3 +43,12 @@ bypass-selection = true      # no package to detect; the payload is force-includ
 # The Solara adapter, imported as kbase_design_system.solara.*. Neither it nor its parent carries
 # an __init__.py; files() traverses a namespace package on the 3.10 floor.
 "python/solara" = "kbase_design_system/solara"
+
+# The tests import kbase_design_system, a name only an install provides, so they run against one:
+# `pip install '.[dev]'`, then `pytest`. The wheel job in .github/workflows/design-system.yml does
+# the same with the wheel it built.
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

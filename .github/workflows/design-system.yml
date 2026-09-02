@@ -125,6 +125,14 @@ jobs:
           print(f"{chunks} components, {len(stray) == 0 and 'all classes prefixed'}")
           EOF
 
+      # The tests import kbase_design_system, a name only an install provides, so they run against
+      # the wheel just built rather than the source tree.
+      - name: The tests pass against the wheel
+        working-directory: src/design-system
+        run: |
+          pip install "$(ls dist-python/*.whl)[dev]"
+          pytest
+
       # The payload is force-included files with no package directory behind them, so nothing
       # above imports it.
       - uses: actions/setup-python@v5

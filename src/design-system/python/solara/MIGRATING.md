@@ -13,9 +13,10 @@ delete withheld, standing on the packaged sheets.** `grep -rohE '\bkb-[a-z0-9-]+
 whether or not a portal rule still paints the element underneath, so the count rises while that
 render stays broken.
 
-The finished portal is **base + brand**: the packaged sheets, one app sheet holding what every
-brand of this portal shares, and one brand file — the portal's skin — holding what a brand swap
-replaces.
+The finished portal is **base + skin**: the packaged sheets, one app sheet holding what every
+skin of this portal shares, and skin sheets — one file per look — each holding what a swap
+replaces. Every portal serves three kinds of look through one setting (§2): the design system
+as shipped, a KBase look that sets only the portal's gallery colour, and any number of brands.
 
 ---
 
@@ -76,12 +77,13 @@ signature has crashed the app bar, which no test renders.
   cancelling line in the app sheet, under the component's own name. An element declines a name
   on two grounds: it means something else, or no component exists — and the `components.css`
   grep in _Sources of truth_ settles the second.
-- **One app sheet, one brand file, split by what a brand swap replaces.** The brand file holds
+- **One app sheet and the skin sheets, split by what a skin swap replaces.** A skin sheet holds
   the identity — the token literals the README's skin section names, plus the treatments that
-  are the brand: signature paint, brand state fills. The app sheet holds what every brand
-  shares: layout, geometry the markup depends on, bridge corrections. During §2's window only,
-  a third string — the transitional paint block (§3) — carries the portal's paint until §4
-  step 3 empties it. A second token family
+  are the brand: signature paint, brand state fills. The app sheet holds what every skin
+  shares: layout, geometry the markup depends on, bridge corrections. While a migration PR
+  converts elements, a third string — the transitional paint block (§3) — carries the portal's
+  paint until §4 step 3 empties it; what it still holds when the PR closes is named as required
+  follow-up at the top of the PR body (§9). A second token family
   (`--<app>-*`), a `var(--c-x, var(--app-y))` fallback, or a fresh class restyling a named
   component each hides part of the brand from `theme.vuetify()` and from every future skin.
 - **A component is chosen by what its element means**, with the showcase section as the cite,
@@ -91,6 +93,11 @@ signature has crashed the app bar, which no test renders.
 - **A colour that encodes a datum stays a literal.** A heat ramp in a table cell belongs to the
   figure; no token stands behind it. Inline styles that state only layout — a `max-width` on a
   Select, a `gap` on a Row — block no skin and stay.
+- **A weight is `--fw-normal` or `--fw-bold`.** The package loads two faces of each family, 400
+  and 700, and Oxygen has no others. A literal `500`, `600` or `800` asks for a face nothing
+  serves, and the browser draws the nearest one it has: 500 renders as 400, 600 and 800 as 700.
+  Converting a literal to the token it rendered as changes no pixel; the sheet then states the
+  weight the page drew.
 
 ---
 
@@ -111,7 +118,6 @@ getting the answer is that stage's next step.
 - Verdicts on genuine component gaps: local rule, upstream ask, or leave it.
 - Architectural changes the migration surfaces — a render path that gives a loading state no
   frame to paint in, a data model no component expresses.
-- Crossing the stop-line, the PR that deletes the last portal rule (§2); it does not reverse.
 
 Everything else is decided from the sources above and reported as the choice made, in one line.
 A question the showcase or a gate in this file answers is not put to the user.
@@ -136,7 +142,7 @@ anyone deciding to. A planning subagent receives this file, not a summary of it.
 - [ ] §9 Proof
 ```
 
-A stage closes on the matrix render for its views — design-system-only and branded, light and
+A stage closes on the matrix render for its views — `none` and every shipped skin, light and
 dark (§9) — and against the standing list: this file's invariants plus every constraint the
 user has added. §9 holds the full protocol and the closing audits.
 
@@ -157,8 +163,8 @@ Counting starts after the reading in _Sources of truth_ is finished. Four measur
   every stylesheet, so each paint-bearing site is an element no skin can repaint; those sites
   are the conversion targets. Layout-only sites stay, and the paint-bearing count runs well
   below the raw count.
-  Colour inside sandboxed iframes and canvas figures is carried by the portal's Python
-  constants and stays out of the conversion (Appendix 9).
+  Colour inside sandboxed iframes and canvas figures is set from Python and stays out of the
+  conversion; the single-hue roles come from `theme.tokens()` (Appendix 9).
 - **The funnels**: the helper functions that render tables, cards and chips for many call sites.
   A funnel is one edit regardless of its call-site count, and most paint-bearing volume sits in
   a handful of them.
@@ -170,39 +176,70 @@ the upstream ask is filed after the stage ships, with the working rule as the sp
 
 The inventory becomes a written plan, checked against the stage list — all nine present, each
 deferral stated — and the user-decision batch goes out. §2 and §3's sheet loading proceed while
-answers are out; the brand file waits on the palette answer, and §4's first edit waits on the
+answers are out; the skin sheets wait on the palette answer, and §4's first edit waits on the
 whole batch.
 
 ---
 
 ## §2 · Declare the dependency
 
-The package belongs in `[project.dependencies]`, pinned to a `ds-v` tag: a missing install then
-fails in pip, at install time. `ipyvuetify>=3` belongs beside it: `vuetify.css` styles Vuetify 3's
-markup, and an environment that already holds ipyvuetify 1.x satisfies Solara's own pin and
-renders Vuetify 2 markup no packaged rule matches — dark mode, text fields and buttons all fail,
-each looking like a portal bug. In an optional extra it fails in the browser, as an unstyled
-page. The icons module is imported plainly — a missing package raises `ImportError` naming it,
-where a soft-import shim serves the page with no icons and no styling.
+The package belongs in `[project.dependencies]`, pinned to a `ds-v` tag, from the first
+migration PR: a missing install then fails in pip, at install time. `ipyvuetify>=3` belongs
+beside it: `vuetify.css` styles Vuetify 3's markup, and an environment that already holds
+ipyvuetify 1.x satisfies Solara's own pin and renders Vuetify 2 markup no packaged rule matches
+— dark mode, text fields and buttons all fail, each looking like a portal bug. The icons module
+is imported plainly — a missing package raises `ImportError` naming it, where a soft-import shim
+serves the page with no icons and no styling.
 
-A portal migrating across many PRs may hold the pin in an optional extra while its own rules
-still paint everything. The window's loading code guards on the package's presence — a
-portal-defined `has_design_system()`, a try/except around the package import, gating the sheet
-loading and theme wiring; when the
-import fails, the guarded block loads nothing — and the stop-line PR deletes the guard along
-with the extra. The plain import
-above is the end state; the condemned shim is the _permanent_ soft import, which leaves a
-`kb-*`-named page unstyled forever rather than for a bounded window. The window closes at the
-stop-line: the PR that deletes the last portal rule moves the pin into `[project.dependencies]`
-in the same change, because past it the sheets are load-bearing.
+An optional extra behind a guard — a `has_design_system()`, a try/except around the import —
+lets the portal's own rules go on painting while the migration is partial, and leaves a
+`kb-*`-named page unstyled with nothing raised whenever the extra is not installed. The extra,
+the guard and the switch that withheld the sheets then wait on a closing PR that nothing forces
+anyone to write. Pinned in `[project.dependencies]`, every PR's page stands on the packaged
+sheets, or pip refuses the install.
 
-The stop-line is also where the pre-migration appearance ceases to exist — it lived in the
-deleted rules. A frozen "legacy" stylesheet kept past that point snapshots nothing and drifts
-with every later change. Reversibility comes from the brand file instead: a brand is one file —
-palette block and treatments — under version control, and any past brand is a checkout away.
-The portal implements one lookup: `<APP>_SKIN`, else the fleet-wide `KBASE_SKIN`, read at
-startup, selects the brand file by name or path — the string §3 loads as `BRAND_CSS` — and an
-unmatched value (`legacy`, say) falls to the default brand.
+### The skin setting
+
+The portal implements one lookup: `<APP>_SKIN`, else the fleet-wide `KBASE_SKIN`, read where the
+page renders, with a default that is a constant in the portal's repo. The lookup is the portal's
+— which variables, whether a config file or a user's choice joins them later — and the value it
+produces goes to `theme.skin()`, which turns it into a sheet:
+
+```python
+import os
+from importlib.resources import files
+from kbase_design_system.solara import theme
+
+DEFAULT_SKIN = "kbase"
+
+def active_skin() -> theme.Skin:
+    requested = os.environ.get("PORTAL_SKIN") or os.environ.get("KBASE_SKIN")
+    return theme.skin(files("portal") / "resources", DEFAULT_SKIN, requested)
+```
+
+A value is one of three kinds of look, or a path:
+
+- `none` — the design system as shipped. Nothing is mounted over the packaged sheets and the
+  widgets take the packaged palette. It is the acceptance render (§9).
+- `kbase` — the portal's KBase sheet, `resources/kbase.css`, which the portal authors. It sets
+  `--c-primary` to the portal's colour in the gallery's facet palette
+  (`src/routes/portals.tsx`) and nothing else: no other token, no treatment. That is a
+  convention checked by eye when the sheet is reviewed, not a test.
+- any other name — a brand, `resources/<name>.css`: the portal's own palette and treatments. A
+  portal ships as many as it has looks to serve, and adding one is adding a file.
+- a path — a stylesheet anywhere on disk, read on every render, for trying a skin the portal
+  does not ship.
+
+An unknown name falls to the default, and the returned `Skin` carries the request and the
+reason, for the portal's `doctor` to print after the variable's name. Reading the lookup where
+the page renders, not where the module is imported, is what lets a running process serve a
+different skin to a later request.
+
+The pre-migration appearance ceases to exist with the rules that painted it. A frozen copy of
+the old stylesheet kept as a skin targets markup the migration removes, so it paints less with
+every converted element and nothing at the end. A brand re-expresses the old look on the tokens
+— the old primary in `--c-primary`, the old treatments rewritten over the packaged names — and
+keeps working as the components change under it. Any past skin sheet is a checkout away.
 
 ---
 
@@ -218,7 +255,7 @@ Six sheets, read from the installed package, in this order, ahead of the portal'
 tokens.css → utilities.css → prose.css → solara/vuetify.css → components.css → chrome.css
 ```
 
-then the app sheet, then the brand file, last. `vuetify.css` loads **before** `components.css`
+then the app sheet, then the skin sheet, last. `vuetify.css` loads **before** `components.css`
 and `chrome.css`; its header is the contract: _"Only geometry is reset. Colour and type stay
 with components.css, which loads after this file and wins on order."_ Loaded last instead, it
 re-wins every property that order had settled, and the components stop painting shared
@@ -242,22 +279,25 @@ from importlib.resources import files
 SHEETS = ("tokens.css", "utilities.css", "prose.css",
           "solara/vuetify.css", "components.css", "chrome.css")
 
+skin = active_skin()       # §2: read here, at render
 for name in SHEETS:
     solara.Style(files("kbase_design_system").joinpath(name).read_text())
-solara.Style(APP_CSS)      # shared by every brand: layout, bridge corrections
-solara.Style(BRAND_CSS)    # the brand file §2's skin lookup selected
+solara.Style(APP_CSS)      # shared by every skin: layout, bridge corrections
+if skin.css:               # "" under none
+    solara.Style(skin.css)
 ```
 
-The block above is the end state. During §2's window it sits behind the window guard, and a
-third string, `TRANSITIONAL_CSS`, loads last, after `BRAND_CSS`, so a rule in it outranks every
-brand treatment until step 3 deletes it — steps 1–2's identical rendering depends on that
-position. Wiring the loading splits the portal's existing stylesheet — paint rules routed for
-deletion (§1) into `TRANSITIONAL_CSS`; portal-specific paint that stays, layout and bridge
-corrections into `APP_CSS` — and the split is checked like a lift: the page renders identically
-before and after. §4 step 1 lifts into the same string, step 3 empties it, and the stop-line PR
-deletes the constant.
+The block above is the end state. While a PR converts elements, a third string,
+`TRANSITIONAL_CSS`, loads last, after the skin sheet, so a rule in it outranks every treatment
+until step 3 deletes it — steps 1–2's identical rendering depends on that position. Wiring the
+loading splits the portal's existing stylesheet — paint rules routed for deletion (§1) into
+`TRANSITIONAL_CSS`; portal-specific paint that stays, layout and bridge corrections into
+`APP_CSS` — and the split is checked like a lift: the page renders identically before and after.
+§4 step 1 lifts into the same string and step 3 empties it. The string belongs to the PR that
+uses it: the PR ends with it deleted, or with what remains in it named as required follow-up at
+the top of the PR body (§9).
 
-### The brand file
+### The skin sheets
 
 A `:root` block of token overrides, then the brand's own treatments. `tokens.css` declares
 `--c-primary` outside any `light-dark()` and derives `--ct-primary` from it once per scheme, so
@@ -266,6 +306,11 @@ README's skin section lists the literal-carrying tokens and the derived rest; an
 be set, and a derived token gives way when named directly. `theme.vuetify()` reads the `:root`
 block and ignores the treatments, so the widget palette follows the same file. A hex anywhere
 else in the portal is a colour no skin will ever reach.
+
+The KBase sheet is the `:root` block alone, holding `--c-primary` (§2). A brand sheet is the
+block and the treatments, and a treatment paints under the packaged names, so it lands on the
+elements every skin reaches. The sheets wait on the palette decision (§ Decisions); the app
+sheet does not.
 
 ### Vuetify's palette
 
@@ -276,15 +321,16 @@ on-colours it picks by contrast. Left unset, the widgets blend against Material'
 
 ```python
 from kbase_design_system.solara import theme
-for scheme, colours in theme.vuetify(BRAND_CSS).items():
+for scheme, colours in theme.vuetify(skin.css).items():
     target = getattr(solara.lab.theme.themes, scheme)
     for trait, value in colours.items():
         setattr(target, trait, value)
 ```
 
-`BRAND_CSS` is the same string the page loads. `theme.vuetify()` lays its declarations over the
-packaged tokens as the cascade would, evaluates the `oklch(from …)` expressions as arithmetic,
-and returns thirteen traits per scheme. Passing a colour instead of the stylesheet leaves ten
+`skin.css` is the same string the page loads, and `""` under `none` gives the packaged palette.
+`theme.vuetify()` lays its declarations over the packaged tokens as the cascade would, evaluates
+the `oklch(from …)` expressions as arithmetic, and returns thirteen traits per scheme. Passing a
+colour instead of the stylesheet leaves ten
 of the thirteen on the packaged palette — a brand that moves the page background, the
 text-colour ramp or a semantic colour moves tokens no single hue carries — so the sheets follow
 the brand and the widgets do not.
@@ -306,9 +352,8 @@ explicit `.prose` asks for it. (Scoping
 `.solara-markdown` upstream in `prose.css` is an open ask; the rescope machinery is checked
 against it before being duplicated.)
 
-§3 closes on a screenshot of the landing page — widgets in the brand's primary, the brand
-typeface loaded — and, while §2's window is open, on `pip uninstall` restoring the previous
-rendering exactly (the §2 guard skips the loading and the portal's own rules still paint).
+§3 closes on a screenshot of the landing page under the default skin — widgets in its primary,
+the typeface loaded — and one under `none`, with the packaged palette on the widgets.
 
 ---
 
@@ -381,7 +426,8 @@ trail; the reference portals gained theirs during migration. `chrome.css` holds 
 and mark; `components.css` holds Breadcrumbs.
 
 Elements that are the brand — a logo, a signature motif — keep their markup and take their
-paint from the brand file, so a swapped brand swaps them too; their geometry stays app-side.
+paint from the skin sheet, so a swapped skin swaps them too, and under `none` and the KBase
+sheet they carry only what the packaged sheets paint; their geometry stays app-side.
 
 ---
 
@@ -470,20 +516,14 @@ its exit status.
 The matrix, per stage and in full before the PR:
 
 ```
-every view  ×  design-system-only and branded  ×  light and dark
+every view  ×  none and every shipped skin  ×  light and dark
 ```
 
-The first axis is a temporary switch the migration adds and the stop-line PR removes.
-Design-system-only withholds `BRAND_CSS` and `TRANSITIONAL_CSS` (§3) — every rule routed for
-deletion, original and lifted — leaving the packaged sheets, the layout and bridge rules, and
-the portal-specific paint that stays: the intro's acceptance render, at any point in the
-window. Branded loads everything.
-
-While §2's window is open, the matrix gains a degraded pass: the app served with the package
-genuinely unimportable — not a monkeypatched flag — and clicked through. Unit tests around the
-helpers
-have missed a widget handed `children=None` and a status glyph degrading to an empty string; a
-render catches both.
+The skin axis is the §2 setting, and the matrix outlives the migration: `none` is the intro's
+acceptance render — the packaged sheets, the layout and bridge rules, and the portal-specific
+paint that stays — and each shipped sheet is a look the portal serves. While a PR holds rules
+in `TRANSITIONAL_CSS` (§3), `none` withholds that string too, so the render shows what the
+packaged sheets paint without the portal's paint rules.
 
 Screenshot tooling fails in known shapes: readiness keyed on a portal class times out when §4
 renames that class away, so readiness keys on a `kb-*` selector; a view list that drifted from
@@ -508,12 +548,18 @@ the user has added, each item checked — and three audits close the migration, 
   re-running the §1 lookup against the end state.
 
 Each invariant becomes a behavioral test where the portal can express it — sheet order, no
-hexes in the app sheet, brand-file coverage, degradation while the window is open. A test that
+hexes and no literal weights in the app sheet, and that the sheet `theme.skin()` returns is the
+one mounted and the one handed to `theme.vuetify()`. Resolving a value — `none`, name, path,
+fallback — is tested once, in the package, and not again per portal; the lookup is the
+portal's to test. A test that
 counts selectors in a packaged file pins the package, not the portal, and does not ship.
 
 The PR's base is the upstream default branch at its current tip — a stale fork base makes the
-diff describe changes nobody made. The PR body carries the before/after matrix for every
-accessible view, what was explicitly left undone and why, and the open upstream asks.
+diff describe changes nobody made. The PR body opens with what the PR leaves outstanding — a
+stage not finished, a string not yet emptied — named as required follow-up; an exclusion the
+user granted is listed apart from it, with its owner. Then the before/after
+matrix for every accessible view and the open upstream asks. Outstanding work written beside
+the exclusions under one heading has been read as decided, and stayed undone.
 
 ---
 
@@ -538,13 +584,14 @@ Symptom, mechanism, fix.
 6. **A segmented control renders one segment short.** `ToggleButtonsSingle` (solara 1.61) emits
    no mount point for an `auto`-style option. The options restructure; CSS does not reach it.
 7. **The sheets re-branded, the widgets stayed purple.** Vuetify's theme is RGB triplets no
-   stylesheet reaches. `theme.vuetify(BRAND_CSS)`, with the same string the page loads (§3).
+   stylesheet reaches. `theme.vuetify(skin.css)`, with the same string the page loads (§3).
 8. **Typeface and every icon silently gone.** The sheets were joined into one string, and the
    browser discarded `vuetify.css`'s leading `@import`s. One `solara.Style` per sheet (§3).
 9. **Tokens never resolve inside a map or plot.** Sandboxed iframes (`srcdoc` without
-   `allow-same-origin`) and SVG/canvas renderers see no CSS variables. The portal's Python
-   colour constants are a deliberate third carrier of the brand — one module, synced with the
-   brand file — and those surfaces stay out of the class conversion.
+   `allow-same-origin`) and SVG/canvas renderers see no CSS variables. A figure's accent, ink
+   and ground come from `theme.tokens(skin.css, scheme)` — the sheet the page loads, as hex —
+   so they follow the skin; a palette that carries data stays the figure's own literals. Those
+   surfaces stay out of the class conversion.
 10. **A full-page screenshot stops at one viewport.** Solara scrolls the routed content in a
     div of its own, so a headless browser's full-page capture measures the document, which is
     viewport-sized. The content's height is `.solara-autorouter-content`'s scrollHeight; size

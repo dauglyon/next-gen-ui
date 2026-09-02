@@ -6,25 +6,25 @@
 
 .h1 {
   font-size: var(--fs-9);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   color: var(--c-ink);
 }
 
 .h2 {
   font-size: var(--fs-7);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   color: var(--c-ink);
 }
 
 .h3 {
   font-size: var(--fs-6);
-  font-weight: 600;
+  font-weight: var(--fw-bold);
   color: var(--c-ink);
 }
 
 .h4 {
   font-size: var(--fs-5);
-  font-weight: 600;
+  font-weight: var(--fw-bold);
   color: var(--c-ink);
 }
 
@@ -36,7 +36,7 @@
 
 .label {
   font-size: var(--fs-4);
-  font-weight: 600;
+  font-weight: var(--fw-bold);
   color: var(--c-ink3);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -44,7 +44,7 @@
 
 .sub {
   font-size: var(--fs-4);
-  font-weight: 600;
+  font-weight: var(--fw-bold);
   color: var(--c-ink3);
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -73,7 +73,7 @@
 .mono-value {
   font-family: var(--f-mono);
   font-size: var(--fs-4);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   color: var(--c-ink2);
 }
 
@@ -84,10 +84,10 @@
   color: var(--c-ink4);
 }
 
-/* Section label: 12px 600, used inside forms/panels (not uppercase like .label) */
+/* Section label, used inside forms/panels (not uppercase like .label) */
 .section-label {
   font-size: var(--fs-4);
-  font-weight: 600;
+  font-weight: var(--fw-bold);
   color: var(--c-ink2);
 }
 
@@ -119,7 +119,7 @@
 .link {
   font: inherit;
   color: var(--ct-primary);
-  font-weight: 600;
+  font-weight: var(--fw-bold);
   text-decoration: underline;
   text-underline-offset: 2px;
   cursor: pointer;

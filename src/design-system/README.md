@@ -74,7 +74,18 @@ the braid where it stands and the dots jump to the row.
 as a number. Vuetify holds its theme as comma-separated RGB triplets, and CSS
 cannot decompose a colour into three, so `theme.vuetify(skin_css)` returns the
 thirteen traits ipyvuetify syncs, per scheme, resolved against the portal's own
-skin.
+skin. `theme.tokens(skin_css, scheme)` returns every opaque colour token as
+hex, for code that draws outside the page's CSS — a plot rendered on the
+server, an SVG in a sandboxed iframe — so a figure's accent, ink and background
+change with the skin as the page does. The borders, the focus ring and the
+scrim carry an alpha and are not in it.
+
+`theme.skin(resources, default, requested)` takes the value of a portal's skin
+setting and returns the stylesheet it names: a file under `resources` by name,
+or a path on disk. A name with no file falls back to `default`, and the
+returned `Skin.note` says why, for the portal's doctor command. The setting
+itself — its lookup and its default — is the portal's; which skins a portal
+ships is `solara/MIGRATING.md` §2.
 
 Most of `tokens.css` is `oklch(from var(--c-base) L C H)` — arithmetic with one
 answer, which `oklch.py` computes. `theme.py` reads the stylesheet the wheel
@@ -88,6 +99,11 @@ that publishes the npm package, so neither needs a bump.
 
 Building the wheel compiles Sass, so `dart-sass` is installed into the build
 environment. It is not a runtime dependency.
+
+The Python side's tests run against an install, because the name they import,
+`kbase_design_system`, exists only in one: in `src/design-system`,
+`pip install '.[dev]'`, then `pytest`. The wheel job in CI does the same with
+the wheel it just built.
 
 ## Class names for CSS-only consumers
 
@@ -261,6 +277,7 @@ that uses them, with no stylesheet holding a hardcoded value:
 | Type scale      | `--fs-1`–`--fs-11`, `--fs-hero`            | sequential, smallest to largest                                                                                                                   |
 | Weight          | `--fw-normal`, `--fw-bold`                 | two, because `fonts.css` serves two faces                                                                                                         |
 | Density         | `--s-1`–`--s-12`                           | the whole spacing scale                                                                                                                           |
+| Page column     | `--w-page`                                 | the width a portal centres its content in. The default matches the portals gallery, so a portal opened from the gallery keeps the same edges      |
 | Motion          | `--t-fast`, `--t-base`, `--t-slow`         |                                                                                                                                                   |
 
 `--z-raised`, `--z-scrim`, `--z-modal` and `--z-toast` are not skin levers.
