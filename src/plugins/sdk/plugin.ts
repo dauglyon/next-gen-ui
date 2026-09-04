@@ -40,12 +40,16 @@ export interface PromptContext {
   select?: (key: string) => void;
 }
 
-// What a plugin offers to do with what the user typed: which of its own
-// document's params to open, and why it matched — its own words, since
-// the host has no idea what the plugin's data means.
+// Something a plugin offers to do with what the user typed.
 export interface Offer {
-  params: Record<string, string>;
-  why: string;
+  // Where this lands you, in the plugin's words — "Protein dossier for
+  // P0A7B8", not "UniProt accession". What was recognised is the
+  // plugin's reasoning; what happens is the user's question.
+  label: string;
+  // What the plugin is being asked to do. Opaque to the host, which only
+  // carries it: it becomes the document's params, and the plugin reads
+  // it back through usePanel(). One input may offer several actions.
+  action: Record<string, string>;
 }
 
 // Plugins volunteer: only the plugin knows what "mine" looks like, so the

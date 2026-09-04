@@ -72,8 +72,11 @@ export default definePlugin({
   prompt bar once the module has loaded; `options` + `select` let the user switch the destination
   before sending, `documentParams` lets them jump to its document.
 - `AppFrame` renders an iframe that survives its panel being moved between groups.
-- A `Matcher` — `match(text) => Offer[]` — volunteers the plugin for what the user is typing:
-  each `Offer` is the `params` to open in this plugin's document and the `why` shown beside it.
+- A `Matcher` — `match(text) => Offer[]` — volunteers the plugin for what the user is typing.
+  Each `Offer` names a destination in the plugin's own words (`label`: "Protein dossier for
+  P0A7B8") and the `action` that gets there. The host only carries the action: it becomes the
+  document's params, which the plugin reads back through `usePanel()`. One input may offer
+  several actions, since one accession is worth landing on in more than one place.
   It runs on every keystroke, so it is synchronous and cheap, with no I/O; `[]` is the normal
   answer. Params it returns are the document's identity, so any the route has no segment for
   travel in the URL's query string.

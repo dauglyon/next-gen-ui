@@ -18,6 +18,9 @@ import styles from './Workbench.module.css';
 type BarSuggestion = Suggestion & {
   run?: () => void;
   icon?: ComponentType<IconProps>;
+  // A command name is code and set in the mono face; an offer is a
+  // phrase and is not.
+  mono?: boolean;
 };
 
 // The bottom bar. A leading slash makes it a command, completed from the
@@ -109,13 +112,14 @@ export function PromptBar() {
       .slice(0, 4)
       .map(({ plugin, title, offer }) => ({
         value: text,
-        label: `Open ${title}`,
-        detail: offer.why,
+        // The offer says where you land; the app is who takes you.
+        label: offer.label,
+        detail: title,
         icon: iconFor(source.manifest(plugin)?.icon),
         run: () =>
           void dispatch({
             type: 'open',
-            panel: makePanel(plugin, 'document', offer.params),
+            panel: makePanel(plugin, 'document', offer.action),
           }),
       }));
 
@@ -186,7 +190,7 @@ export function PromptBar() {
       const commands: BarSuggestion[] = list.map((s) => {
         const owner = registry.get(s.value.trim().replace(/^\//, '').split(/\s+/)[0])?.source;
         const manifest = owner ? source.manifest(owner) : undefined;
-        return manifest ? { ...s, icon: iconFor(manifest.icon) } : s;
+        return { ...s, mono: true, icon: manifest ? iconFor(manifest.icon) : undefined };
       });
       const alternatives = list.length
         ? []
@@ -283,7 +287,9 @@ export function PromptBar() {
               <span className={styles.completionIcon} aria-hidden="true">
                 {s.icon ? <s.icon size={14} /> : null}
               </span>
-              <span className={styles.completionLabel}>{s.label}</span>
+              <span className={s.mono ? styles.completionLabel : styles.completionText}>
+                {s.label}
+              </span>
               {s.detail && <span className="caption">{s.detail}</span>}
             </li>
           ))}

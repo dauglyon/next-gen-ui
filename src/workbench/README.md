@@ -92,10 +92,11 @@ With no assistant set the row says so.
 
 Free text also reaches page-like plugins, two ways. **Plugins volunteer**: an installed plugin
 may supply a `match(text)` (`InstalledPlugin.match`, eager, unlike its module, because it runs on
-every keystroke) returning offers — the params to open in its own document, and `why` it
-matched, in its own words. Only the plugin knows what its data looks like, so the host never
-interprets the query; it calls every matcher, drops one that throws with a warning, and shows
-what came back. Second, the host matches an app's **name or description** (`protein evidence`
+every keystroke) returning offers. An offer names where the row lands you, in the plugin's own
+words, and the action that gets there; the host is only the courier — the action becomes the
+document's params and the plugin reads it back. Only the plugin knows what its data looks like,
+so the host never interprets the query; it calls every matcher, drops one that throws with a
+warning, and shows what came back. Second, the host matches an app's **name or description** (`protein evidence`
 finds Function Junction), with a `Browse everything` entry opening **Home**.
 
 Row zero of that list is what Enter will do, always rendered: the assistant, with the

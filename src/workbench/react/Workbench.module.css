@@ -808,6 +808,14 @@
   font-size: var(--fs-4);
 }
 
+/* An offer is a sentence about where you land, not a command name. */
+.completionText {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-4);
+  color: var(--c-ink);
+}
+
 /* Locked layout: the arrangement is fixed (the reducer refuses structural
    operations); hiding the resize handles removes the affordance too. */
 .root[data-locked] .separator {
