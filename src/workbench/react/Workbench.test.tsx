@@ -21,7 +21,12 @@ function memoryStorage(): Storage {
 }
 
 function mount(storage: Storage | null = null) {
-  const services = createWorkbench({ installed: localPlugins, storage, defaultPinned: ['hello'] });
+  const services = createWorkbench({
+    installed: localPlugins,
+    storage,
+    defaultPinned: ['koros', 'data', 'jobs'],
+    defaultAssistant: 'koros',
+  });
   render(
     <WorkbenchProvider services={services}>
       <Workbench />
@@ -31,77 +36,102 @@ function mount(storage: Storage | null = null) {
 }
 
 const status = () => screen.getByRole('status', { name: 'Workbench announcements' });
+const openJob = async (user: ReturnType<typeof userEvent.setup>, name: RegExp) => {
+  const sidebar = screen.getByRole('region', { name: 'Sidebar' });
+  await user.click(await within(sidebar).findByRole('button', { name }));
+};
 
 describe('Workbench', () => {
-  it('shows the pinned navigator and opens a document from it', async () => {
+  it('shows the pinned navigators and opens a document from one', async () => {
     const user = userEvent.setup();
     mount();
     const sidebar = screen.getByRole('region', { name: 'Sidebar' });
-    await user.click(await within(sidebar).findByRole('button', { name: /say hello to alpha/i }));
-    expect(await screen.findByRole('tab', { name: /hello alpha/i })).toHaveAttribute(
+    expect(
+      within(sidebar)
+        .getAllByRole('region')
+        .map((r) => r.getAttribute('aria-labelledby')),
+    ).toHaveLength(3);
+    await openJob(user, /assemble reads/i);
+    expect(await screen.findByRole('tab', { name: /job 12/i })).toHaveAttribute(
       'aria-selected',
       'true',
     );
-    expect(screen.getByRole('heading', { name: /hello, alpha/i })).toBeInTheDocument();
-    expect(status()).toHaveTextContent('Opened Hello: alpha');
+    expect(screen.getByRole('heading', { name: /assemble reads/i })).toBeInTheDocument();
+    expect(status()).toHaveTextContent('Opened Jobs: 12');
   });
 
   it('opening the same document again focuses it instead of duplicating', async () => {
     const user = userEvent.setup();
     mount();
-    const open = async (name: string) =>
-      user.click(await screen.findByRole('button', { name: `Say hello to ${name}` }));
-    await open('alpha');
-    await open('beta');
-    await open('alpha');
+    await openJob(user, /assemble reads/i);
+    await openJob(user, /annotate isolate/i);
+    await openJob(user, /assemble reads/i);
     expect(screen.getAllByRole('tab')).toHaveLength(2);
-    expect(screen.getByRole('tab', { name: /hello alpha/i })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
+    expect(screen.getByRole('tab', { name: /job 12/i })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('closes the focused panel from the keyboard and announces it', async () => {
     const user = userEvent.setup();
     mount();
-    await user.click(await screen.findByRole('button', { name: 'Say hello to alpha' }));
-    await screen.findByRole('heading', { name: /hello, alpha/i });
+    await openJob(user, /assemble reads/i);
+    await screen.findByRole('heading', { name: /assemble reads/i });
     await user.keyboard('{Alt>}{Shift>}W{/Shift}{/Alt}');
     expect(screen.queryByRole('tab')).not.toBeInTheDocument();
-    expect(status()).toHaveTextContent('Closed Hello alpha');
+    expect(status()).toHaveTextContent('Closed Job 12: Assemble reads');
   });
 
   it('splits and moves focus by keyboard', async () => {
     const user = userEvent.setup();
     mount();
-    await user.click(await screen.findByRole('button', { name: 'Say hello to alpha' }));
-    await user.click(await screen.findByRole('button', { name: 'Say hello to beta' }));
+    await openJob(user, /assemble reads/i);
+    await openJob(user, /annotate isolate/i);
+    await screen.findByRole('heading', { name: /annotate isolate/i });
     await user.keyboard('{Control>}{Alt>}{Shift>}{ArrowRight}{/Shift}{/Alt}{/Control}');
     expect(screen.getAllByRole('tablist', { name: 'Open panels' })).toHaveLength(2);
-    expect(status()).toHaveTextContent('Moved Hello beta right of Hello alpha');
+    expect(status()).toHaveTextContent(
+      'Moved Job 13: Annotate isolate 12 right of Job 12: Assemble reads',
+    );
     await user.keyboard('{Alt>}{Shift>}{ArrowUp}{/Shift}{/Alt}');
-    expect(screen.getByRole('tab', { name: /hello alpha/i })).toHaveFocus();
+    expect(screen.getByRole('tab', { name: /job 12/i })).toHaveFocus();
   });
 
   it('restores the layout from storage on the next mount', async () => {
     const user = userEvent.setup();
     const storage = memoryStorage();
     const first = mount(storage);
-    await user.click(await screen.findByRole('button', { name: 'Say hello to gamma' }));
-    expect(Object.keys(first.store.get().panels)).toContain('hello/document?name=gamma');
+    await openJob(user, /nifh search/i);
+    expect(Object.keys(first.store.get().panels)).toContain('jobs/document?id=20');
 
     document.body.innerHTML = '';
     mount(storage);
-    expect(await screen.findByRole('tab', { name: /hello gamma/i })).toBeInTheDocument();
+    expect(await screen.findByRole('tab', { name: /job 20/i })).toBeInTheDocument();
   });
 
   it('keeps the rest interactive when a panel crashes', async () => {
     const user = userEvent.setup();
     mount();
-    await user.click(await screen.findByRole('button', { name: 'Say hello to alpha' }));
-    await user.click(await screen.findByRole('button', { name: 'Say hello to crash' }));
-    expect(screen.getByRole('alert')).toHaveTextContent('This panel crashed');
-    await user.click(screen.getByRole('tab', { name: /hello alpha/i }));
-    expect(screen.getByRole('heading', { name: /hello, alpha/i })).toBeVisible();
+    await openJob(user, /assemble reads/i);
+    const sidebar = screen.getByRole('region', { name: 'Sidebar' });
+    // The Tree's click handler sits on the row inside the treeitem.
+    await user.click(await within(sidebar).findByText('Crash test panel'));
+    expect(await screen.findByRole('alert')).toHaveTextContent('This panel crashed');
+    await user.click(screen.getByRole('tab', { name: /job 12/i }));
+    expect(screen.getByRole('heading', { name: /assemble reads/i })).toBeVisible();
+  });
+
+  it('runs a plugin command from the prompt bar, loading the plugin on demand', async () => {
+    const user = userEvent.setup();
+    const services = mount();
+    expect(services.source.loaded('jobs')).toBeUndefined();
+    await user.type(screen.getByRole('textbox', { name: 'Prompt' }), '/cancel 12{Enter}');
+    await openJob(user, /assemble reads/i);
+    expect(await screen.findByText('cancelled')).toBeInTheDocument();
+  });
+
+  it('shows a loaded plugin status item', async () => {
+    const user = userEvent.setup();
+    mount();
+    await openJob(user, /assemble reads/i);
+    expect(await screen.findByText(/1 running/)).toBeInTheDocument();
   });
 });

@@ -41,6 +41,8 @@ export interface HostIndex extends PanelSource {
   // The module if it has already loaded; never triggers a load.
   loaded: (id: PluginId) => PluginModule | undefined;
   subscribe: (listener: () => void) => () => void;
+  // Bumps when a module finishes loading; pairs with subscribe for React.
+  version: () => number;
   // Registers the manifest-declared commands. `host` builds the PluginHost a
   // command runs against.
   registerCommands: (registry: CommandRegistry, host: (plugin: PluginId) => PluginHost) => void;
@@ -53,6 +55,7 @@ export function createHostIndex(installed: InstalledPlugin[]): HostIndex {
   const loading = new Map<PluginId, Promise<PluginModule>>();
   const panels = new Map<string, PanelDefinition>();
   const listeners = new Set<() => void>();
+  let version = 0;
 
   const load = (id: PluginId): Promise<PluginModule> => {
     const have = modules.get(id);
@@ -64,6 +67,7 @@ export function createHostIndex(installed: InstalledPlugin[]): HostIndex {
     const promise = plugin.load().then((module) => {
       modules.set(id, module);
       loading.delete(id);
+      version += 1;
       listeners.forEach((l) => l());
       return module;
     });
@@ -100,6 +104,7 @@ export function createHostIndex(installed: InstalledPlugin[]): HostIndex {
     manifests: () => installed.map((p) => p.manifest),
     load,
     loaded: (id) => modules.get(id),
+    version: () => version,
     subscribe(listener) {
       listeners.add(listener);
       return () => listeners.delete(listener);

@@ -8,6 +8,7 @@ import { fallbackTitle } from '../react/context';
 import { createPromptHandle } from '../react/services';
 import type { InstalledPlugin } from './installed';
 import { createHostIndex } from './installed';
+import { catalog } from './catalog';
 import { createSettingsStore } from './settings';
 
 export const LAYOUT_STORAGE_KEY = 'workbench.layout.v1';
@@ -34,7 +35,7 @@ export function createWorkbench({
   const announcer = createAnnouncer();
   const prompt = createPromptHandle();
   const focusIntentRef: WorkbenchServices['focusIntentRef'] = { current: 'command' };
-  const source = createHostIndex(installed);
+  const source = createHostIndex([...installed, catalog]);
   const settings = createSettingsStore(storage, { assistant: defaultAssistant });
 
   const fallback = () => defaultLayout({ pinned: defaultPinned });

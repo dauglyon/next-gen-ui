@@ -426,3 +426,40 @@
 .blockToggle[data-dragging] {
   opacity: 0.4;
 }
+
+/* App frames */
+
+.frameLayer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 0;
+  background: var(--c-bg);
+  pointer-events: auto;
+  visibility: hidden;
+}
+
+.frameLayer[data-dragging] .frame {
+  pointer-events: none;
+}
+
+.statusItem {
+  font: inherit;
+  font-size: var(--fs-5);
+  color: var(--c-ink3);
+  background: none;
+  border: none;
+  padding: 0 var(--s-2);
+  cursor: pointer;
+}
+
+.statusItem:hover {
+  color: var(--c-ink);
+}

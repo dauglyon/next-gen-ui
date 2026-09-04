@@ -19,3 +19,7 @@ export type {
   PromptRequest,
   CommandValues,
 } from './plugin';
+export { AppFrame } from './AppFrame';
+export type { AppFrameProps } from './AppFrame';
+export { FrameLayerContext, useFrameLayer } from './frames';
+export type { FrameLayer, FrameSpec } from './frames';

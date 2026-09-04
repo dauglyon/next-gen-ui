@@ -1,4 +1,5 @@
 import { useLayout } from './context';
+import { FrameLayerProvider } from './FrameLayer';
 import { LiveRegion } from './LiveRegion';
 import { MainArea } from './MainArea';
 import { PromptBar } from './PromptBar';
@@ -18,10 +19,12 @@ export function Workbench() {
     <div className={styles.root}>
       <WorkbenchMenubar />
       <WorkbenchDnd>
-        <div className={styles.body}>
-          <Sidebar />
-          <MainArea />
-        </div>
+        <FrameLayerProvider>
+          <div className={styles.body}>
+            <Sidebar />
+            <MainArea />
+          </div>
+        </FrameLayerProvider>
       </WorkbenchDnd>
       {layout.bars.prompt && <PromptBar />}
       {layout.bars.status && <StatusBar />}

@@ -4,5 +4,10 @@ import type { WorkbenchServices } from '../workbench/react';
 
 // Router context for tests: the bundled plugins and no persistence.
 export function testWorkbench(): WorkbenchServices {
-  return createWorkbench({ installed: localPlugins, storage: null, defaultPinned: ['hello'] });
+  return createWorkbench({
+    installed: localPlugins,
+    storage: null,
+    defaultPinned: ['koros', 'data', 'jobs'],
+    defaultAssistant: 'koros',
+  });
 }
