@@ -37,20 +37,30 @@ export interface RouterContext {
 
 // The design system is documentation, so it is readable without an account.
 // /portals is the public front door: a gallery of published portals that
-// anyone can browse before they have a KBase identity.
+// anyone can browse before they have a KBase identity. The workbench is a
+// prototype running entirely on mocked plugins, so it is browsable without
+// an account until real plugins carry user data.
 const PUBLIC_ROUTES: ReadonlyArray<string> = [
   '/login',
   '/login/continue',
   '/design-system',
   '/portals',
+  '/workbench',
 ];
+
+// Prefix-matched: plugin deep links (/p/<pluginId>/…) open documents in the
+// workbench shell, so they share its visibility.
+const PUBLIC_PREFIXES: ReadonlyArray<string> = ['/p/'];
 
 function isPublic(pathname: string): boolean {
   // Trailing slashes reach the gate verbatim -- a pasted `/portals/`, or a
   // browser replaying a cached 301 from an older build. Exact matching would
   // send those to /login even though the route is public.
   const normalized = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
-  return PUBLIC_ROUTES.includes(normalized);
+  return (
+    PUBLIC_ROUTES.includes(normalized) ||
+    PUBLIC_PREFIXES.some((prefix) => normalized.startsWith(prefix))
+  );
 }
 
 export const Route = createRootRouteWithContext<RouterContext>()({
