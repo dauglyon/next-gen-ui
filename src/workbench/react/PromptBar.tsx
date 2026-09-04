@@ -1,19 +1,24 @@
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
-import type { KeyboardEvent } from 'react';
+import type { ComponentType, KeyboardEvent } from 'react';
 import { ArrowUpRight, CaretUpDown, Check } from '@phosphor-icons/react';
+import type { IconProps } from '@phosphor-icons/react';
 import { Menu, PromptInput } from '@kbase/design-system';
 import type { PromptContext } from '../../plugins/sdk';
 import { makePanel } from '../core';
 import type { Suggestion } from '../commands';
 import { complete, parse, resolve, usage } from '../commands';
+import { iconFor } from '../host/icons';
 import { routeParams } from '../host/routes';
 import { useDispatch, useLayout, useRun, useServices } from './context';
 import { focusPanelElement } from './useFocusSync';
 import styles from './Workbench.module.css';
 
 // A suggestion that acts directly, for offers whose params no command
-// string could carry.
-type BarSuggestion = Suggestion & { run?: () => void };
+// string could carry, and that says whose it is.
+type BarSuggestion = Suggestion & {
+  run?: () => void;
+  icon?: ComponentType<IconProps>;
+};
 
 // The bottom bar. A leading slash makes it a command, completed from the
 // registry before any plugin code loads; anything else goes to the
@@ -106,6 +111,7 @@ export function PromptBar() {
         value: text,
         label: `Open ${title}`,
         detail: offer.why,
+        icon: iconFor(source.manifest(plugin)?.icon),
         run: () =>
           void dispatch({
             type: 'open',
@@ -122,6 +128,7 @@ export function PromptBar() {
           {
             value: text,
             label: `Ask ${assistantTitle ?? assistant}`,
+            icon: iconFor(source.manifest(assistant)?.icon),
             run: () => void submit(text),
           },
         ]
@@ -151,6 +158,7 @@ export function PromptBar() {
         value: `/open ${m.id}`,
         label: `Open ${m.title}`,
         detail: m.description,
+        icon: iconFor(m.icon),
         run: () => void submit(`/open ${m.id}`),
       }));
     // The full-density form of this same search, when the inline list is
@@ -161,6 +169,7 @@ export function PromptBar() {
           {
             value: '/open home',
             label: 'Browse everything',
+            icon: iconFor(source.manifest('home')?.icon),
             run: () => void submit('/open home'),
           },
         ]
@@ -173,13 +182,19 @@ export function PromptBar() {
     // complete() answers [] for anything that is not a slash command.
     void complete(registry, value, ctx()).then((list) => {
       if (!live) return;
+      // A command's icon is its plugin's; the workbench's own have none.
+      const commands: BarSuggestion[] = list.map((s) => {
+        const owner = registry.get(s.value.trim().replace(/^\//, '').split(/\s+/)[0])?.source;
+        const manifest = owner ? source.manifest(owner) : undefined;
+        return manifest ? { ...s, icon: iconFor(manifest.icon) } : s;
+      });
       const alternatives = list.length
         ? []
         : [...offerSuggestions(value), ...appSuggestions(value)];
       // Nothing worth choosing between: no list, and Enter behaves as if
       // there were none.
       const found = list.length
-        ? list
+        ? commands
         : alternatives.length
           ? [...defaultSuggestion(value), ...alternatives]
           : [];
@@ -265,6 +280,9 @@ export function PromptBar() {
                 accept(s);
               }}
             >
+              <span className={styles.completionIcon} aria-hidden="true">
+                {s.icon ? <s.icon size={14} /> : null}
+              </span>
               <span className={styles.completionLabel}>{s.label}</span>
               {s.detail && <span className="caption">{s.detail}</span>}
             </li>

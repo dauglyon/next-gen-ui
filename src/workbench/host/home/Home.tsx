@@ -1,5 +1,5 @@
 import { useState, useSyncExternalStore } from 'react';
-import { SearchBar } from '@kbase/design-system';
+import { Chip, SearchBar } from '@kbase/design-system';
 import type { Manifest } from '../../../plugins/sdk';
 import { usePanelTitle } from '../../../plugins/sdk';
 import { makePanel } from '../../core';
@@ -34,10 +34,11 @@ export function HomeDocument() {
 
   const openApp = (m: Manifest) =>
     dispatch({ type: 'open', panel: makePanel(m.id, 'document', {}) });
-  const showPanel = (m: Manifest) => {
-    if (!layout.sidebar.pinned.includes(m.id)) dispatch({ type: 'pin', plugin: m.id });
-    dispatch({ type: 'focus', panel: makePanel(m.id, 'navigator').id });
-  };
+  // Open, not pin: `open` shows a pinned plugin's navigator in its
+  // sidebar block and an unpinned one as a tab, which is what picking it
+  // here should mean. Pinning is the catalog's job.
+  const showPanel = (m: Manifest) =>
+    dispatch({ type: 'open', panel: makePanel(m.id, 'navigator') });
 
   return (
     <div className={styles.root}>
@@ -55,6 +56,8 @@ export function HomeDocument() {
         empty="No panel matches."
         items={panels}
         onPick={showPanel}
+        // Beside the description, not instead of it: where a panel
+        // already is does not describe what it is.
         note={(m) => (layout.sidebar.pinned.includes(m.id) ? 'In the sidebar' : undefined)}
       />
     </div>
@@ -92,8 +95,11 @@ function Section({
                   <span className={styles.cardIcon} aria-hidden="true">
                     <Icon size={18} />
                   </span>
-                  <span className={styles.cardTitle}>{m.title}</span>
-                  <p className={`caption ${styles.cardDesc}`}>{hint ?? m.description}</p>
+                  <span className={styles.cardTitle}>
+                    {m.title}
+                    {hint && <Chip color="neutral" label={hint} />}
+                  </span>
+                  <p className={`caption ${styles.cardDesc}`}>{m.description}</p>
                 </button>
               </li>
             );

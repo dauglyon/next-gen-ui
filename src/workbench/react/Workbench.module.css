@@ -779,8 +779,9 @@
 
 .completion {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  gap: var(--s-4);
+  gap: var(--s-3);
   padding: var(--s-2) var(--s-3);
   border-radius: var(--r-sm);
   cursor: pointer;
@@ -790,7 +791,19 @@
   background: var(--c-raised);
 }
 
+/* Whose row this is. The slot is kept when a row has no plugin (the
+   workbench's own commands) so the labels stay in one column. */
+.completionIcon {
+  display: inline-flex;
+  justify-content: center;
+  flex: none;
+  width: 16px;
+  color: var(--c-ink4);
+}
+
 .completionLabel {
+  flex: 1;
+  min-width: 0;
   font-family: var(--f-mono);
   font-size: var(--fs-4);
 }

@@ -1,6 +1,6 @@
 import { Component, Suspense, useCallback, useMemo } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
-import { Button, Loader } from '@kbase/design-system';
+import { Button, EmptyState, Loader } from '@kbase/design-system';
 import { HostContext, PanelContext } from '../../plugins/sdk';
 import type { PanelHandle, PluginHost } from '../../plugins/sdk';
 import type { Panel } from '../core';
@@ -38,11 +38,12 @@ export function PanelHost({ panel, focused }: { panel: Panel; focused: boolean }
 
   if (!definition) return <GhostPanel panel={panel} />;
   const Component = definition.component;
+  const title = services.source.manifest(panel.plugin)?.title ?? panel.plugin;
   return (
     <PanelContext value={handle}>
       <HostContext value={host}>
         <PanelBoundary key={panel.id}>
-          <Suspense fallback={<Loading />}>
+          <Suspense fallback={<Loading title={title} />}>
             <Component />
           </Suspense>
         </PanelBoundary>
@@ -51,11 +52,15 @@ export function PanelHost({ panel, focused }: { panel: Panel; focused: boolean }
   );
 }
 
-function Loading() {
+// The panel's own empty state until its code arrives, named: a bare
+// spinner in the corner of a blank pane says nothing about what is
+// coming, and reads as a stray graphic rather than the panel loading.
+function Loading({ title }: { title: string }) {
   return (
-    <div className={styles.panelMessage}>
-      <Loader label="Loading panel" />
-    </div>
+    <EmptyState
+      icon={<Loader size={36} label={`Loading ${title}`} />}
+      title={`Loading ${title}…`}
+    />
   );
 }
 

@@ -12,6 +12,12 @@ export const home: InstalledPlugin = {
     contractVersion: CONTRACT_VERSION,
     icon: 'House',
     document: { route: '/' },
+    commands: [
+      { name: 'browse', title: 'Browse everything installed', icon: 'House', shortcut: 'Browse' },
+    ],
   },
-  load: () => import('./Home').then((m) => ({ document: m.HomeDocument })),
+  load: async () => ({
+    document: (await import('./Home')).HomeDocument,
+    commands: (await import('./commands')).commands,
+  }),
 };
