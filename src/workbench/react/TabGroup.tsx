@@ -1,7 +1,8 @@
 import type { KeyboardEvent, MouseEvent } from 'react';
 import { X } from '@phosphor-icons/react';
-import { ContextMenu, EmptyState, Tabs } from '@kbase/design-system';
+import { Button, ContextMenu, EmptyState, Tabs } from '@kbase/design-system';
 import type { Group, Panel, PanelId, Side } from '../core';
+import { makePanel } from '../core';
 import { useDispatch, useLayout, useServices, useTitle } from './context';
 import { panelDomId, tabDomId } from './domIds';
 import { PanelHost } from './PanelHost';
@@ -41,7 +42,18 @@ export function TabGroup({ group }: { group: Group }) {
         <div className={styles.groupBody}>
           <EmptyState
             title="Nothing open"
-            description="Pick something in the sidebar, or press / and type a command."
+            description="Pick something in the sidebar, type into the prompt bar, or browse everything installed."
+            action={
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  dispatch({ type: 'open', panel: makePanel('home', 'document', {}) })
+                }
+              >
+                Browse
+              </Button>
+            }
           />
           <GroupDropZones group={group.id} />
         </div>

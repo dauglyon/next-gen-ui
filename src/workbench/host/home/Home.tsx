@@ -1,0 +1,105 @@
+import { useState, useSyncExternalStore } from 'react';
+import { SearchBar } from '@kbase/design-system';
+import type { Manifest } from '../../../plugins/sdk';
+import { usePanelTitle } from '../../../plugins/sdk';
+import { makePanel } from '../../core';
+import { useDispatch, useLayout, useServices } from '../../react/context';
+import { iconFor } from '../icons';
+import { routeParams } from '../routes';
+import styles from './Home.module.css';
+
+// The launcher as a page: everything installed, searchable. The prompt
+// bar completes the same names inline; this is that search given room,
+// and the only path to a page-like plugin that does not need its name
+// known in advance.
+export function HomeDocument() {
+  usePanelTitle('Home');
+  const { source } = useServices();
+  const layout = useLayout();
+  const dispatch = useDispatch();
+  const [query, setQuery] = useState('');
+  useSyncExternalStore(source.subscribe, source.version, source.version);
+
+  const q = query.trim().toLowerCase();
+  const matches = (m: Manifest) =>
+    !q ||
+    m.title.toLowerCase().includes(q) ||
+    m.id.includes(q) ||
+    (m.description?.toLowerCase().includes(q) ?? false);
+  const listed = source.manifests().filter((m) => m.id !== 'home' && matches(m));
+  // An app is a document that names itself completely: no route params to
+  // fill, so it can be opened from a list.
+  const apps = listed.filter((m) => m.document && routeParams(m.document.route).length === 0);
+  const panels = listed.filter((m) => m.navigator);
+
+  const openApp = (m: Manifest) =>
+    dispatch({ type: 'open', panel: makePanel(m.id, 'document', {}) });
+  const showPanel = (m: Manifest) => {
+    if (!layout.sidebar.pinned.includes(m.id)) dispatch({ type: 'pin', plugin: m.id });
+    dispatch({ type: 'focus', panel: makePanel(m.id, 'navigator').id });
+  };
+
+  return (
+    <div className={styles.root}>
+      <SearchBar
+        className={styles.search}
+        value={query}
+        onValueChange={setQuery}
+        placeholder="Search apps and panels"
+        aria-label="Search installed plugins"
+      />
+
+      <Section title="Apps" empty="No app matches." items={apps} onPick={openApp} />
+      <Section
+        title="Panels"
+        empty="No panel matches."
+        items={panels}
+        onPick={showPanel}
+        note={(m) => (layout.sidebar.pinned.includes(m.id) ? 'In the sidebar' : undefined)}
+      />
+    </div>
+  );
+}
+
+function Section({
+  title,
+  empty,
+  items,
+  onPick,
+  note,
+}: {
+  title: string;
+  empty: string;
+  items: Manifest[];
+  onPick: (m: Manifest) => void;
+  note?: (m: Manifest) => string | undefined;
+}) {
+  return (
+    <section className={styles.section} aria-labelledby={`home-${title}`}>
+      <h2 id={`home-${title}`} className="h4">
+        {title}
+      </h2>
+      {items.length === 0 ? (
+        <p className="caption">{empty}</p>
+      ) : (
+        <ul className={styles.grid}>
+          {items.map((m) => {
+            const Icon = iconFor(m.icon);
+            const hint = note?.(m);
+            return (
+              <li key={m.id}>
+                <button type="button" className={styles.card} onClick={() => onPick(m)}>
+                  <span className={styles.cardIcon} aria-hidden="true">
+                    <Icon size={18} />
+                  </span>
+                  <span className={styles.cardTitle}>{m.title}</span>
+                  <p className={`caption ${styles.cardDesc}`}>{hint ?? m.description}</p>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}

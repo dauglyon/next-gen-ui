@@ -6,6 +6,7 @@ import type { PromptContext } from '../../plugins/sdk';
 import { makePanel } from '../core';
 import type { Suggestion } from '../commands';
 import { complete, parse, resolve, usage } from '../commands';
+import { routeParams } from '../host/routes';
 import { useDispatch, useLayout, useRun, useServices } from './context';
 import { focusPanelElement } from './useFocusSync';
 import styles from './Workbench.module.css';
@@ -16,7 +17,9 @@ import styles from './Workbench.module.css';
 export function PromptBar() {
   const [value, setValue] = useState('');
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [highlight, setHighlight] = useState(0);
+  const [highlight, setHighlight] = useState(-1);
+  // Command completions are selected on arrival; app suggestions are not.
+  const [kind, setKind] = useState<'command' | 'app'>('command');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { registry, announcer, prompt, settings, source, dispatch } = useServices();
@@ -37,18 +40,35 @@ export function PromptBar() {
     focusKind: layout.focus ? (layout.panels[layout.focus]?.kind ?? null) : null,
   });
 
-  // The omnibox path to page-like plugins: a single short word that
-  // prefixes an app's name completes to opening it, so document-only
-  // plugins are reachable by typing their name — no launcher surface.
-  // One word only, so composing a sentence to the assistant stays quiet.
+  // The omnibox path to page-like plugins. Descriptions are matched as
+  // well as names, so "protein evidence" reaches Function Junction
+  // without knowing it exists; every term must appear somewhere, and a
+  // name being typed outranks a description hit. Offered, never
+  // selected — see onKeyDown, where Enter still goes to the assistant.
   const appSuggestions = (text: string): Suggestion[] => {
-    const t = text.trim().toLowerCase();
-    if (t.length < 2 || /\s/.test(t)) return [];
-    return source
+    const query = text.trim().toLowerCase();
+    const terms = query.split(/\s+/).filter(Boolean);
+    if (query.length < 2) return [];
+    const hits = source
       .manifests()
-      .filter((m) => m.document)
-      .filter((m) => m.title.toLowerCase().startsWith(t) || m.id.startsWith(t))
-      .map((m) => ({ value: `/open ${m.id}`, label: `Open ${m.title}`, detail: m.description }));
+      .filter((m) => m.document && routeParams(m.document.route).length === 0)
+      .flatMap((m) => {
+        const title = m.title.toLowerCase();
+        const haystack = `${title} ${m.id} ${m.description?.toLowerCase() ?? ''}`;
+        if (!terms.every((t) => haystack.includes(t))) return [];
+        const named = title.startsWith(terms[0]) || m.id.startsWith(terms[0]);
+        return [{ m, rank: named ? 0 : 1 }];
+      })
+      .sort((a, b) => a.rank - b.rank || a.m.title.localeCompare(b.m.title))
+      .slice(0, 4)
+      .map(({ m }) => ({
+        value: `/open ${m.id}`,
+        label: `Open ${m.title}`,
+        detail: m.description,
+      }));
+    // The full-density form of this same search, when the inline list is
+    // not the answer.
+    return hits.length ? [...hits, { value: '/open home', label: 'Browse everything' }] : [];
   };
 
   // Completion follows the text; a stale async result for older text is dropped.
@@ -57,8 +77,13 @@ export function PromptBar() {
     // complete() answers [] for anything that is not a slash command.
     void complete(registry, value, ctx()).then((list) => {
       if (!live) return;
-      setSuggestions(list.length ? list : appSuggestions(value));
-      setHighlight(0);
+      const apps = list.length ? [] : appSuggestions(value);
+      setSuggestions(list.length ? list : apps);
+      setKind(list.length ? 'command' : 'app');
+      // A command's completion is the point of typing it, so its first
+      // entry is selected; an app is a suggestion beside free text, so
+      // nothing is, and Enter still sends the line to the assistant.
+      setHighlight(list.length ? 0 : -1);
     });
     return () => {
       live = false;
@@ -76,6 +101,13 @@ export function PromptBar() {
       : null;
 
   const accept = (s: Suggestion) => {
+    // An app has nothing to fill in: choosing it is the whole action.
+    if (kind === 'app') {
+      setValue('');
+      setSuggestions([]);
+      void submit(s.value);
+      return;
+    }
     setValue(s.value);
     setSuggestions([]);
   };
@@ -146,10 +178,14 @@ export function PromptBar() {
       setHighlight((h) => (h + 1) % suggestions.length);
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
-      setHighlight((h) => (h - 1 + suggestions.length) % suggestions.length);
+      setHighlight((h) => (h <= 0 ? suggestions.length : h) - 1);
+    } else if (event.key === 'Tab') {
+      event.preventDefault();
+      accept(suggestions[Math.max(0, highlight)]);
     } else if (
-      event.key === 'Tab' ||
-      (event.key === 'Enter' && suggestions[highlight]?.value !== value)
+      event.key === 'Enter' &&
+      highlight >= 0 &&
+      suggestions[highlight].value !== value
     ) {
       event.preventDefault();
       accept(suggestions[highlight]);
@@ -196,7 +232,8 @@ export function PromptBar() {
           role: 'combobox',
           'aria-expanded': open,
           'aria-controls': open ? listId : undefined,
-          'aria-activedescendant': open ? `${listId}-${highlight}` : undefined,
+          'aria-activedescendant':
+            open && highlight >= 0 ? `${listId}-${highlight}` : undefined,
           'aria-autocomplete': 'list',
           onKeyDown,
         }}

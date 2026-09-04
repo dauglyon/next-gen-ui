@@ -89,8 +89,14 @@ and, once its module has loaded, what its `usePromptContext` hook reports: the c
 prompt will join, offered as a switcher over the hook's `options` and a jump to its document.
 With no assistant set the row says so.
 
-A short word that prefixes a document plugin.s name completes to opening it — the omnibox
-path to page-like apps, with no launcher surface.
+Free text also reaches page-like plugins: an app whose name **or description** matches what has
+been typed is offered below the bar (`protein evidence` finds Function Junction), with a
+`Browse everything` entry opening **Home**. These are offered, never selected — Enter still goes
+to the assistant until one is chosen with the arrow keys, and choosing one opens it, since an
+app has no arguments to fill in. Home (`host/home/`, a host plugin like the catalog) is that
+same search as a page: the apps and panels installed, searched over the same names and
+descriptions. One search, two densities — inline while typing, a page when browsing — reached
+from the bar, from the empty group's **Browse**, or by name.
 
 Default keybindings live in `commands/keys.ts` and avoid chords browsers own (Ctrl+W/T/N,
 Ctrl+Tab, Ctrl+PageUp/Down, Alt+Left/Right). `/` focuses the bar; `Escape` returns to the panel.
