@@ -107,8 +107,9 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
           away when you reload.
         </li>
         <li>
-          Open Catalog to add and remove the panels on the left, and to choose which tool answers
-          the questions you type.
+          Open Catalog to see every installed tool and choose which sit in the left column. All of
+          them answer what you type; the assistant setting only picks who gets the text when you
+          press Enter without choosing a row.
         </li>
         <li>
           Reload the page. Everything comes back where you left it, including the address of
