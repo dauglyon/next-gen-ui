@@ -1,6 +1,7 @@
 import type { PluginHost } from '../../plugins/sdk';
 import type { PluginId } from '../core';
 import { createWorkbenchStore, defaultLayout, deserialize, makePanel, serialize } from '../core';
+import type { Command } from '../commands';
 import { createCommandRegistry, workbenchCommands } from '../commands';
 import { createAnnouncer, createTitleStore } from '../react';
 import type { WorkbenchServices } from '../react';
@@ -9,6 +10,7 @@ import { createPromptHandle } from '../react/services';
 import type { InstalledPlugin } from './installed';
 import { createHostIndex } from './installed';
 import { catalog } from './catalog';
+import { routeParams } from './routes';
 import { createSettingsStore } from './settings';
 
 export const LAYOUT_STORAGE_KEY = 'workbench.layout.v1';
@@ -68,6 +70,7 @@ export function createWorkbench({
     plugins: () => source.plugins().map((p) => p.id),
     focusPrompt: () => prompt.focus(),
   }).forEach((c) => registry.register(c));
+  registry.register(openCommand(services));
   source.registerCommands(registry, (plugin) => pluginHostFor(services, plugin));
 
   if (storage) {
@@ -80,6 +83,50 @@ export function createWorkbench({
     });
   }
   return services;
+}
+
+// `/open <plugin> [value]`: a navigator plugin's navigator, an app's single
+// page, or a document whose route has one param filled by `value`. Works
+// from the manifest alone, so it completes and runs before any plugin code
+// has loaded.
+function openCommand(services: WorkbenchServices): Command {
+  const { source, dispatch, announcer } = services;
+  const openable = () => source.manifests().filter((m) => m.navigator || m.document);
+  return {
+    name: 'open',
+    title: 'Open a plugin panel',
+    source: 'workbench',
+    args: [
+      {
+        name: 'plugin',
+        type: 'string',
+        required: true,
+        complete: (prefix) =>
+          openable()
+            .map((m) => m.id)
+            .filter((id) => id.startsWith(prefix)),
+      },
+      { name: 'value', type: 'string', description: 'the document route param' },
+    ],
+    run: ({ plugin, value }) => {
+      const manifest = source.manifest(String(plugin));
+      if (!manifest || !(manifest.navigator || manifest.document)) {
+        announcer.announce(`Nothing to open for ${String(plugin)}`);
+        return;
+      }
+      const params = manifest.document ? routeParams(manifest.document.route) : [];
+      if (manifest.document && (value !== undefined || !manifest.navigator)) {
+        if (params.length > 1 || (params.length === 1 && value === undefined)) {
+          announcer.announce(`/open ${manifest.id} needs ${params.join(', ')}`);
+          return;
+        }
+        const filled = params.length === 1 ? { [params[0]]: String(value) } : {};
+        dispatch({ type: 'open', panel: makePanel(manifest.id, 'document', filled) });
+        return;
+      }
+      dispatch({ type: 'open', panel: makePanel(manifest.id, 'navigator') });
+    },
+  };
 }
 
 // What a plugin's code may do to the workbench, scoped to that plugin.

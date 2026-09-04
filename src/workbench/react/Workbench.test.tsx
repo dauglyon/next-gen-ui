@@ -123,9 +123,52 @@ describe('Workbench', () => {
     const user = userEvent.setup();
     const services = mount();
     expect(services.source.loaded('jobs')).toBeUndefined();
-    await user.type(screen.getByRole('textbox', { name: 'Prompt' }), '/cancel 12{Enter}');
+    await user.type(screen.getByRole('combobox', { name: 'Prompt' }), '/cancel 12{Enter}');
     await openJob(user, /assemble reads/i);
     expect(await screen.findByText('cancelled')).toBeInTheDocument();
+  });
+
+  it('completes a command name, then opens a document cold with /open', async () => {
+    const user = userEvent.setup();
+    const services = mount();
+    const box = screen.getByRole('combobox', { name: 'Prompt' });
+    await user.type(box, '/op');
+    const options = await screen.findAllByRole('option');
+    expect(options.map((o) => o.textContent)).toEqual(
+      expect.arrayContaining([expect.stringContaining('/open <plugin> [value]')]),
+    );
+    await user.keyboard('{Tab}');
+    expect(box).toHaveValue('/open ');
+    // Not pinned, so nothing of it has loaded yet.
+    expect(services.source.loaded('function-junction')).toBeUndefined();
+    await user.type(box, 'function-junction{Enter}');
+    expect(await screen.findByRole('tab', { name: /function junction/i })).toBeInTheDocument();
+    expect(await screen.findByRole('group', { name: 'Function Junction' })).toBeInTheDocument();
+    expect(services.source.loaded('function-junction')).toBeDefined();
+  });
+
+  it('sends free text to the assistant and lands it in an arc', async () => {
+    const user = userEvent.setup();
+    mount();
+    await user.type(
+      screen.getByRole('combobox', { name: 'Prompt' }),
+      'Which isolates fix nitrogen?{Enter}',
+    );
+    expect(await screen.findByRole('tab', { name: /arc: nitrogenase/i })).toBeInTheDocument();
+    expect(await screen.findByText('Which isolates fix nitrogen?')).toBeInTheDocument();
+  });
+
+  it('with no assistant, free text is refused and the setting re-targets the bar', async () => {
+    const user = userEvent.setup();
+    const services = mount();
+    services.settings.set({ assistant: null });
+    await user.type(screen.getByRole('combobox', { name: 'Prompt' }), 'hello?{Enter}');
+    expect(status()).toHaveTextContent('No assistant is set');
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument();
+    services.settings.set({ assistant: 'koros' });
+    await user.clear(screen.getByRole('combobox', { name: 'Prompt' }));
+    await user.type(screen.getByRole('combobox', { name: 'Prompt' }), 'hello?{Enter}');
+    expect(await screen.findByRole('tab', { name: /arc:/i })).toBeInTheDocument();
   });
 
   it('shows a loaded plugin status item', async () => {

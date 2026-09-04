@@ -463,3 +463,44 @@
 .statusItem:hover {
   color: var(--c-ink);
 }
+
+/* Prompt completions */
+
+.promptBar {
+  position: relative;
+}
+
+.completions {
+  position: absolute;
+  left: var(--s-4);
+  right: var(--s-4);
+  bottom: 100%;
+  margin: 0 0 var(--s-2);
+  padding: var(--s-2);
+  list-style: none;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--e-3);
+  max-height: 40vh;
+  overflow: auto;
+  z-index: var(--z-anchored);
+}
+
+.completion {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+}
+
+.completion[data-highlighted] {
+  background: var(--c-raised);
+}
+
+.completionLabel {
+  font-family: var(--f-mono);
+  font-size: var(--fs-4);
+}

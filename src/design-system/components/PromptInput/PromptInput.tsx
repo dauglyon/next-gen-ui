@@ -5,6 +5,7 @@ import { Frame } from '../Frame';
 import { Button } from '../Button';
 import { Alert } from '../Alert';
 import { Textarea } from '../Textarea';
+import type { TextareaProps } from '../Textarea';
 import { useSubmitMode, useHardwareKeyboard, type SubmitOn } from '../../util/useSubmitMode';
 import styles from './PromptInput.module.scss';
 import { cx } from '../../util/cx';
@@ -44,6 +45,11 @@ export interface PromptInputProps {
   maxRows?: number;
   autoFocus?: boolean;
   className?: string;
+  /**
+   * Spread onto the field, for a completion popup's combobox wiring
+   * (`role`, `aria-*`) and its key handling. The component's own props win.
+   */
+  fieldProps?: Omit<TextareaProps, 'value' | 'onValueChange' | 'onSubmit'>;
 }
 
 export function PromptInput({
@@ -64,6 +70,7 @@ export function PromptInput({
   maxRows = 6,
   autoFocus,
   className,
+  fieldProps,
 }: PromptInputProps) {
   const empty = !value.trim();
   const mode = useSubmitMode(submitOn);
@@ -82,6 +89,7 @@ export function PromptInput({
 
       <Frame paddingY={2} paddingX={4} className={cx(styles.surface, flush && styles.flush)}>
         <Textarea
+          {...fieldProps}
           rows={1}
           autoGrow
           maxRows={maxRows}
