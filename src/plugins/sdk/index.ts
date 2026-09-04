@@ -17,6 +17,8 @@ export type {
   StatusItem,
   PromptHandler,
   PromptRequest,
+  PromptContext,
+  PromptDestinationOption,
   CommandValues,
 } from './plugin';
 export { AppFrame } from './AppFrame';

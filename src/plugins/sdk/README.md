@@ -63,6 +63,10 @@ export default definePlugin({
 - `prompt(request, host)` makes the plugin an assistant candidate (`promptHandler: true`).
 - `useStatus` is a hook returning `{ text, command? }` items for the status bar; called once the
   module has loaded.
+- `usePromptContext` is a hook naming where free text will land (the open conversation, or what
+  submitting would create): `{ label, documentParams?, options?, select? }`. Shown above the
+  prompt bar once the module has loaded; `options` + `select` let the user switch the destination
+  before sending, `documentParams` lets them jump to its document.
 - `AppFrame` renders an iframe that survives its panel being moved between groups.
 
 ## Building a remote

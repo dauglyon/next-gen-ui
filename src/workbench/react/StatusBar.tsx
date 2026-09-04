@@ -1,16 +1,19 @@
 import { useSyncExternalStore } from 'react';
+import { SidebarSimple } from '@phosphor-icons/react';
 import { Button, Chip } from '@kbase/design-system';
 import type { StatusItem } from '../../plugins/sdk';
-import { useLayout, useMode, useRun, useServices, useTitle } from './context';
+import { useDispatch, useLayout, useMode, useRun, useServices, useTitle } from './context';
 import styles from './Workbench.module.css';
 
 export function StatusBar() {
   const layout = useLayout();
   const mode = useMode();
+  const dispatch = useDispatch();
   const { source, store, announcer } = useServices();
   useSyncExternalStore(source.subscribe, source.version, source.version);
   const focused = layout.focus ? layout.panels[layout.focus] : undefined;
   const title = useTitle(focused, layout.focus ?? '');
+  const collapsed = layout.sidebar.collapsed;
   // Status hooks exist only on loaded modules; a plugin that has not run yet
   // has nothing to say.
   const withStatus = source
@@ -20,6 +23,15 @@ export function StatusBar() {
 
   return (
     <div className={styles.statusBar} aria-label="Status bar">
+      <Button
+        size="xs"
+        variant="ghost"
+        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        aria-expanded={!collapsed}
+        onClick={() => dispatch({ type: 'sidebar', collapsed: !collapsed })}
+      >
+        <SidebarSimple size={14} aria-hidden="true" />
+      </Button>
       {mode === 'customize' && (
         <div className={styles.customizeControls} role="group" aria-label="Customize mode">
           <Chip color="purple" label="Customizing" />

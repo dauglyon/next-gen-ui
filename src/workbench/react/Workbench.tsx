@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import type { PluginId } from '../core';
 import { useLayout, useMode } from './context';
 import { FrameLayerProvider } from './FrameLayer';
 import { LiveRegion } from './LiveRegion';
@@ -16,18 +18,27 @@ export function Workbench() {
   const mode = useMode();
   useKeybindings();
   useFocusSync();
+  // Ephemeral: which unpinned plugin's navigator the sidebar previews —
+  // a block in the stack expanded, a flyout beside the rail collapsed.
+  const [preview, setPreview] = useState<PluginId | null>(null);
   return (
     <div className={styles.root} data-mode={mode}>
       <WorkbenchMenubar />
       <WorkbenchDnd>
         <FrameLayerProvider>
           <div className={styles.body}>
-            <Sidebar />
-            <MainArea />
+            <Sidebar
+              preview={preview}
+              onPreview={setPreview}
+              onDismissPreview={() => setPreview(null)}
+            />
+            <div className={styles.mainColumn}>
+              <MainArea />
+              {layout.bars.prompt && <PromptBar />}
+            </div>
           </div>
         </FrameLayerProvider>
       </WorkbenchDnd>
-      {layout.bars.prompt && <PromptBar />}
       {layout.bars.status && <StatusBar />}
       <LiveRegion />
     </div>

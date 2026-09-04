@@ -1,7 +1,7 @@
-import { useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { Chip, Tree } from '@kbase/design-system';
 import { definePlugin, useHost, usePanel, usePanelTitle } from '@kbase/plugin-sdk';
-import type { StatusItem } from '@kbase/plugin-sdk';
+import type { PromptContext, StatusItem } from '@kbase/plugin-sdk';
 import { koros } from './store';
 
 function useKoros() {
@@ -40,8 +40,14 @@ function ArcDocument() {
   const { params, focused } = usePanel();
   useKoros();
   const arc = koros.arc(params.slug);
+  const slug = arc?.slug;
   usePanelTitle(arc ? `Arc: ${arc.title}` : `Arc: ${params.slug}`);
-  if (focused && arc) koros.setCurrent(arc.slug);
+  // An effect, not a render-time call: setCurrent notifies subscribers in
+  // other components (the prompt bar's destination row), which React
+  // forbids during render.
+  useEffect(() => {
+    if (focused && slug) koros.setCurrent(slug);
+  }, [focused, slug]);
   if (!arc) {
     return (
       <div style={{ padding: 'var(--s-5)' }}>
@@ -80,10 +86,28 @@ function useStatus(): StatusItem[] {
   return n > 0 ? [{ text: `${n} answering` }] : [];
 }
 
+// Mirrors the prompt handler below: free text lands in the current arc,
+// else starts a new one. Any arc is offered as a switch target.
+function usePromptContext(): PromptContext | null {
+  useKoros();
+  const slug = koros.current();
+  const arc = slug ? koros.arc(slug) : undefined;
+  return {
+    label: arc ? `Arc: ${arc.title}` : 'A new arc',
+    documentParams: arc ? { slug: arc.slug } : undefined,
+    options: koros
+      .projects()
+      .flatMap((p) => koros.arcsOf(p.id))
+      .map((a) => ({ key: a.slug, label: `Arc: ${a.title}` })),
+    select: (key) => koros.setCurrent(key),
+  };
+}
+
 export default definePlugin({
   navigator: ProjectsNavigator,
   document: ArcDocument,
   useStatus,
+  usePromptContext,
   commands: {
     'new-question': (_values, host) => {
       const arc = koros.newArc();

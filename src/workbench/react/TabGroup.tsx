@@ -1,6 +1,6 @@
 import type { KeyboardEvent, MouseEvent } from 'react';
 import { X } from '@phosphor-icons/react';
-import { ContextMenu, EmptyState } from '@kbase/design-system';
+import { ContextMenu, EmptyState, Tabs } from '@kbase/design-system';
 import type { Group, Panel, PanelId, Side } from '../core';
 import { useDispatch, useLayout, useServices, useTitle } from './context';
 import { panelDomId, tabDomId } from './domIds';
@@ -51,7 +51,12 @@ export function TabGroup({ group }: { group: Group }) {
 
   return (
     <div className={styles.group} data-group={group.id} data-focused={focused || undefined}>
-      <div role="tablist" aria-label="Open panels" className={styles.tablist} onKeyDown={onKeyDown}>
+      <div
+        role="tablist"
+        aria-label="Open panels"
+        className={`${Tabs.tabClasses.listDividers} ${styles.tablist}`}
+        onKeyDown={onKeyDown}
+      >
         {group.tabs.map((id, index) => (
           <Tab
             key={id}
@@ -81,6 +86,15 @@ export function TabGroup({ group }: { group: Group }) {
               hidden={group.active !== id}
               className={styles.tabpanel}
               data-panel={id}
+              // Pointer as well as focus: most of a panel is plain text,
+              // and clicking it fires no focus event, so the workbench
+              // focus would stay wherever it last was.
+              onPointerDownCapture={() => {
+                if (layout.focus !== id) {
+                  focusIntentRef.current = 'user';
+                  dispatch({ type: 'focus', panel: id });
+                }
+              }}
               onFocusCapture={() => {
                 if (layout.focus !== id) {
                   focusIntentRef.current = 'user';
@@ -123,7 +137,9 @@ function Tab({
   onSelect: () => void;
 }) {
   const dispatch = useDispatch();
+  const { source } = useServices();
   const title = useTitle(panel, id);
+  const Icon = panel ? source.plugins().find((p) => p.id === panel.plugin)?.icon : undefined;
   const { dragRef, dragHandlers, isDragging } = useDragPanel({
     panel: id,
     kind: panel?.kind ?? 'document',
@@ -147,10 +163,11 @@ function Tab({
             aria-controls={panelDomId(id)}
             tabIndex={active ? 0 : -1}
             data-panel-tab={id}
+            data-selected={active || undefined}
             data-focused={focused || undefined}
             data-dragging={isDragging || undefined}
             data-over={isOver || undefined}
-            className={styles.tab}
+            className={`${Tabs.tabClasses.tab} ${styles.tab}`}
             ref={(el) => {
               dragRef(el);
               dropRef(el);
@@ -161,6 +178,11 @@ function Tab({
           />
         }
       >
+        {Icon && (
+          <span className={styles.tabIcon} aria-hidden="true">
+            <Icon size={13} />
+          </span>
+        )}
         <span className={styles.tabTitle}>{title}</span>
         <span className={styles.tabClose} aria-hidden="true" onClick={close} title="Close">
           <X size={12} weight="bold" />

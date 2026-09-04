@@ -56,14 +56,17 @@ than repaired. Settings that are not layout (`assistant`) live under `workbench.
 
 ## Sidebar (provisional)
 
-The icon column _is_ the pinned list, one icon per plugin, in pin order. Pinned plugins'
-navigators stack vertically, splitting the height with dividers; each scrolls inside itself and
-the sidebar never scrolls. A block folds to its header and is never hidden; a plugin leaves the
-sidebar only by unpinning. Clicking an icon unfolds and focuses that block and never hides
-anything. Unpinned plugins live under **More** and pop out beside the icons without changing the
-layout; Pin from there. Collapsing the sidebar leaves the icon column and every icon pops out.
-Any navigator can be dragged into the main area as a tab; closing it there returns it to the
-sidebar if its plugin is still pinned.
+Pinned plugins' navigators stack vertically as blocks, splitting the height with dividers; each
+scrolls inside itself and the sidebar never scrolls. A block's header carries its plugin's icon
+and title (the accordion pattern) and click-toggles the fold; a block folds to its header and is
+never hidden; a plugin leaves the sidebar only by unpinning. There is no separate icon rail:
+collapsing the sidebar *is* the icon column — the same pinned list, one icon per plugin in pin
+order, each popping its navigator out beside it without changing the layout. Unpinned plugins
+live under **More** (in the footer strip expanded, among the icons collapsed): a menu naming
+them, and choosing one shows its navigator as an ephemeral dashed *preview block* at the bottom
+of the stack — two clicks to look at a plugin without pinning it; Pin or dismiss from the
+preview's header, and a reload forgets it. Any navigator can be dragged into the main area as a
+tab; closing it there returns it to the sidebar if its plugin is still pinned.
 
 ## Commands and the prompt bar
 
@@ -75,7 +78,10 @@ plugin commands in one registry. Menus, keybindings and the bar are three surfac
 
 Free text goes to the plugin the settings name as **assistant** (a manifest with
 `promptHandler: true` whose module exports `prompt`). Its handler drives its own UI through the
-host; the bar shows Stop while it runs. With no assistant set the bar says so.
+host; the bar shows Stop while it runs. A destination row above the field names the assistant
+and, once its module has loaded, what its `usePromptContext` hook reports: the conversation the
+prompt will join, offered as a switcher over the hook's `options` and a jump to its document.
+With no assistant set the row says so.
 
 Default keybindings live in `commands/keys.ts` and avoid chords browsers own (Ctrl+W/T/N,
 Ctrl+Tab, Ctrl+PageUp/Down, Alt+Left/Right). `/` focuses the bar; `Escape` returns to the panel.

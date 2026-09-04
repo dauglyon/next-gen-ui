@@ -1,10 +1,12 @@
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import type { KeyboardEvent } from 'react';
-import { PromptInput } from '@kbase/design-system';
+import { ArrowUpRight, CaretUpDown, Check } from '@phosphor-icons/react';
+import { Menu, PromptInput } from '@kbase/design-system';
+import type { PromptContext } from '../../plugins/sdk';
 import { makePanel } from '../core';
 import type { Suggestion } from '../commands';
 import { complete, parse, resolve, usage } from '../commands';
-import { useLayout, useMode, useRun, useServices } from './context';
+import { useDispatch, useLayout, useMode, useRun, useServices } from './context';
 import { focusPanelElement } from './useFocusSync';
 import styles from './Workbench.module.css';
 
@@ -54,14 +56,12 @@ export function PromptBar() {
 
   const parsed = parse(value);
   const known = parsed.kind === 'command' ? registry.get(parsed.name) : undefined;
+  // Free-text destination is the row above the bar; the hint slot only
+  // ever explains the command being typed.
   const hint =
     parsed.kind === 'command' && known && known.args?.length
       ? `${usage(known.name, known.args)} — ${known.title}`
-      : busy
-        ? 'Answering…'
-        : assistantTitle
-          ? `Free text goes to ${assistantTitle}. Type / for commands.`
-          : 'No assistant is set. Pick one in the catalog, or type / for commands.';
+      : null;
 
   const accept = (s: Suggestion) => {
     setValue(s.value);
@@ -178,7 +178,7 @@ export function PromptBar() {
         error={error}
         busy={busy}
         onStop={() => abort.current?.abort()}
-        flush
+        footer={<PromptDestination />}
         maxRows={4}
         fieldProps={{
           role: 'combobox',
@@ -190,5 +190,91 @@ export function PromptBar() {
         }}
       />
     </div>
+  );
+}
+
+// Where free text will land: the assistant, and — once its module has
+// loaded — the conversation it reports via usePromptContext. Lives inside
+// the composer's footer row, like an email's To line.
+function PromptDestination() {
+  const { source, settings } = useServices();
+  const assistant = useSyncExternalStore(settings.subscribe, settings.get, settings.get).assistant;
+  useSyncExternalStore(source.subscribe, source.version, source.version);
+  if (!assistant) {
+    return (
+      <p className={styles.promptContext}>
+        Free text needs an assistant — pick one in the catalog.
+      </p>
+    );
+  }
+  const title = source.manifest(assistant)?.title ?? assistant;
+  const usePromptContext = source.loaded(assistant)?.usePromptContext;
+  return (
+    <p className={styles.promptContext}>
+      <span>To</span>
+      <span className={styles.promptDestination}>{title}</span>
+      {usePromptContext && (
+        <AssistantContext assistant={assistant} usePromptContext={usePromptContext} />
+      )}
+    </p>
+  );
+}
+
+// The destination control: a switcher over the assistant's offered
+// targets, and a jump to the destination's document.
+function AssistantContext({
+  assistant,
+  usePromptContext,
+}: {
+  assistant: string;
+  usePromptContext: () => PromptContext | null;
+}) {
+  const context = usePromptContext();
+  const dispatch = useDispatch();
+  if (!context) return null;
+  const { label, documentParams, options, select } = context;
+  const switchable = !!options?.length && !!select;
+  return (
+    <>
+      <span aria-hidden="true">·</span>
+      {switchable ? (
+        <Menu.Root>
+          <Menu.Trigger
+            render={<button type="button" className={styles.promptTarget} />}
+            aria-label={`Prompt destination: ${label}. Change destination`}
+          >
+            {label}
+            <CaretUpDown size={12} aria-hidden="true" />
+          </Menu.Trigger>
+          <Menu.Popup>
+            {options.map((option) => (
+              <Menu.Item key={option.key} onClick={() => select(option.key)}>
+                <Check
+                  size={14}
+                  weight="bold"
+                  aria-hidden="true"
+                  style={{ visibility: option.label === label ? 'visible' : 'hidden' }}
+                />
+                {option.label}
+              </Menu.Item>
+            ))}
+          </Menu.Popup>
+        </Menu.Root>
+      ) : (
+        <span className={styles.promptDestination}>{label}</span>
+      )}
+      {documentParams && (
+        <button
+          type="button"
+          className={styles.promptTarget}
+          aria-label={`Go to ${label}`}
+          onClick={() =>
+            dispatch({ type: 'open', panel: makePanel(assistant, 'document', documentParams) })
+          }
+        >
+          <ArrowUpRight size={13} aria-hidden="true" />
+        </button>
+      )}
+    </>
   );
 }

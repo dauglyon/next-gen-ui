@@ -1,6 +1,7 @@
 .root {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  /* menubar / body (sidebar + main column with the composer) / status bar */
+  grid-template-rows: auto minmax(0, 1fr) auto;
   height: 100dvh;
   background: var(--c-bg);
   color: var(--c-ink);
@@ -15,13 +16,14 @@
   white-space: nowrap;
 }
 
+/* Chrome sits on the warm page background; content panels are white
+   surface cards. The two-tone split is what makes the layout legible. */
 .menubar {
   display: flex;
   align-items: center;
   gap: var(--s-4);
   padding: var(--s-1) var(--s-3);
   border-bottom: 1px solid var(--c-border);
-  background: var(--c-surface);
 }
 
 .brand {
@@ -40,17 +42,63 @@
 .sidebar {
   display: flex;
   min-height: 0;
-  border-right: 1px solid var(--c-border);
-  background: var(--c-surface);
 }
 
+/* The collapsed rail and the expanded accordion are both always mounted;
+   collapsing animates the two clip widths in opposite directions, so one
+   state slides away behind the other instead of swapping. */
 .iconColumn {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--s-2);
+  box-sizing: border-box;
+  width: 42px;
   padding: var(--s-3) var(--s-2);
-  border-right: 1px solid var(--c-border);
+  overflow: hidden;
+  transition:
+    width var(--t-slow) ease,
+    padding var(--t-slow) ease,
+    opacity var(--t-slow) ease,
+    visibility 0s 0s;
+}
+
+.sidebar:not([data-collapsed]) .iconColumn {
+  width: 0;
+  padding-inline: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    width var(--t-slow) ease,
+    padding var(--t-slow) ease,
+    opacity var(--t-slow) ease,
+    visibility 0s var(--t-slow);
+}
+
+.blocksClip {
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+  transition:
+    width var(--t-slow) ease,
+    opacity var(--t-slow) ease,
+    visibility 0s 0s;
+}
+
+.sidebar[data-collapsed] .blocksClip {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    width var(--t-slow) ease,
+    opacity var(--t-slow) ease,
+    visibility 0s var(--t-slow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iconColumn,
+  .blocksClip {
+    transition: none;
+  }
 }
 
 .spacer {
@@ -58,12 +106,28 @@
 }
 
 .blocks {
+  /* Never shrinks below its set width: while the clip animates closed the
+     content is cropped, not re-laid-out. */
+  flex: none;
   display: flex;
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
+  padding: var(--s-3);
 }
 
+/* The main area's column: panels above, the composer below, together
+   spanning only the width right of the sidebar. */
+.mainColumn {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* One section of the accordion card (.blockStack); only the preview block
+   is a card of its own. */
 .block {
   display: flex;
   flex-direction: column;
@@ -71,39 +135,100 @@
   min-height: 0;
 }
 
-.block[data-focused] .blockHeader {
-  box-shadow: inset 3px 0 0 var(--c-primary);
+.block[data-folded] .blockHeader {
+  border-bottom: none;
 }
 
+/* An unpinned navigator being looked at. Its own card, dashed: not part
+   of the saved layout, gone on dismiss or reload. */
+.previewBlock {
+  flex: 0 0 auto;
+  height: auto;
+  max-height: 45%;
+  margin-top: var(--s-2);
+  background: var(--c-surface);
+  border: 1px dashed var(--c-border2);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.previewHeader {
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-1) var(--s-2) var(--s-1) var(--s-4);
+}
+
+.previewTitle {
+  font-size: var(--fs-5);
+  font-weight: var(--fw-bold);
+  color: var(--c-ink);
+}
+
+/* Focus marks with the system's tint-plus-tinted-text pair (NavIcon
+   active, Tree selected), not an edge bar of raw primary. */
+.block[data-focused] .blockHeader {
+  background: var(--bg-primary);
+}
+
+.block[data-focused] .blockToggle {
+  color: var(--ct-primary);
+}
+
+.blockLabel {
+  color: inherit;
+}
+
+/* A whisper of tone, not a band: --c-raised plus the hairline and the
+   header's own height is what separates one section from the next. */
 .blockHeader {
   display: flex;
+  background: var(--c-raised);
   border-bottom: 1px solid var(--c-border);
 }
 
+/* The design system's accordion header: bold ink title, leading icon in
+   ink3, chevron on the right rotating open/closed. */
 .blockToggle {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: var(--s-2);
-  padding: var(--s-2) var(--s-3);
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
   background: none;
   border: none;
-  color: var(--c-ink2);
-  font: inherit;
+  color: var(--c-ink);
+  font-family: inherit;
+  font-size: var(--fs-5);
+  font-weight: var(--fw-bold);
   text-align: left;
   cursor: pointer;
 }
 
-.blockToggle:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--c-focus) inset;
+.blockIcon {
+  display: inline-flex;
+  color: var(--c-ink3);
 }
 
-.blockTitle {
-  font-size: var(--fs-5);
-  font-weight: var(--fw-bold);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+.blockChevron {
+  margin-left: auto;
+  color: var(--c-ink4);
+  transition: transform var(--t-base);
+  transform: rotate(180deg);
+}
+
+.block[data-folded] .blockChevron {
+  transform: none;
+}
+
+.block[data-focused] .blockIcon {
+  color: var(--ct-primary);
+}
+
+/* Surface, not raised: the header itself is raised now. */
+.blockToggle:focus-visible {
+  outline: none;
+  background: var(--c-surface);
+  box-shadow: inset 0 0 0 2px var(--c-focus);
 }
 
 .blockBody {
@@ -112,37 +237,25 @@
   overflow: auto;
 }
 
-.popout {
+/* The class is doubled to outrank Popover.Popup's own 320px max-width and
+   content padding: this popout holds a whole navigator panel, not a hint,
+   and the panel body pads itself like its sidebar twin. Width comes
+   inline from the layout's sidebar width, so the flyout is the sidebar's
+   own size. */
+.popout.popout {
   display: flex;
   background: var(--c-surface);
   border: 1px solid var(--c-border);
   border-radius: var(--r-lg);
-  box-shadow: var(--e-3);
-  width: 360px;
-  height: 420px;
+  max-width: none;
+  height: 480px;
+  max-height: 80vh;
+  padding: 0;
   overflow: hidden;
-}
-
-.popoutList {
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid var(--c-border);
-  min-width: 100px;
-}
-
-.popoutTab {
-  padding: var(--s-2) var(--s-3);
-  background: none;
-  border: none;
-  color: var(--c-ink3);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.popoutTab[aria-selected='true'] {
-  color: var(--c-ink);
-  background: var(--c-raised);
+  /* Popover elevation (--e-4, per the token's own grading), not the menu's
+     --e-3 — aligned flush with the cards, the shadow is what says this
+     floats above them. */
+  box-shadow: var(--e-4);
 }
 
 .popoutBody {
@@ -155,10 +268,18 @@
 .popoutHeader {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: var(--s-2) var(--s-3);
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-4);
+  background: var(--c-raised);
   border-bottom: 1px solid var(--c-border);
 }
+
+.popoutTitle {
+  font-size: var(--fs-5);
+  font-weight: var(--fw-bold);
+  color: var(--c-ink);
+}
+
 
 /* Main area */
 
@@ -167,13 +288,17 @@
   min-width: 0;
   min-height: 0;
   display: flex;
+  padding: var(--s-3) var(--s-3) var(--s-3) 0;
 }
 
+/* Cards separated by a gap; each separator straddles the gap after its
+   child, so the grab area is exactly the visible gutter. */
 .split {
   display: flex;
   flex: 1;
   min-width: 0;
   min-height: 0;
+  gap: var(--s-2);
 }
 
 .splitRow {
@@ -202,22 +327,23 @@
   position: absolute;
   z-index: 1;
   background: transparent;
+  border-radius: var(--r-full);
   touch-action: none;
 }
 
 .splitRow > .splitChild > .separator {
   top: 0;
   bottom: 0;
-  right: -3px;
-  width: 6px;
+  right: calc(-1 * var(--s-2));
+  width: var(--s-2);
   cursor: col-resize;
 }
 
 .splitCol > .splitChild > .separator {
   left: 0;
   right: 0;
-  bottom: -3px;
-  height: 6px;
+  bottom: calc(-1 * var(--s-2));
+  height: var(--s-2);
   cursor: row-resize;
 }
 
@@ -227,63 +353,151 @@
   outline: none;
 }
 
+/* The sidebar's accordion card: all pinned navigators on one surface,
+   sections met by hairlines rather than gaps, so the stack reads as one
+   object — closed by the More footer row. Separators straddle the seams
+   instead of living in gutters. */
+.accordion {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.blockStack {
+  gap: 0;
+  flex: 1;
+  min-height: 0;
+}
+
+/* The accordion's footer: shaped like a section header, but an action. */
+.moreRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  padding: var(--s-2) var(--s-4);
+  background: var(--c-raised);
+  border: none;
+  border-top: 1px solid var(--c-border);
+  font-family: inherit;
+  font-size: var(--fs-4);
+  font-weight: var(--fw-bold);
+  color: var(--c-ink3);
+  text-align: left;
+  cursor: pointer;
+}
+
+.moreRow:hover {
+  color: var(--c-ink);
+}
+
+.moreRow:focus-visible {
+  outline: none;
+  background: var(--c-surface);
+  box-shadow: inset 0 0 0 2px var(--c-focus);
+}
+
+/* What the row opens onto, shown where a header would show its chevron. */
+.moreIcons {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-left: auto;
+  color: var(--c-ink4);
+  font-size: var(--fs-3);
+  font-weight: var(--fw-normal);
+}
+
+.blockStack > .splitChild:not(:first-child) > .block {
+  border-top: 1px solid var(--c-border);
+}
+
+.blockStack > .splitChild > .separator {
+  bottom: -3px;
+  height: 6px;
+}
+
+/* The design system's tabs (Tabs.tabClasses.list / .tab) dress the strip
+   inside the group card. These classes hold only what the workbench adds:
+   scrolling, the strip inset, the close button's flex layout, drag
+   markers, and the second focus level. */
 .group {
+  /* A root-level group has no SplitView assigning it a share; without
+     flex it would shrink to its content's width. */
+  flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
   min-width: 0;
   height: 100%;
-  border-right: 1px solid var(--c-border);
-  border-bottom: 1px solid var(--c-border);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
 }
 
 .tablist {
-  display: flex;
+  flex: none;
   overflow-x: auto;
-  border-bottom: 1px solid var(--c-border);
-  background: var(--c-surface);
+  background: var(--c-raised);
+  /* Inset so the first tab clears the card's rounded corner. */
+  padding: 0 var(--s-3);
 }
 
 .tab {
   display: inline-flex;
   align-items: center;
   gap: var(--s-2);
-  padding: var(--s-2) var(--s-3);
-  border: none;
-  border-bottom: 2px solid transparent;
-  background: none;
-  color: var(--c-ink4);
-  font: inherit;
-  font-size: var(--fs-4);
   white-space: nowrap;
-  cursor: pointer;
 }
 
-.tab[aria-selected='true'] {
-  color: var(--c-ink2);
-  background: var(--c-bg);
-}
-
-.group[data-focused] .tab[aria-selected='true'] {
-  border-bottom-color: var(--c-primary);
+/* The DS marks the selected tab --ct-primary; the workbench has many
+   groups, so only the focused group's keeps the tint. The .tablist hop
+   outranks the DS's .tab[data-selected]. */
+.group:not([data-focused]) .tablist .tab[data-selected] {
   color: var(--c-ink);
+  border-bottom-color: var(--c-ink5);
 }
 
-.tab:focus-visible {
-  outline: none;
-  box-shadow: inset 0 0 0 2px var(--c-focus);
+/* The plugin's glyph; currentColor, so it tints with the tab's state. */
+.tabIcon {
+  display: inline-flex;
 }
 
+/* Shown on the selected tab and under the pointer; hidden-but-present
+   elsewhere so tab widths never change. Nudged 1px down: geometrically
+   centered, the glyph reads high against a lowercase label's mass. */
 .tabClose {
+  position: relative;
+  top: 1px;
   display: inline-flex;
   border-radius: var(--r-sm);
   padding: 2px;
   color: var(--c-ink5);
+  opacity: 0;
+  transition: opacity var(--t-fast);
+}
+
+.tab:hover .tabClose,
+.tab:focus-visible .tabClose,
+.tab[data-selected] .tabClose {
+  opacity: 1;
 }
 
 .tabClose:hover {
   background: var(--c-raised);
   color: var(--c-ink2);
+}
+
+.tabClose:focus-visible {
+  outline: none;
+  background: var(--c-raised);
+  box-shadow: 0 0 0 2px var(--c-focus);
 }
 
 .tabpanel {
@@ -311,10 +525,57 @@
 
 /* Bars */
 
+/* A floating composer card on the page background, inset to the same
+   gutters as the panels; the wrapper also anchors the completion popup.
+   Lives in the main column, so it spans only the width right of the
+   sidebar. */
 .promptBar {
-  border-top: 1px solid var(--c-border);
-  background: var(--c-surface);
-  padding: var(--s-2) var(--s-4);
+  position: relative;
+  padding: 0 var(--s-3) var(--s-3) 0;
+}
+
+/* Lives inside the composer's footer row. */
+.promptContext {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin: 0;
+  min-width: 0;
+  font-size: var(--fs-4);
+  color: var(--c-ink4);
+}
+
+.promptDestination {
+  color: var(--c-ink2);
+}
+
+/* The destination switcher and the jump-to-it button. The pill's padding
+   is cancelled vertically so it doesn't inflate the footer row. */
+.promptTarget {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  padding: var(--s-1) var(--s-2);
+  margin-block: calc(-1 * var(--s-1));
+  border: none;
+  border-radius: var(--r-sm);
+  background: none;
+  font: inherit;
+  font-size: var(--fs-4);
+  color: var(--c-ink2);
+  cursor: pointer;
+}
+
+.promptTarget:hover {
+  background: var(--c-raised);
+  color: var(--c-ink);
+}
+
+.promptTarget:focus-visible {
+  outline: none;
+  background: var(--c-raised);
+  box-shadow: 0 0 0 2px var(--c-focus);
 }
 
 .statusBar {
@@ -322,8 +583,6 @@
   align-items: center;
   gap: var(--s-3);
   padding: var(--s-1) var(--s-4);
-  border-top: 1px solid var(--c-border);
-  background: var(--c-surface);
   min-height: 24px;
 }
 
@@ -441,7 +700,7 @@
   top: 0;
   left: 0;
   border: 0;
-  background: var(--c-bg);
+  background: var(--c-surface);
   pointer-events: auto;
   visibility: hidden;
 }
@@ -452,10 +711,11 @@
 
 .statusItem {
   font: inherit;
-  font-size: var(--fs-5);
+  font-size: var(--fs-4);
   color: var(--c-ink3);
   background: none;
   border: none;
+  border-radius: var(--r-sm);
   padding: 0 var(--s-2);
   cursor: pointer;
 }
@@ -464,16 +724,21 @@
   color: var(--c-ink);
 }
 
-/* Prompt completions */
-
-.promptBar {
-  position: relative;
+.statusItem:focus-visible {
+  outline: none;
+  background: var(--c-raised);
+  box-shadow: 0 0 0 2px var(--c-focus);
 }
+
+/* Prompt completions */
 
 .completions {
   position: absolute;
   left: var(--s-4);
-  right: var(--s-4);
+  /* A palette anchored where the text is typed, not a bar spanning the
+     viewport — full width would put each description a screen away from
+     its command. */
+  width: min(520px, calc(100% - 2 * var(--s-4)));
   bottom: 100%;
   margin: 0 0 var(--s-2);
   padding: var(--s-2);

@@ -2,6 +2,8 @@ import { useSyncExternalStore } from 'react';
 import { Chip, Radio, Switch } from '@kbase/design-system';
 import { usePanelTitle } from '../../../plugins/sdk';
 import { useDispatch, useLayout, useServices } from '../../react/context';
+import { iconFor } from '../icons';
+import styles from './Catalog.module.css';
 
 // The host's own navigator: what is installed, what is pinned, and which
 // plugin answers the prompt bar. Reaches host services directly, which no
@@ -17,47 +19,47 @@ export function CatalogNavigator() {
   const assistants = manifests.filter((m) => m.promptHandler);
 
   return (
-    <div style={{ padding: 'var(--s-3)', display: 'grid', gap: 'var(--s-5)' }}>
-      <section aria-labelledby="catalog-installed" style={{ display: 'grid', gap: 'var(--s-2)' }}>
+    <div className={styles.root}>
+      <section aria-labelledby="catalog-installed" className={styles.section}>
         <h2 id="catalog-installed" className="h4">
           Installed
         </h2>
-        <ul
-          style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 'var(--s-3)' }}
-        >
+        <ul className={styles.list}>
           {manifests.map((m) => {
+            const Icon = iconFor(m.icon);
             const pinned = layout.sidebar.pinned.includes(m.id);
             const loaded = !!source.loaded(m.id);
             return (
-              <li key={m.id} style={{ display: 'grid', gap: 'var(--s-1)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-3)' }}>
-                  <span className="body" style={{ flex: 1 }}>
-                    {m.title}
-                  </span>
+              <li key={m.id} className={styles.row}>
+                <span className={styles.rowIcon} aria-hidden="true">
+                  <Icon size={16} />
+                </span>
+                <span className={styles.rowTitle}>
+                  <span className="body">{m.title}</span>
                   {loaded && <Chip color="green" label="loaded" />}
-                  {m.navigator && (
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-2)' }}>
-                      <span className="caption">Pinned</span>
-                      <Switch
-                        checked={pinned}
-                        onCheckedChange={(v) =>
-                          dispatch(
-                            v ? { type: 'pin', plugin: m.id } : { type: 'unpin', plugin: m.id },
-                          )
-                        }
-                        aria-label={`Pin ${m.title} to the sidebar`}
-                      />
-                    </label>
-                  )}
-                </div>
-                {m.description && <p className="caption">{m.description}</p>}
+                </span>
+                {m.navigator && (
+                  <span className={styles.rowControls}>
+                    <span className="caption">Pinned</span>
+                    <Switch
+                      checked={pinned}
+                      onCheckedChange={(v) =>
+                        dispatch(
+                          v ? { type: 'pin', plugin: m.id } : { type: 'unpin', plugin: m.id },
+                        )
+                      }
+                      aria-label={`Pin ${m.title} to the sidebar`}
+                    />
+                  </span>
+                )}
+                {m.description && <p className={`caption ${styles.rowDesc}`}>{m.description}</p>}
               </li>
             );
           })}
         </ul>
       </section>
 
-      <section aria-labelledby="catalog-assistant" style={{ display: 'grid', gap: 'var(--s-2)' }}>
+      <section aria-labelledby="catalog-assistant" className={styles.section}>
         <h2 id="catalog-assistant" className="h4">
           Assistant
         </h2>
@@ -71,12 +73,12 @@ export function CatalogNavigator() {
           style={{ display: 'grid', gap: 'var(--s-2)' }}
         >
           {assistants.map((m) => (
-            <label key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-2)' }}>
+            <label key={m.id} className={styles.assistantRow}>
               <Radio.Radio value={m.id} />
               <span className="body">{m.title}</span>
             </label>
           ))}
-          <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-2)' }}>
+          <label className={styles.assistantRow}>
             <Radio.Radio value="none" />
             <span className="body">None</span>
           </label>
