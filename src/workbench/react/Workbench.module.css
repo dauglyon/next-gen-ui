@@ -18,11 +18,14 @@
 
 /* Chrome sits on the warm page background; content panels are white
    surface cards. The two-tone split is what makes the layout legible. */
+/* The design system's app bar (chrome.css .kb-appbar): --s-3 vertical
+   padding — the room the canonical masthead was sized for. A compact
+   menu strip makes the lockup read wrong at any scale. */
 .menubar {
   display: flex;
   align-items: center;
   gap: var(--s-4);
-  padding: var(--s-1) var(--s-3);
+  padding: var(--s-3);
   border-bottom: 1px solid var(--c-border);
 }
 
