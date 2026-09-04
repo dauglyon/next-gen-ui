@@ -6,7 +6,10 @@ import type { Side } from './tree';
 // invert operations, it restores snapshots, so nothing here needs an inverse.
 
 export type MainTarget = { group: GroupId; index?: number } | { group: GroupId; side: Side };
-export type Target = MainTarget | { zone: 'sidebar' };
+// A sidebar index is a pin position, in pre-removal terms like a
+// same-group tab index; absent, a pinned plugin keeps its place and a new
+// one appends.
+export type Target = MainTarget | { zone: 'sidebar'; index?: number };
 
 export type Operation =
   | { type: 'open'; panel: Panel; target?: MainTarget }

@@ -29,4 +29,13 @@ describe('dropOperation', () => {
       to: { zone: 'sidebar' },
     });
   });
+
+  it('drops on a block insert at its pin slot, navigators only', () => {
+    expect(dropOperation(doc, { type: 'pin', index: 1 })).toBeNull();
+    expect(dropOperation(nav, { type: 'pin', index: 1 })).toEqual({
+      type: 'move',
+      panel: nav.panel,
+      to: { zone: 'sidebar', index: 1 },
+    });
+  });
 });

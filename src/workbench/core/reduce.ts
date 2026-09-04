@@ -171,10 +171,21 @@ function move(
   if (!panel) return layout;
   if ('zone' in op.to) {
     if (panel.kind !== 'navigator') return layout;
-    const main = normalize(removeTab(layout.main, panel.id), layout.main.id);
-    const pinned = layout.sidebar.pinned.includes(panel.plugin)
-      ? layout.sidebar.pinned
-      : [...layout.sidebar.pinned, panel.plugin];
+    const removed = removeTab(layout.main, panel.id);
+    // normalize rebuilds the tree, so skip it when nothing was removed —
+    // a pure pin reorder must compare reference-equal below.
+    const main = removed === layout.main ? layout.main : normalize(removed, layout.main.id);
+    const before = layout.sidebar.pinned;
+    const from = before.indexOf(panel.plugin);
+    const without = before.filter((p) => p !== panel.plugin);
+    // No index: a pinned plugin keeps its place, a new one appends.
+    let at = op.to.index ?? (from !== -1 ? from : without.length);
+    // A given index is in pre-removal terms, like a same-group tab move.
+    if (op.to.index !== undefined && from !== -1 && from < op.to.index) at -= 1;
+    at = Math.max(0, Math.min(at, without.length));
+    const pinned = [...without.slice(0, at), panel.plugin, ...without.slice(at)];
+    const unchanged = main === layout.main && pinned.every((p, i) => p === before[i]);
+    if (unchanged) return focus(layout, panel.id);
     return { ...layout, main, sidebar: { ...layout.sidebar, pinned }, focus: panel.id };
   }
   return { ...layout, main: place(layout, panel.id, op.to, ctx), focus: panel.id };

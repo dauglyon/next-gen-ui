@@ -151,6 +151,13 @@
   border-bottom: none;
 }
 
+/* Insertion line: a dropped navigator lands before this block. On the
+   header, whose own inset shadow paints above its background — on the
+   section it hid behind it. */
+.block[data-over] .blockHeader {
+  box-shadow: inset 0 3px 0 var(--c-primary);
+}
+
 /* An unpinned navigator being looked at. Its own card, dashed: not part
    of the saved layout, gone on dismiss or reload. */
 .previewBlock {

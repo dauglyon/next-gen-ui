@@ -14,6 +14,8 @@ export type DropData =
   | { type: 'tab'; group: GroupId; index: number }
   | { type: 'edge'; group: GroupId; side: Side }
   | { type: 'group'; group: GroupId }
+  // A pin position: dropping a navigator on a block inserts before it.
+  | { type: 'pin'; index: number }
   | { type: 'sidebar' };
 
 export const dragId = (panel: PanelId) => `drag:${panel}`;
@@ -25,6 +27,8 @@ export const dropId = (data: DropData) => {
       return `drop:edge:${data.group}:${data.side}`;
     case 'group':
       return `drop:group:${data.group}`;
+    case 'pin':
+      return `drop:pin:${data.index}`;
     case 'sidebar':
       return 'drop:sidebar';
   }
@@ -38,6 +42,9 @@ export function dropOperation(active: DragData, over: DropData): Operation | nul
       return { type: 'move', panel: active.panel, to: { group: over.group } };
     case 'edge':
       return { type: 'move', panel: active.panel, to: { group: over.group, side: over.side } };
+    case 'pin':
+      if (active.kind !== 'navigator') return null;
+      return { type: 'move', panel: active.panel, to: { zone: 'sidebar', index: over.index } };
     case 'sidebar':
       if (active.kind !== 'navigator') return null;
       return { type: 'move', panel: active.panel, to: { zone: 'sidebar' } };

@@ -155,13 +155,21 @@ function Block({ panel, info }: { panel: Panel; info: PluginInfo | undefined }) 
     panel: panel.id,
     kind: 'navigator',
   });
+  // Dropping another navigator on this block inserts it at this pin slot.
+  const dragging = useDragging();
+  const { dropRef, isOver } = useDropTarget(
+    { type: 'pin', index: at },
+    dragging?.kind !== 'navigator' || dragging?.panel === panel.id,
+  );
 
   return (
     <section
+      ref={dropRef}
       className={styles.block}
       aria-labelledby={headerId}
       data-focused={focused || undefined}
       data-folded={folded || undefined}
+      data-over={isOver || undefined}
     >
       <ContextMenu.Root>
         <ContextMenu.Trigger className={styles.blockHeader}>

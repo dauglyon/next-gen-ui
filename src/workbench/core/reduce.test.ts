@@ -146,6 +146,25 @@ describe('move', () => {
     const start = run(defaultLayout(), { type: 'open', panel: arc });
     expect(reduce(start, { type: 'move', panel: arc.id, to: { zone: 'sidebar' } })).toBe(start);
   });
+
+  it('reorders pins with a pre-removal sidebar index', () => {
+    const start = defaultLayout({ pinned: ['koros', 'data', 'jobs'] });
+    const dataNav = makePanel('data', 'navigator');
+    const l = run(start, { type: 'move', panel: dataNav.id, to: { zone: 'sidebar', index: 0 } });
+    expect(l.sidebar.pinned).toEqual(['data', 'koros', 'jobs']);
+    // Downward past itself: index given before removal, like a tab move.
+    const l2 = run(start, { type: 'move', panel: dataNav.id, to: { zone: 'sidebar', index: 3 } });
+    expect(l2.sidebar.pinned).toEqual(['koros', 'jobs', 'data']);
+  });
+
+  it('a reorder to the same place is not a change', () => {
+    const start = defaultLayout({ pinned: ['koros', 'data'] });
+    const korosNav = makePanel('koros', 'navigator');
+    const focused = reduce(start, { type: 'focus', panel: korosNav.id });
+    expect(
+      reduce(focused, { type: 'move', panel: korosNav.id, to: { zone: 'sidebar', index: 0 } }),
+    ).toBe(focused);
+  });
 });
 
 describe('pin and fold', () => {
