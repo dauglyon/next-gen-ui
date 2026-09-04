@@ -137,16 +137,12 @@ export function Sidebar({
         data-over={isOver || undefined}
       >
         {shortcuts.length > 0 && (
-          <div className={styles.shortcutRow}>
-            {/* Beside the toolbar, not in it: the glyph the collapsed rail
-                folds this toolbar into, on the leading-glyph centre-line. */}
-            <span className={styles.shortcutMark} aria-hidden="true">
-              <Nut size={16} />
-            </span>
-            <Toolbar.Root className={styles.shortcutBar} aria-label="Shortcuts">
-              <ShortcutButtons shortcuts={shortcuts} />
-            </Toolbar.Root>
-          </div>
+          // Buttons only: an expanded toolbar's identity is its position
+          // and contents (Photoshop, ribbon, macOS all agree); the nut
+          // represents it only in the collapsed rail.
+          <Toolbar.Root className={styles.shortcutBar} aria-label="Shortcuts">
+            <ShortcutButtons shortcuts={shortcuts} />
+          </Toolbar.Root>
         )}
         <div className={styles.accordion}>
           {blocks.length === 0 ? (
