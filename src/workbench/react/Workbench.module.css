@@ -142,11 +142,26 @@
   border-radius: var(--r-lg);
 }
 
-/* The same toolbar behind the rail's ⚡ icon, vertical. The class is
-   doubled to outrank Popover.Popup's content padding. */
-.shortcutPop.shortcutPop {
-  min-width: 160px;
-  padding: var(--s-2);
+/* The toolbar unfolding rightwards from the rail's ⚡: a horizontal strip
+   at the icon's row, not a menu card. Scales out of its left edge. The
+   class is doubled to outrank Popover.Popup's content padding and width. */
+.shortcutFlyout.shortcutFlyout {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: var(--s-1);
+  border-radius: var(--r-md);
+  box-shadow: var(--e-3);
+  transform-origin: left center;
+  transition:
+    transform var(--t-base) ease,
+    opacity var(--t-base) ease;
+}
+
+.shortcutFlyout[data-starting-style],
+.shortcutFlyout[data-ending-style] {
+  transform: scaleX(0.5);
+  opacity: 0;
 }
 
 /* The main area's column: panels above, the composer below, together

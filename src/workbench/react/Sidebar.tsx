@@ -86,13 +86,13 @@ export function Sidebar({
             />
             <Popover.Popup
               side="right"
-              sideOffset={8}
-              align="start"
-              alignOffset={6}
-              className={styles.shortcutPop}
+              sideOffset={4}
+              className={styles.shortcutFlyout}
               aria-label="Shortcuts"
             >
-              <Toolbar.Root orientation="vertical" aria-label="Shortcuts">
+              {/* The toolbar itself, unfolding rightwards from the ⚡ —
+                  not a menu card. */}
+              <Toolbar.Root aria-label="Shortcuts">
                 <ShortcutButtons shortcuts={shortcuts} />
               </Toolbar.Root>
             </Popover.Popup>
