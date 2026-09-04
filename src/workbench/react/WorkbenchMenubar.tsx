@@ -18,8 +18,13 @@ export function WorkbenchMenubar() {
   return (
     <div className={styles.menubar}>
       <span className={styles.brand} aria-hidden="true">
-        {/* Static until something wires `active` to a loading state. */}
-        <Loader size={20} active={false} />
+        {/* The design system's masthead ratios: 16px dots, --s-5 to the
+            wordmark. 42 here because the Loader's 48-unit viewBox padding
+            means its dots render at 18/48 of `size`. Static until
+            something wires `active` to a loading state. */}
+        <span className={styles.brandMark}>
+          <Loader size={42} active={false} />
+        </span>
         KBase
       </span>
       <Menubar.Root aria-label="Workbench menu">

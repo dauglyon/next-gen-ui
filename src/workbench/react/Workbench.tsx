@@ -21,11 +21,7 @@ export function Workbench() {
   // a block in the stack expanded, a flyout beside the rail collapsed.
   const [preview, setPreview] = useState<PluginId | null>(null);
   return (
-    <div
-      className={styles.root}
-      data-locked={layout.locked || undefined}
-      data-sidebar-collapsed={layout.sidebar.collapsed || undefined}
-    >
+    <div className={styles.root} data-locked={layout.locked || undefined}>
       <WorkbenchMenubar />
       <WorkbenchDnd>
         <FrameLayerProvider>

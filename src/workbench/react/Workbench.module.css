@@ -24,26 +24,27 @@
   gap: var(--s-4);
   padding: var(--s-1) var(--s-3);
   border-bottom: 1px solid var(--c-border);
-  transition: padding var(--t-slow) ease;
 }
 
-/* Expanded, the logo shares the header icons' centre-line (x=24) and the
-   sidebar scans as rows. Collapsed, everything below is a bare glyph
-   column, and an aligned logo gets scanned as its first member — so it
-   slides off the line to the page's 8px gutter, marking where chrome
-   ends without crowding the viewport edge. */
-.root[data-sidebar-collapsed] .brand {
-  padding-inline: 0;
-}
-
+/* The design system's masthead: the mark, --s-5, then the name at --fs-7
+   bold ink2. At this scale the mark reads as a logo, not another glyph in
+   the collapsed rail's column, so it holds one position in both states. */
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: var(--s-2);
+  gap: var(--s-5);
+  font-size: var(--fs-7);
   font-weight: var(--fw-bold);
-  color: var(--c-ink3);
+  color: var(--c-ink2);
   padding: 0 var(--s-2);
-  transition: padding var(--t-slow) ease;
+}
+
+/* Bounds the line box: the Loader's square SVG is taller than its dots,
+   and overflow stays visible for the animated form. */
+.brandMark {
+  display: flex;
+  align-items: center;
+  height: 24px;
 }
 
 .body {
