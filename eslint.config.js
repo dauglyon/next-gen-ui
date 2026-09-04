@@ -35,6 +35,24 @@ export default tseslint.config(
     },
   },
   {
+    // The workbench's layout model and command registry are plain TypeScript
+    // so they can be tested without a DOM and read without React knowledge.
+    files: ['src/workbench/core/**/*.ts', 'src/workbench/commands/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['react', 'react-dom', 'react/*', 'react-dom/*', '@tanstack/*', '@kbase/*'],
+              message: 'src/workbench/core and src/workbench/commands stay framework-free.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['**/*.mjs'],
     extends: [js.configs.recommended],
     languageOptions: {
