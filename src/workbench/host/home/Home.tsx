@@ -14,7 +14,7 @@ import styles from './Home.module.css';
 // known in advance.
 export function HomeDocument() {
   usePanelTitle('Home');
-  const { source } = useServices();
+  const { source, preview } = useServices();
   const layout = useLayout();
   const dispatch = useDispatch();
   const [query, setQuery] = useState('');
@@ -34,11 +34,16 @@ export function HomeDocument() {
 
   const openApp = (m: Manifest) =>
     dispatch({ type: 'open', panel: makePanel(m.id, 'document', {}) });
-  // Open, not pin: `open` shows a pinned plugin's navigator in its
-  // sidebar block and an unpinned one as a tab, which is what picking it
-  // here should mean. Pinning is the catalog's job.
-  const showPanel = (m: Manifest) =>
-    dispatch({ type: 'open', panel: makePanel(m.id, 'navigator') });
+  // Show where it lives, never pin: a pinned plugin's navigator is
+  // focused in its sidebar block, an unpinned one is previewed the way
+  // the sidebar's More menu previews it. Pinning is the catalog's job.
+  const showPanel = (m: Manifest) => {
+    if (layout.sidebar.pinned.includes(m.id)) {
+      dispatch({ type: 'open', panel: makePanel(m.id, 'navigator') });
+    } else {
+      preview.set(m.id);
+    }
+  };
 
   return (
     <div className={styles.root}>

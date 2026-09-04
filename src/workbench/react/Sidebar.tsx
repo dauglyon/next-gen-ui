@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useSyncExternalStore } from 'react';
 import type { RefObject } from 'react';
 // Chrome glyphs come straight from Phosphor, never from the host's icon
 // table — the table is the plugins' namespace (host/icons.ts).
@@ -19,18 +19,10 @@ import styles from './Workbench.module.css';
 // control strip. A block folds to its header and never hides; leaving the
 // sidebar means unpinning. Unpinned plugins sit under "More" and pop out
 // without touching the layout.
-export function Sidebar({
-  preview,
-  onPreview,
-  onDismissPreview,
-}: {
-  preview: PluginId | null;
-  onPreview: (plugin: PluginId) => void;
-  onDismissPreview: () => void;
-}) {
+export function Sidebar() {
   const layout = useLayout();
   const dispatch = useDispatch();
-  const { source } = useServices();
+  const { source, preview: previewHandle } = useServices();
   const { sidebar } = layout;
   const plugins = source.plugins();
   const infoOf = (id: PluginId) => plugins.find((p) => p.id === id);
@@ -45,7 +37,14 @@ export function Sidebar({
     { type: 'pin', index: sidebar.pinned.length },
     dragging?.kind !== 'navigator',
   );
+  const preview = useSyncExternalStore(
+    previewHandle.subscribe,
+    previewHandle.get,
+    previewHandle.get,
+  );
   const previewing = preview && !sidebar.pinned.includes(preview) ? preview : null;
+  const onPreview = previewHandle.set;
+  const onDismissPreview = () => previewHandle.set(null);
   // Anchors the collapsed preview flyout to the ⋯ icon that opened it.
   const moreAnchorRef = useRef<HTMLSpanElement>(null);
 

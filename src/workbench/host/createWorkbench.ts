@@ -6,7 +6,7 @@ import { createCommandRegistry, workbenchCommands } from '../commands';
 import { createAnnouncer, createTitleStore } from '../react';
 import type { WorkbenchServices } from '../react';
 import { fallbackTitle } from '../react/context';
-import { createPromptHandle } from '../react/services';
+import { createPreviewHandle, createPromptHandle } from '../react/services';
 import type { InstalledPlugin } from './installed';
 import { createHostIndex } from './installed';
 import { catalog } from './catalog';
@@ -38,6 +38,7 @@ export function createWorkbench({
   const titles = createTitleStore();
   const announcer = createAnnouncer();
   const prompt = createPromptHandle();
+  const preview = createPreviewHandle();
   const focusIntentRef: WorkbenchServices['focusIntentRef'] = { current: 'command' };
   const source = createHostIndex([...installed, catalog, shortcutsPlugin, home]);
   const settings = createSettingsStore(storage, { assistant: defaultAssistant });
@@ -62,6 +63,7 @@ export function createWorkbench({
     titles,
     announcer,
     prompt,
+    preview,
     focusIntentRef,
     dispatch,
   };
