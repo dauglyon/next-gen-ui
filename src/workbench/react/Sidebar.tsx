@@ -41,11 +41,16 @@ export function Sidebar({
   // Anchors the collapsed preview flyout to the ⋯ icon that opened it.
   const moreAnchorRef = useRef<HTMLSpanElement>(null);
 
-  // Both states stay mounted; CSS animates the clip widths between them,
-  // so collapsing reads as the accordion sliding away behind the rail
-  // rather than one view swapping for another.
+  // Both states stay mounted. One width animates — the container's — and
+  // the two layers crossfade: the rail is a fixed-width overlay (its icons
+  // are never clipped mid-animation) and the blocks keep their full width,
+  // cropped by the container, so nothing inside re-lays-out.
   return (
-    <div className={styles.sidebar} data-collapsed={sidebar.collapsed || undefined}>
+    <div
+      className={styles.sidebar}
+      data-collapsed={sidebar.collapsed || undefined}
+      style={{ width: sidebar.collapsed ? 42 : sidebar.width }}
+    >
       <div
         className={styles.iconColumn}
         role="toolbar"
@@ -80,15 +85,14 @@ export function Sidebar({
         />
       )}
 
-      <div className={styles.blocksClip} style={{ width: sidebar.collapsed ? 0 : sidebar.width }}>
-        <div
-          ref={dropRef}
-          className={styles.blocks}
-          style={{ width: sidebar.width }}
-          role="region"
-          aria-label="Sidebar"
-          data-over={isOver || undefined}
-        >
+      <div
+        ref={dropRef}
+        className={styles.blocks}
+        style={{ width: sidebar.width }}
+        role="region"
+        aria-label="Sidebar"
+        data-over={isOver || undefined}
+      >
         <div className={styles.accordion}>
           {blocks.length === 0 ? (
             <p className={`caption ${styles.panelMessage}`}>
@@ -125,7 +129,6 @@ export function Sidebar({
             onDismiss={onDismissPreview}
           />
         )}
-        </div>
       </div>
     </div>
   );

@@ -39,15 +39,24 @@
 
 /* Sidebar */
 
+/* Both states stay mounted; the container's width is the ONE animated
+   layout property, and the rail and the blocks crossfade inside it. The
+   rail is a fixed-width overlay so its icons are never clipped
+   mid-animation; the blocks keep their full width and are cropped by the
+   container, so nothing inside re-lays-out. */
 .sidebar {
-  display: flex;
+  position: relative;
+  flex: none;
   min-height: 0;
+  overflow: hidden;
+  transition: width var(--t-slow) ease;
 }
 
-/* The collapsed rail and the expanded accordion are both always mounted;
-   collapsing animates the two clip widths in opposite directions, so one
-   state slides away behind the other instead of swapping. */
 .iconColumn {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -55,48 +64,32 @@
   box-sizing: border-box;
   width: 42px;
   padding: var(--s-3) var(--s-2);
-  overflow: hidden;
+  background: var(--c-bg);
   transition:
-    width var(--t-slow) ease,
-    padding var(--t-slow) ease,
     opacity var(--t-slow) ease,
     visibility 0s 0s;
 }
 
 .sidebar:not([data-collapsed]) .iconColumn {
-  width: 0;
-  padding-inline: 0;
   opacity: 0;
   visibility: hidden;
   transition:
-    width var(--t-slow) ease,
-    padding var(--t-slow) ease,
     opacity var(--t-slow) ease,
     visibility 0s var(--t-slow);
 }
 
-.blocksClip {
-  display: flex;
-  min-height: 0;
-  overflow: hidden;
-  transition:
-    width var(--t-slow) ease,
-    opacity var(--t-slow) ease,
-    visibility 0s 0s;
-}
-
-.sidebar[data-collapsed] .blocksClip {
+.sidebar[data-collapsed] .blocks {
   opacity: 0;
   visibility: hidden;
   transition:
-    width var(--t-slow) ease,
     opacity var(--t-slow) ease,
     visibility 0s var(--t-slow);
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .sidebar,
   .iconColumn,
-  .blocksClip {
+  .blocks {
     transition: none;
   }
 }
@@ -106,14 +99,14 @@
 }
 
 .blocks {
-  /* Never shrinks below its set width: while the clip animates closed the
-     content is cropped, not re-laid-out. */
-  flex: none;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  height: 100%;
   overflow: hidden;
   padding: var(--s-3);
+  transition:
+    opacity var(--t-slow) ease,
+    visibility 0s 0s;
 }
 
 /* The main area's column: panels above, the composer below, together
