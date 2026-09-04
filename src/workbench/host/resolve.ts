@@ -15,6 +15,10 @@ export function resolveDeepLink(
   services: WorkbenchServices,
   plugin: PluginId,
   rest: string,
+  // Params the route has no segment for, as written by pathForPanel. The
+  // round trip has to be exact: a link that resolves to different params
+  // is a different panel, and the layout would gain one on every focus.
+  search = '',
 ): Resolution {
   const manifest = services.source.manifest(plugin);
   if (!manifest) {
@@ -39,6 +43,10 @@ export function resolveDeepLink(
       message: `${manifest.title} has no page at /${rest}; its pages look like ${manifest.document.route}.`,
     };
   }
-  services.dispatch({ type: 'open', panel: makePanel(plugin, 'document', params) });
+  const extra = Object.fromEntries(new URLSearchParams(search));
+  services.dispatch({
+    type: 'open',
+    panel: makePanel(plugin, 'document', { ...extra, ...params }),
+  });
   return { ok: true };
 }

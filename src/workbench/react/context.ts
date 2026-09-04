@@ -16,7 +16,6 @@ export function useLayout(): Layout {
   return useSyncExternalStore(store.subscribe, store.get, store.get);
 }
 
-
 export function useDispatch(): (op: Operation) => boolean {
   const { store, announcer } = useServices();
   return useCallback(

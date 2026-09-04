@@ -127,7 +127,6 @@
     visibility 0s 0s;
 }
 
-
 /* The main area's column: panels above, the composer below, together
    spanning only the width right of the sidebar. */
 .mainColumn {
@@ -300,7 +299,6 @@
   font-weight: var(--fw-bold);
   color: var(--c-ink);
 }
-
 
 /* Main area */
 

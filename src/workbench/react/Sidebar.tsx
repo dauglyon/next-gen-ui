@@ -362,7 +362,12 @@ function PreviewBlock({
         >
           Pin
         </Button>
-        <Button size="xs" variant="ghost" aria-label={`Dismiss ${title} preview`} onClick={onDismiss}>
+        <Button
+          size="xs"
+          variant="ghost"
+          aria-label={`Dismiss ${title} preview`}
+          onClick={onDismiss}
+        >
           <X size={13} aria-hidden="true" />
         </Button>
       </div>
@@ -448,9 +453,7 @@ function PopoutIcon({
   return (
     <Popover.Root>
       <Popover.Trigger
-        render={
-          <Toolbar.Button render={<NavIcon aria-label={label}>{children}</NavIcon>} />
-        }
+        render={<Toolbar.Button render={<NavIcon aria-label={label}>{children}</NavIcon>} />}
       />
       {/* Beside the rail with its top at the icon: the default bottom-
           centered placement would cover the icons under the clicked one. */}

@@ -29,7 +29,15 @@ export interface PopupProps extends Omit<BasePopover.Popup.Props, 'className'> {
   alignOffset?: BasePopover.Positioner.Props['alignOffset'];
 }
 
-export function Popup({ className, anchor, side, sideOffset, align, alignOffset, ...props }: PopupProps) {
+export function Popup({
+  className,
+  anchor,
+  side,
+  sideOffset,
+  align,
+  alignOffset,
+  ...props
+}: PopupProps) {
   return (
     <BasePopover.Portal>
       <BasePopover.Positioner

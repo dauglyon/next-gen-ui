@@ -40,6 +40,20 @@ export interface PromptContext {
   select?: (key: string) => void;
 }
 
+// What a plugin offers to do with what the user typed: which of its own
+// document's params to open, and why it matched — its own words, since
+// the host has no idea what the plugin's data means.
+export interface Offer {
+  params: Record<string, string>;
+  why: string;
+}
+
+// Plugins volunteer: only the plugin knows what "mine" looks like, so the
+// host runs this rather than interpreting the query itself. Called on
+// every keystroke, so it is synchronous and cheap — no I/O, no await.
+// Returning [] is the normal answer.
+export type Matcher = (text: string) => Offer[];
+
 export interface PluginModule {
   navigator?: ComponentType;
   document?: ComponentType;

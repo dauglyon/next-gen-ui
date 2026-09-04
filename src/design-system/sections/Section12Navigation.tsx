@@ -108,8 +108,8 @@ export function Section12Navigation() {
       <div className={s.sNum}>12</div>
       <div className={s.sTitle}>Navigation</div>
       <p className={s.sDesc}>
-        Tree for hierarchical browsing. Tabs for switching views. Stepper for multi-step flows.
-        All use keyboard navigation.
+        Tree for hierarchical browsing. Tabs for switching views. Stepper for multi-step flows. All
+        use keyboard navigation.
       </p>
 
       <div className={s.sub}>Tree</div>

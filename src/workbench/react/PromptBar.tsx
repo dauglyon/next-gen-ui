@@ -11,15 +11,17 @@ import { useDispatch, useLayout, useRun, useServices } from './context';
 import { focusPanelElement } from './useFocusSync';
 import styles from './Workbench.module.css';
 
+// A suggestion that acts directly, for offers whose params no command
+// string could carry.
+type BarSuggestion = Suggestion & { run?: () => void };
+
 // The bottom bar. A leading slash makes it a command, completed from the
 // registry before any plugin code loads; anything else goes to the
 // assistant the user chose in the catalog.
 export function PromptBar() {
   const [value, setValue] = useState('');
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [suggestions, setSuggestions] = useState<BarSuggestion[]>([]);
   const [highlight, setHighlight] = useState(-1);
-  // Command completions are selected on arrival; app suggestions are not.
-  const [kind, setKind] = useState<'command' | 'app'>('command');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { registry, announcer, prompt, settings, source, dispatch } = useServices();
@@ -39,78 +41,6 @@ export function PromptBar() {
   const ctx = () => ({
     focusKind: layout.focus ? (layout.panels[layout.focus]?.kind ?? null) : null,
   });
-
-  // The omnibox path to page-like plugins. Descriptions are matched as
-  // well as names, so "protein evidence" reaches Function Junction
-  // without knowing it exists; every term must appear somewhere, and a
-  // name being typed outranks a description hit. Offered, never
-  // selected — see onKeyDown, where Enter still goes to the assistant.
-  const appSuggestions = (text: string): Suggestion[] => {
-    const query = text.trim().toLowerCase();
-    const terms = query.split(/\s+/).filter(Boolean);
-    if (query.length < 2) return [];
-    const hits = source
-      .manifests()
-      .filter((m) => m.document && routeParams(m.document.route).length === 0)
-      .flatMap((m) => {
-        const title = m.title.toLowerCase();
-        const haystack = `${title} ${m.id} ${m.description?.toLowerCase() ?? ''}`;
-        if (!terms.every((t) => haystack.includes(t))) return [];
-        const named = title.startsWith(terms[0]) || m.id.startsWith(terms[0]);
-        return [{ m, rank: named ? 0 : 1 }];
-      })
-      .sort((a, b) => a.rank - b.rank || a.m.title.localeCompare(b.m.title))
-      .slice(0, 4)
-      .map(({ m }) => ({
-        value: `/open ${m.id}`,
-        label: `Open ${m.title}`,
-        detail: m.description,
-      }));
-    // The full-density form of this same search, when the inline list is
-    // not the answer.
-    return hits.length ? [...hits, { value: '/open home', label: 'Browse everything' }] : [];
-  };
-
-  // Completion follows the text; a stale async result for older text is dropped.
-  useEffect(() => {
-    let live = true;
-    // complete() answers [] for anything that is not a slash command.
-    void complete(registry, value, ctx()).then((list) => {
-      if (!live) return;
-      const apps = list.length ? [] : appSuggestions(value);
-      setSuggestions(list.length ? list : apps);
-      setKind(list.length ? 'command' : 'app');
-      // A command's completion is the point of typing it, so its first
-      // entry is selected; an app is a suggestion beside free text, so
-      // nothing is, and Enter still sends the line to the assistant.
-      setHighlight(list.length ? 0 : -1);
-    });
-    return () => {
-      live = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- ctx() reads the layout, which changes how commands filter but should not refetch on every layout change
-  }, [value, registry]);
-
-  const parsed = parse(value);
-  const known = parsed.kind === 'command' ? registry.get(parsed.name) : undefined;
-  // Free-text destination is the row above the bar; the hint slot only
-  // ever explains the command being typed.
-  const hint =
-    parsed.kind === 'command' && known && known.args?.length
-      ? `${usage(known.name, known.args)} — ${known.title}`
-      : null;
-
-  const accept = (s: Suggestion) => {
-    // An app has nothing to fill in: choosing it is the whole action.
-    if (kind === 'app') {
-      setValue('');
-      setSuggestions([]);
-      void submit(s.value);
-      return;
-    }
-    setValue(s.value);
-    setSuggestions([]);
-  };
 
   const submit = async (text: string) => {
     setError(null);
@@ -165,6 +95,127 @@ export function PromptBar() {
     }
   };
 
+  // What plugins volunteered for this text, ahead of name matches: a
+  // plugin recognising its own data is a better answer than a plugin
+  // whose description happens to share a word.
+  const offerSuggestions = (text: string): BarSuggestion[] =>
+    source
+      .offers(text.trim())
+      .slice(0, 4)
+      .map(({ plugin, title, offer }) => ({
+        value: text,
+        label: `Open ${title}`,
+        detail: offer.why,
+        run: () =>
+          void dispatch({
+            type: 'open',
+            panel: makePanel(plugin, 'document', offer.params),
+          }),
+      }));
+
+  // Row zero is what Enter will do. Nothing is guessed: the assistant
+  // stays the default and the alternatives sit under it, visible before
+  // the key is pressed rather than hidden behind knowing to press down.
+  const defaultSuggestion = (text: string): BarSuggestion[] =>
+    assistant
+      ? [
+          {
+            value: text,
+            label: `Ask ${assistantTitle ?? assistant}`,
+            run: () => void submit(text),
+          },
+        ]
+      : [];
+
+  // The omnibox path to page-like plugins. Descriptions are matched as
+  // well as names, so "protein evidence" reaches Function Junction
+  // without knowing it exists; every term must appear somewhere, and a
+  // name being typed outranks a description hit.
+  const appSuggestions = (text: string): BarSuggestion[] => {
+    const query = text.trim().toLowerCase();
+    const terms = query.split(/\s+/).filter(Boolean);
+    if (query.length < 2) return [];
+    const hits = source
+      .manifests()
+      .filter((m) => m.document && routeParams(m.document.route).length === 0)
+      .flatMap((m) => {
+        const title = m.title.toLowerCase();
+        const haystack = `${title} ${m.id} ${m.description?.toLowerCase() ?? ''}`;
+        if (!terms.every((t) => haystack.includes(t))) return [];
+        const named = title.startsWith(terms[0]) || m.id.startsWith(terms[0]);
+        return [{ m, rank: named ? 0 : 1 }];
+      })
+      .sort((a, b) => a.rank - b.rank || a.m.title.localeCompare(b.m.title))
+      .slice(0, 4)
+      .map(({ m }) => ({
+        value: `/open ${m.id}`,
+        label: `Open ${m.title}`,
+        detail: m.description,
+        run: () => void submit(`/open ${m.id}`),
+      }));
+    // The full-density form of this same search, when the inline list is
+    // not the answer.
+    return hits.length
+      ? [
+          ...hits,
+          {
+            value: '/open home',
+            label: 'Browse everything',
+            run: () => void submit('/open home'),
+          },
+        ]
+      : [];
+  };
+
+  // Completion follows the text; a stale async result for older text is dropped.
+  useEffect(() => {
+    let live = true;
+    // complete() answers [] for anything that is not a slash command.
+    void complete(registry, value, ctx()).then((list) => {
+      if (!live) return;
+      const alternatives = list.length
+        ? []
+        : [...offerSuggestions(value), ...appSuggestions(value)];
+      // Nothing worth choosing between: no list, and Enter behaves as if
+      // there were none.
+      const found = list.length
+        ? list
+        : alternatives.length
+          ? [...defaultSuggestion(value), ...alternatives]
+          : [];
+      setSuggestions(found);
+      // Row zero is always the default action, so it is always selected;
+      // arrowing away from it changes what Enter does, visibly.
+      setHighlight(found.length ? 0 : -1);
+    });
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ctx() reads the layout, which changes how commands filter but should not refetch on every layout change
+  }, [value, registry]);
+
+  const parsed = parse(value);
+  const known = parsed.kind === 'command' ? registry.get(parsed.name) : undefined;
+  // Free-text destination is the row above the bar; the hint slot only
+  // ever explains the command being typed.
+  const hint =
+    parsed.kind === 'command' && known && known.args?.length
+      ? `${usage(known.name, known.args)} — ${known.title}`
+      : null;
+
+  const accept = (s: BarSuggestion) => {
+    // A row that acts has nothing to complete; a command completion is
+    // text the user may still add arguments to.
+    if (s.run) {
+      setValue('');
+      setSuggestions([]);
+      s.run();
+      return;
+    }
+    setValue(s.value);
+    setSuggestions([]);
+  };
+
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key === 'Escape') {
       event.preventDefault();
@@ -182,13 +233,14 @@ export function PromptBar() {
     } else if (event.key === 'Tab') {
       event.preventDefault();
       accept(suggestions[Math.max(0, highlight)]);
-    } else if (
-      event.key === 'Enter' &&
-      highlight >= 0 &&
-      suggestions[highlight].value !== value
-    ) {
-      event.preventDefault();
-      accept(suggestions[highlight]);
+    } else if (event.key === 'Enter' && highlight >= 0) {
+      const chosen = suggestions[highlight];
+      // A row that acts always acts; a completion is skipped when it
+      // would only retype what is already there.
+      if (chosen.run || chosen.value !== value) {
+        event.preventDefault();
+        accept(chosen);
+      }
     }
   };
 
@@ -199,7 +251,10 @@ export function PromptBar() {
         <ul id={listId} role="listbox" aria-label="Completions" className={styles.completions}>
           {suggestions.map((s, i) => (
             <li
-              key={s.value}
+              // By position: several rows can share a value (every offer
+              // for one query carries the text that produced it), and a
+              // duplicate key renders the list wrong.
+              key={i}
               id={`${listId}-${i}`}
               role="option"
               aria-selected={i === highlight}
@@ -232,8 +287,7 @@ export function PromptBar() {
           role: 'combobox',
           'aria-expanded': open,
           'aria-controls': open ? listId : undefined,
-          'aria-activedescendant':
-            open && highlight >= 0 ? `${listId}-${highlight}` : undefined,
+          'aria-activedescendant': open && highlight >= 0 ? `${listId}-${highlight}` : undefined,
           'aria-autocomplete': 'list',
           onKeyDown,
         }}

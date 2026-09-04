@@ -47,9 +47,7 @@ export function TabGroup({ group }: { group: Group }) {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() =>
-                  dispatch({ type: 'open', panel: makePanel('home', 'document', {}) })
-                }
+                onClick={() => dispatch({ type: 'open', panel: makePanel('home', 'document', {}) })}
               >
                 Browse
               </Button>

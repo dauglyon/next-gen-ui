@@ -30,6 +30,19 @@ describe('resolveDeepLink', () => {
     expect(s.store.get().focus).toBe('genknown/document');
   });
 
+  // pathForPanel writes params the route cannot spell into the query;
+  // resolving has to return the same panel, or focusing it would open a
+  // second one on every round trip.
+  it('takes params from the query as well as the path', () => {
+    const s = services();
+    expect(resolveDeepLink(s, 'function-junction', '', '?q=P0A7B8')).toEqual({ ok: true });
+    expect(Object.keys(s.store.get().panels)).toContain('function-junction/document?q=P0A7B8');
+    resolveDeepLink(s, 'function-junction', '', '?q=P0A7B8');
+    expect(
+      Object.keys(s.store.get().panels).filter((k) => k.startsWith('function-junction/document')),
+    ).toHaveLength(1);
+  });
+
   it.each([
     ['nope', 'x', 'unknown-plugin'],
     ['catalog', 'x', 'no-document'],

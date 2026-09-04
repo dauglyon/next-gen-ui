@@ -7,8 +7,13 @@ import { WORKBENCH_PATH } from '../../workbench/react';
 // into whatever arrangement the user already had, or focuses it if open.
 // A link that names nothing announces why and lands on the bare workbench.
 export const Route = createFileRoute('/_workbench/p/$pluginId/$')({
-  loader: ({ context, params }) => {
-    const result = resolveDeepLink(context.workbench, params.pluginId, params._splat ?? '');
+  loader: ({ context, params, location }) => {
+    const result = resolveDeepLink(
+      context.workbench,
+      params.pluginId,
+      params._splat ?? '',
+      location.searchStr,
+    );
     if (!result.ok) {
       context.workbench.announcer.announce(result.message);
       throw redirect({ to: WORKBENCH_PATH, replace: true });

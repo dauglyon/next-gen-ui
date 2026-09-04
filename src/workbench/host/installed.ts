@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import type { ComponentType } from 'react';
 import type { IconProps } from '@phosphor-icons/react';
-import type { Manifest, PluginModule, PromptHandler } from '../../plugins/sdk';
+import type { Manifest, Matcher, Offer, PluginModule, PromptHandler } from '../../plugins/sdk';
 import type { PanelKind, PluginId } from '../core';
 import type { ArgSpec, Command, CommandRegistry } from '../commands';
 import type { PluginHost } from '../../plugins/sdk';
@@ -14,6 +14,17 @@ import { iconFor } from './icons';
 export interface InstalledPlugin {
   manifest: Manifest;
   load: () => Promise<PluginModule>;
+  // Eager, unlike `load`: matching runs on every keystroke, so it cannot
+  // wait for the plugin's bundle. A remote would expose it separately
+  // from its UI for the same reason.
+  match?: Matcher;
+}
+
+// A plugin's offer, with the plugin it came from.
+export interface PluginOffer {
+  plugin: PluginId;
+  title: string;
+  offer: Offer;
 }
 
 export interface PluginInfo {
@@ -40,6 +51,10 @@ export interface HostIndex extends PanelSource {
   load: (id: PluginId) => Promise<PluginModule>;
   // The module if it has already loaded; never triggers a load.
   loaded: (id: PluginId) => PluginModule | undefined;
+  // Every installed plugin's answer to what the user typed, in
+  // registration order. A matcher that throws is dropped with a warning,
+  // like an invalid manifest: one bad plugin cannot break the bar.
+  offers: (text: string) => PluginOffer[];
   subscribe: (listener: () => void) => () => void;
   // Bumps when a module finishes loading; pairs with subscribe for React.
   version: () => number;
@@ -100,6 +115,20 @@ export function createHostIndex(installed: InstalledPlugin[]): HostIndex {
         icon: iconFor(manifest.icon),
       })),
     panel: (type) => panels.get(type),
+    offers(text) {
+      const found: PluginOffer[] = [];
+      for (const { manifest, match } of installed) {
+        if (!match) continue;
+        try {
+          for (const offer of match(text)) {
+            found.push({ plugin: manifest.id, title: manifest.title, offer });
+          }
+        } catch (err) {
+          console.warn(`plugin ${manifest.id}: its matcher threw; ignoring it`, err);
+        }
+      }
+      return found;
+    },
     manifest: (id) => byId.get(id)?.manifest,
     manifests: () => installed.map((p) => p.manifest),
     load,

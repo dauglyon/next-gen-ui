@@ -19,6 +19,8 @@ export type {
   PromptRequest,
   PromptContext,
   PromptDestinationOption,
+  Offer,
+  Matcher,
   CommandValues,
 } from './plugin';
 export { AppFrame } from './AppFrame';

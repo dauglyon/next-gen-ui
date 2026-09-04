@@ -72,6 +72,11 @@ export default definePlugin({
   prompt bar once the module has loaded; `options` + `select` let the user switch the destination
   before sending, `documentParams` lets them jump to its document.
 - `AppFrame` renders an iframe that survives its panel being moved between groups.
+- A `Matcher` — `match(text) => Offer[]` — volunteers the plugin for what the user is typing:
+  each `Offer` is the `params` to open in this plugin's document and the `why` shown beside it.
+  It runs on every keystroke, so it is synchronous and cheap, with no I/O; `[]` is the normal
+  answer. Params it returns are the document's identity, so any the route has no segment for
+  travel in the URL's query string.
 
 ## Building a remote
 

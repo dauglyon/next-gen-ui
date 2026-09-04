@@ -66,10 +66,10 @@ Pinned plugins' navigators stack vertically as blocks, splitting the height with
 scrolls inside itself and the sidebar never scrolls. A block's header carries its plugin's icon
 and title (the accordion pattern) and click-toggles the fold; a block folds to its header and is
 never hidden; a plugin leaves the sidebar only by unpinning. There is no separate icon rail:
-collapsing the sidebar *is* the icon column — the same pinned list, one icon per plugin in pin
+collapsing the sidebar _is_ the icon column — the same pinned list, one icon per plugin in pin
 order, each popping its navigator out beside it without changing the layout. Unpinned plugins
 live under **More** (in the footer strip expanded, among the icons collapsed): a menu naming
-them, and choosing one shows its navigator as an ephemeral dashed *preview block* at the bottom
+them, and choosing one shows its navigator as an ephemeral dashed _preview block_ at the bottom
 of the stack — two clicks to look at a plugin without pinning it; Pin or dismiss from the
 preview's header, and a reload forgets it. Any navigator can be dragged into the main area as a
 tab; closing it there returns it to the sidebar if its plugin is still pinned.
@@ -89,14 +89,22 @@ and, once its module has loaded, what its `usePromptContext` hook reports: the c
 prompt will join, offered as a switcher over the hook's `options` and a jump to its document.
 With no assistant set the row says so.
 
-Free text also reaches page-like plugins: an app whose name **or description** matches what has
-been typed is offered below the bar (`protein evidence` finds Function Junction), with a
-`Browse everything` entry opening **Home**. These are offered, never selected — Enter still goes
-to the assistant until one is chosen with the arrow keys, and choosing one opens it, since an
-app has no arguments to fill in. Home (`host/home/`, a host plugin like the catalog) is that
-same search as a page: the apps and panels installed, searched over the same names and
-descriptions. One search, two densities — inline while typing, a page when browsing — reached
-from the bar, from the empty group's **Browse**, or by name.
+Free text also reaches page-like plugins, two ways. **Plugins volunteer**: an installed plugin
+may supply a `match(text)` (`InstalledPlugin.match`, eager, unlike its module, because it runs on
+every keystroke) returning offers — the params to open in its own document, and `why` it
+matched, in its own words. Only the plugin knows what its data looks like, so the host never
+interprets the query; it calls every matcher, drops one that throws with a warning, and shows
+what came back. Second, the host matches an app's **name or description** (`protein evidence`
+finds Function Junction), with a `Browse everything` entry opening **Home**.
+
+Row zero of that list is what Enter will do, always rendered: the assistant, with the
+alternatives beneath it. Nothing is guessed — the default is visible before the key is pressed
+rather than hidden behind knowing to press down.
+
+Home (`host/home/`, a host plugin like the catalog) is that same search as a page: the apps and
+panels installed, searched over the same names and descriptions. One search, two densities —
+inline while typing, a page when browsing — reached from the bar, from the empty group's
+**Browse**, or by name.
 
 Default keybindings live in `commands/keys.ts` and avoid chords browsers own (Ctrl+W/T/N,
 Ctrl+Tab, Ctrl+PageUp/Down, Alt+Left/Right). `/` focuses the bar; `Escape` returns to the panel.

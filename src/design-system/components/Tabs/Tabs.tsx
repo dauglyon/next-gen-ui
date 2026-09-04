@@ -18,10 +18,7 @@ export interface TabsListProps extends Omit<BaseTabs.List.Props, 'className'> {
 
 export function List({ className, dividers, ...props }: TabsListProps) {
   return (
-    <BaseTabs.List
-      className={cx(styles.list, dividers && styles.dividers, className)}
-      {...props}
-    />
+    <BaseTabs.List className={cx(styles.list, dividers && styles.dividers, className)} {...props} />
   );
 }
 

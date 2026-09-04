@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import type { Layout, Panel } from '../core';
-import { buildPath } from '../host/routes';
+import { buildPath, extraParams } from '../host/routes';
 import { useLayout, useServices } from './context';
 
 export const WORKBENCH_PATH = '/workbench';
@@ -11,7 +11,9 @@ export const WORKBENCH_PATH = '/workbench';
 export function pathForPanel(panel: Panel | undefined, route: string | undefined): string | null {
   if (!panel || panel.kind !== 'document' || !route) return null;
   try {
-    return `/p/${panel.plugin}${buildPath(route, panel.params) === '/' ? '' : buildPath(route, panel.params)}`;
+    const path = buildPath(route, panel.params);
+    const extra = new URLSearchParams(extraParams(route, panel.params)).toString();
+    return `/p/${panel.plugin}${path === '/' ? '' : path}${extra ? `?${extra}` : ''}`;
   } catch {
     return null;
   }
@@ -36,7 +38,9 @@ export function useUrlSync() {
 
     const panel = layout.focus ? layout.panels[layout.focus] : undefined;
     const path = pathForPanel(panel, panel && source.manifest(panel.plugin)?.document?.route);
-    const current = router.state.location.pathname;
+    // Path and query together: the query carries params the route has no
+    // segment for, and they are part of which panel the URL names.
+    const current = router.state.location.pathname + router.state.location.searchStr;
     if (path) {
       if (path === current) return;
       const justOpened = layout.focus !== null && !(layout.focus in before.panels);

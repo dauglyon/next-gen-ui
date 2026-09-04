@@ -25,6 +25,17 @@ export function buildPath(pattern: string, params: Record<string, string>): stri
   return '/' + out.join('/');
 }
 
+// Params the route has no segment for. A document's params are its
+// identity, so they have to survive the URL; a route says how to spell
+// the ones it names, and the rest ride in the query string.
+export function extraParams(
+  pattern: string,
+  params: Record<string, string>,
+): Record<string, string> {
+  const named = new Set(routeParams(pattern));
+  return Object.fromEntries(Object.entries(params).filter(([key]) => !named.has(key)));
+}
+
 export function routeParams(pattern: string): string[] {
   return segments(pattern)
     .filter((s) => s.startsWith('$'))
