@@ -38,7 +38,13 @@ export function Sidebar({
   const unpinned = withNavigator.filter((p) => !sidebar.pinned.includes(p.id));
   const blocks = sidebarPanels(layout);
   const dragging = useDragging();
-  const { dropRef, isOver } = useDropTarget({ type: 'sidebar' }, dragging?.kind !== 'navigator');
+  // The region below the blocks is the end slot: dropping there moves a
+  // navigator to the last pin position (for a main-area navigator that is
+  // an append, as before).
+  const { dropRef, isOver } = useDropTarget(
+    { type: 'pin', index: sidebar.pinned.length },
+    dragging?.kind !== 'navigator',
+  );
   const previewing = preview && !sidebar.pinned.includes(preview) ? preview : null;
   // Anchors the collapsed preview flyout to the ⋯ icon that opened it.
   const moreAnchorRef = useRef<HTMLSpanElement>(null);
@@ -382,6 +388,7 @@ function PreviewPopout({
 }) {
   const dispatch = useDispatch();
   const width = useLayout().sidebar.width;
+  const fit = useServices().source.manifest(plugin)?.navigator?.fit;
   const title = info?.title ?? plugin;
   const Icon = info?.icon ?? PushPin;
   return (
@@ -393,7 +400,7 @@ function PreviewPopout({
         align="start"
         alignOffset={6}
         className={styles.popout}
-        style={{ width }}
+        style={{ width, height: fit === 'content' ? 'auto' : undefined }}
         aria-label={`${title} preview`}
       >
         <div className={styles.popoutBody}>
@@ -436,6 +443,8 @@ function PopoutIcon({
 }) {
   const panel = makePanel(plugin, 'navigator');
   const width = useLayout().sidebar.width;
+  // A content-fit navigator's flyout hugs its content too.
+  const fit = useServices().source.manifest(plugin)?.navigator?.fit;
   return (
     <Popover.Root>
       <Popover.Trigger
@@ -451,7 +460,7 @@ function PopoutIcon({
         align="start"
         alignOffset={6}
         className={styles.popout}
-        style={{ width }}
+        style={{ width, height: fit === 'content' ? 'auto' : undefined }}
         aria-label={label}
       >
         <div className={styles.popoutBody}>
