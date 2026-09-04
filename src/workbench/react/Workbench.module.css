@@ -26,14 +26,15 @@
   border-bottom: 1px solid var(--c-border);
 }
 
-/* The design system's masthead: the mark, --s-5, then the name at --fs-7
-   bold ink2. At this scale the mark reads as a logo, not another glyph in
-   the collapsed rail's column, so it holds one position in both states. */
+/* The design system's masthead RATIOS at menubar scale: per wordmark size
+   T, dots = 1.0 T and the mark→word gap = 0.75 T; the wordmark sits one
+   type step above its surroundings (triggers are --fs-4, so T = --fs-5),
+   bold ink2. */
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: var(--s-5);
-  font-size: var(--fs-7);
+  gap: var(--s-4);
+  font-size: var(--fs-5);
   font-weight: var(--fw-bold);
   color: var(--c-ink2);
   padding: 0 var(--s-2);
@@ -44,7 +45,7 @@
 .brandMark {
   display: flex;
   align-items: center;
-  height: 24px;
+  height: 18px;
 }
 
 .body {
