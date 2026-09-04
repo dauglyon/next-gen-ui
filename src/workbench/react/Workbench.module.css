@@ -18,38 +18,34 @@
 
 /* Chrome sits on the warm page background; content panels are white
    surface cards. The two-tone split is what makes the layout legible. */
-/* The design system's app bar (chrome.css .kb-appbar): --s-3 vertical
-   padding — the room the canonical masthead was sized for. A compact
-   menu strip makes the lockup read wrong at any scale. */
 .menubar {
   display: flex;
   align-items: center;
   gap: var(--s-4);
-  padding: var(--s-3);
+  padding: var(--s-1) var(--s-3);
   border-bottom: 1px solid var(--c-border);
 }
 
-/* The design system's masthead (chrome.css, as function-junction wears
-   it): the mark at its canonical size — 24 high, 16px dots — and --s-5 to
-   the text, both fixed; only the text adapts to context. Here that is the
-   wordmark one type step above the --fs-4 triggers, bold ink2. */
+/* The design system's masthead RATIOS at menubar scale: per wordmark size
+   T, dots = 1.0 T and the mark→word gap = 0.75 T; the wordmark sits one
+   type step above its surroundings (triggers are --fs-4, so T = --fs-5),
+   bold ink2. */
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: var(--s-5);
+  gap: var(--s-4);
   font-size: var(--fs-5);
   font-weight: var(--fw-bold);
   color: var(--c-ink2);
   padding: 0 var(--s-2);
 }
 
-/* Bounds the line box at the mark's canonical height: the Loader's square
-   SVG is taller than its dots, and overflow stays visible for the
-   animated form. */
+/* Bounds the line box: the Loader's square SVG is taller than its dots,
+   and overflow stays visible for the animated form. */
 .brandMark {
   display: flex;
   align-items: center;
-  height: 24px;
+  height: 18px;
 }
 
 .body {
@@ -129,6 +125,32 @@
   transition:
     opacity var(--t-slow) ease,
     visibility 0s 0s;
+}
+
+/* The shortcut toolbar: a slim panel of manifest-flagged commands above
+   the accordion. */
+.shortcutBar {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-1);
+  padding: var(--s-1);
+  margin-bottom: var(--s-2);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+}
+
+/* The same buttons behind the rail's ⚡ icon. The class is doubled to
+   outrank Popover.Popup's content padding. */
+.shortcutPop.shortcutPop {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--s-1);
+  min-width: 160px;
+  padding: var(--s-2);
 }
 
 /* The main area's column: panels above, the composer below, together

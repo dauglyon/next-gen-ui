@@ -1,11 +1,12 @@
 import { useRef } from 'react';
 import type { RefObject } from 'react';
-import { CaretDown, DotsThree, PushPin, X } from '@phosphor-icons/react';
+import { CaretDown, DotsThree, Lightning, PushPin, X } from '@phosphor-icons/react';
 import { Button, ContextMenu, Menu, NavIcon, Popover } from '@kbase/design-system';
 import type { Panel, PluginId } from '../core';
 import { groups, makePanel, sidebarPanels } from '../core';
 import type { PluginInfo } from '../host/installed';
-import { useDispatch, useLayout, useServices, useTitle } from './context';
+import { iconFor } from '../host/icons';
+import { useDispatch, useLayout, useRun, useServices, useTitle } from './context';
 import { PanelHost } from './PanelHost';
 import { SplitView } from './SplitView';
 import { useDragPanel, useDragging, useDropTarget } from './useDnd';
@@ -40,6 +41,18 @@ export function Sidebar({
   const previewing = preview && !sidebar.pinned.includes(preview) ? preview : null;
   // Anchors the collapsed preview flyout to the ⋯ icon that opened it.
   const moreAnchorRef = useRef<HTMLSpanElement>(null);
+  // Pinned plugins' manifest commands flagged as shortcuts, from the
+  // manifests alone — a shortcut runs before its plugin's code loads.
+  const shortcuts = sidebar.pinned.flatMap((id) =>
+    (source.manifest(id)?.commands ?? [])
+      .filter((c) => c.shortcut)
+      .map((c) => ({
+        key: `${id}/${c.name}`,
+        name: c.name,
+        label: typeof c.shortcut === 'string' ? c.shortcut : c.title,
+        icon: c.icon,
+      })),
+  );
 
   // Both states stay mounted. One width animates — the container's — and
   // the two layers crossfade: the rail is a fixed-width overlay (its icons
@@ -57,6 +70,27 @@ export function Sidebar({
         aria-orientation="vertical"
         aria-label="Pinned plugins"
       >
+        {shortcuts.length > 0 && (
+          <Popover.Root>
+            <Popover.Trigger
+              render={
+                <NavIcon aria-label="Shortcuts">
+                  <Lightning size={18} aria-hidden="true" />
+                </NavIcon>
+              }
+            />
+            <Popover.Popup
+              side="right"
+              sideOffset={8}
+              align="start"
+              alignOffset={6}
+              className={styles.shortcutPop}
+              aria-label="Shortcuts"
+            >
+              <ShortcutButtons shortcuts={shortcuts} />
+            </Popover.Popup>
+          </Popover.Root>
+        )}
         {sidebar.pinned.map((plugin) => {
           const info = infoOf(plugin);
           const label = info?.title ?? plugin;
@@ -93,6 +127,11 @@ export function Sidebar({
         aria-label="Sidebar"
         data-over={isOver || undefined}
       >
+        {shortcuts.length > 0 && (
+          <div className={styles.shortcutBar} role="toolbar" aria-label="Shortcuts">
+            <ShortcutButtons shortcuts={shortcuts} />
+          </div>
+        )}
         <div className={styles.accordion}>
           {blocks.length === 0 ? (
             <p className={`caption ${styles.panelMessage}`}>
@@ -241,6 +280,30 @@ function Block({ panel, info }: { panel: Panel; info: PluginInfo | undefined }) 
         </div>
       )}
     </section>
+  );
+}
+
+// The shortcut buttons, shared by the expanded toolbar and the collapsed
+// popover. Each runs its command through the registry, which loads the
+// plugin's module on first use.
+function ShortcutButtons({
+  shortcuts,
+}: {
+  shortcuts: Array<{ key: string; name: string; label: string; icon?: string }>;
+}) {
+  const run = useRun();
+  return (
+    <>
+      {shortcuts.map((s) => {
+        const Icon = s.icon ? iconFor(s.icon) : Lightning;
+        return (
+          <Button key={s.key} size="xs" variant="ghost" onClick={() => void run(s.name)}>
+            <Icon size={14} aria-hidden="true" />
+            {s.label}
+          </Button>
+        );
+      })}
+    </>
   );
 }
 
