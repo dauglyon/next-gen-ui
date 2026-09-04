@@ -1,4 +1,4 @@
-import { Menu, Menubar } from '@kbase/design-system';
+import { Loader, Menu, Menubar } from '@kbase/design-system';
 import type { Side } from '../core';
 import { groupOf } from '../core';
 import { useDispatch, useLayout, useRun, useServices } from './context';
@@ -18,6 +18,8 @@ export function WorkbenchMenubar() {
   return (
     <div className={styles.menubar}>
       <span className={styles.brand} aria-hidden="true">
+        {/* Static until something wires `active` to a loading state. */}
+        <Loader size={20} active={false} />
         KBase
       </span>
       <Menubar.Root aria-label="Workbench menu">
