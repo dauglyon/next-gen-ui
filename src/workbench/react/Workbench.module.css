@@ -24,6 +24,19 @@
   gap: var(--s-4);
   padding: var(--s-1) var(--s-3);
   border-bottom: 1px solid var(--c-border);
+  transition: padding var(--t-slow) ease;
+}
+
+/* Expanded, the logo shares the header icons' centre-line (x=24) and the
+   sidebar scans as rows. Collapsed, everything below is a bare glyph
+   column, and an aligned logo gets scanned as its first member — so it
+   slides clearly off the line, marking where chrome ends. */
+.root[data-sidebar-collapsed] .menubar {
+  padding-left: var(--s-1);
+}
+
+.root[data-sidebar-collapsed] .brand {
+  padding-inline: 0;
 }
 
 .brand {
@@ -33,6 +46,7 @@
   font-weight: var(--fw-bold);
   color: var(--c-ink3);
   padding: 0 var(--s-2);
+  transition: padding var(--t-slow) ease;
 }
 
 .body {
