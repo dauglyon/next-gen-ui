@@ -71,10 +71,8 @@ export function HomeDocument() {
   );
 }
 
-// The prototype's own instructions. This is a mockup shown to people who
-// did not build it, and the parts worth looking at are the interactions,
-// which nothing on screen announces. It stays at the top because a first
-// visit is the only time it is read.
+// The prototype's own instructions. Each item names what to do and what
+// the code then does, in terms a reader can check against the screen.
 function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
   return (
     <section className={styles.tour} aria-labelledby="home-tour">
@@ -84,39 +82,46 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
       </h2>
       <ol className={styles.tourList}>
         <li>
-          <b>Type into the prompt bar.</b> <Key>P0A7B8</Key>, <Key>E. coli</Key>, <Key>nifH</Key>,{' '}
-          <Key>reads</Key>. Each plugin decides for itself whether it recognises what you typed and
-          says where it could take you; the row nearest the field is what Enter does. <Key>/</Key>{' '}
-          lists commands instead.{' '}
+          <b>Type into the prompt bar.</b> Every installed plugin reads each keystroke and answers
+          with the pages it would open. <Key>P0A7B8</Key> gets two answers from Function Junction, a
+          dossier and a structure; <Key>nifH</Key> gets one each from Data, Jobs and Function
+          Junction; <Key>E. coli</Key> reaches GenKnown. The row nearest the field is the one Enter
+          runs, and it goes to the assistant. A leading <Key>/</Key> replaces the list with
+          commands.{' '}
           <button type="button" className={styles.tourLink} onClick={onFocusPrompt}>
             Put the cursor there
           </button>
         </li>
         <li>
-          <b>Open an app.</b> Function Junction and GenKnown are whole pages rather than sidebar
-          panels. Whichever row you pick hands them what to show; the page prints the action it
-          received.
+          <b>Pick one of those rows.</b> It opens Function Junction or GenKnown as a document and
+          passes it the row&apos;s action; each page prints the action it received. Those two
+          plugins have no sidebar panel, so the prompt bar and this page are the ways in.
         </li>
         <li>
-          <b>Rearrange the sidebar.</b> Drag a block by its header to reorder it, click a header to
-          fold it, and collapse the whole sidebar to the icon rail. <Key>More</Key> previews a
-          plugin without pinning it — drag that preview onto the stack to pin it where you drop it.
+          <b>Rearrange the sidebar.</b> A block header folds on click and reorders on drag.
+          Collapsing the sidebar leaves a 48-pixel icon rail in the same order, each icon opening
+          its panel in a flyout. More shows an unpinned plugin as a dashed block at the bottom of
+          the stack; that block is dropped on reload, and dragging it onto another block pins it at
+          that position.
         </li>
         <li>
-          <b>Move panels around.</b> Drag a navigator out of the sidebar into a tab group, or drag a
-          tab to the edge of a group to split it. Every drag also has a menu route: right-click a
-          tab or a block header.
+          <b>Move a panel between the sidebar and the tabs.</b> Dragging a sidebar block into a tab
+          group moves it there; dropping a tab on a group&apos;s edge splits the group in that
+          direction. Right-clicking a tab or a block header reaches the same operations without a
+          drag.
         </li>
         <li>
-          <b>Reload the page.</b> The arrangement, the focused panel and the open document&apos;s
-          URL all come back. <Key>Workbench → Lock layout</Key> freezes the arrangement while
-          leaving opening, closing and folding free.
+          <b>Reload.</b> The arrangement, the fold states, the focused panel and the focused
+          document&apos;s URL are stored in the browser and restored. Lock layout, in the Workbench
+          menu, then refuses moving, resizing, pinning and unpinning; opening, closing, focusing and
+          folding go on working.
         </li>
       </ol>
       <p className={`caption ${styles.tourNote}`}>
-        Every plugin here is a stand-in: the datasets, jobs and arcs are fixtures, and the two apps
-        are iframes standing where the real ones would be. What is real is the shell around them —
-        how a plugin declares itself, gets loaded, and shares the window.
+        The datasets, jobs and arcs are fixtures compiled into the page, and Function Junction and
+        GenKnown are iframes over static HTML. Nothing here reaches a server. The plugin contract,
+        the loading of a plugin on first use, the layout reducer and the URL round-trip are the
+        parts under test.
       </p>
     </section>
   );
