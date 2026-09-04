@@ -127,42 +127,6 @@
     visibility 0s 0s;
 }
 
-/* The shortcut toolbar: a slim panel of manifest-flagged commands above
-   the accordion. */
-.shortcutBar {
-  flex: none;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--s-1);
-  padding: var(--s-1);
-  margin-bottom: var(--s-2);
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-lg);
-}
-
-/* The toolbar unfolding rightwards from the rail trigger: a horizontal strip
-   at the icon's row, not a menu card. Scales out of its left edge. The
-   class is doubled to outrank Popover.Popup's content padding and width. */
-.shortcutFlyout.shortcutFlyout {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  padding: var(--s-1);
-  border-radius: var(--r-md);
-  box-shadow: var(--e-3);
-  transform-origin: left center;
-  transition:
-    transform var(--t-base) ease,
-    opacity var(--t-base) ease;
-}
-
-.shortcutFlyout[data-starting-style],
-.shortcutFlyout[data-ending-style] {
-  transform: scaleX(0.5);
-  opacity: 0;
-}
 
 /* The main area's column: panels above, the composer below, together
    spanning only the width right of the sidebar. */

@@ -2,13 +2,12 @@ import { useRef } from 'react';
 import type { RefObject } from 'react';
 // Chrome glyphs come straight from Phosphor, never from the host's icon
 // table — the table is the plugins' namespace (host/icons.ts).
-import { CaretDown, DotsThree, Nut, PushPin, X } from '@phosphor-icons/react';
+import { CaretDown, DotsThree, PushPin, X } from '@phosphor-icons/react';
 import { Button, ContextMenu, Menu, NavIcon, Popover, Toolbar } from '@kbase/design-system';
 import type { Panel, PluginId } from '../core';
 import { groups, makePanel, sidebarPanels } from '../core';
 import type { PluginInfo } from '../host/installed';
-import { iconFor } from '../host/icons';
-import { useDispatch, useLayout, useRun, useServices, useTitle } from './context';
+import { useDispatch, useLayout, useServices, useTitle } from './context';
 import { PanelHost } from './PanelHost';
 import { SplitView } from './SplitView';
 import { useDragPanel, useDragging, useDropTarget } from './useDnd';
@@ -43,20 +42,6 @@ export function Sidebar({
   const previewing = preview && !sidebar.pinned.includes(preview) ? preview : null;
   // Anchors the collapsed preview flyout to the ⋯ icon that opened it.
   const moreAnchorRef = useRef<HTMLSpanElement>(null);
-  // Every installed plugin's manifest commands flagged as shortcuts, from
-  // the manifests alone — a shortcut runs before its plugin's code loads.
-  const shortcuts = source.manifests().flatMap((m) =>
-    (m.commands ?? [])
-      .filter((c) => c.shortcut)
-      .map((c) => ({
-        key: `${m.id}/${c.name}`,
-        name: c.name,
-        label: typeof c.shortcut === 'string' ? c.shortcut : c.title,
-        // A command without its own icon wears its plugin's: provenance,
-        // and no collision with the toolbar trigger.
-        icon: c.icon ?? m.icon,
-      })),
-  );
 
   // Both states stay mounted. One width animates — the container's — and
   // the two layers crossfade: the rail is a fixed-width overlay (its icons
@@ -73,33 +58,6 @@ export function Sidebar({
         className={styles.iconColumn}
         aria-label="Pinned plugins"
       >
-        {shortcuts.length > 0 && (
-          <Popover.Root>
-            <Popover.Trigger
-              render={
-                <Toolbar.Button
-                  render={
-                    <NavIcon aria-label="Shortcuts">
-                      <Nut size={18} aria-hidden="true" />
-                    </NavIcon>
-                  }
-                />
-              }
-            />
-            <Popover.Popup
-              side="right"
-              sideOffset={4}
-              className={styles.shortcutFlyout}
-              aria-label="Shortcuts"
-            >
-              {/* The toolbar itself, unfolding rightwards from its trigger —
-                  not a menu card. */}
-              <Toolbar.Root aria-label="Shortcuts">
-                <ShortcutButtons shortcuts={shortcuts} />
-              </Toolbar.Root>
-            </Popover.Popup>
-          </Popover.Root>
-        )}
         {sidebar.pinned.map((plugin) => {
           const info = infoOf(plugin);
           const label = info?.title ?? plugin;
@@ -136,14 +94,6 @@ export function Sidebar({
         aria-label="Sidebar"
         data-over={isOver || undefined}
       >
-        {shortcuts.length > 0 && (
-          // Buttons only: an expanded toolbar's identity is its position
-          // and contents (Photoshop, ribbon, macOS all agree); the nut
-          // represents it only in the collapsed rail.
-          <Toolbar.Root className={styles.shortcutBar} aria-label="Shortcuts">
-            <ShortcutButtons shortcuts={shortcuts} />
-          </Toolbar.Root>
-        )}
         <div className={styles.accordion}>
           {blocks.length === 0 ? (
             <p className={`caption ${styles.panelMessage}`}>
@@ -154,7 +104,13 @@ export function Sidebar({
               dir="col"
               className={styles.blockStack}
               sizes={blocks.map((b) => sidebar.sizes[b.plugin] ?? 1)}
-              fixed={blocks.map((b) => sidebar.folded.includes(b.id))}
+              // Folded blocks and content-fit navigators keep natural
+              // height; only the rest share the stack.
+              fixed={blocks.map(
+                (b) =>
+                  sidebar.folded.includes(b.id) ||
+                  source.manifest(b.plugin)?.navigator?.fit === 'content',
+              )}
               onSizes={(sizes) =>
                 dispatch({
                   type: 'sidebar',
@@ -292,34 +248,6 @@ function Block({ panel, info }: { panel: Panel; info: PluginInfo | undefined }) 
         </div>
       )}
     </section>
-  );
-}
-
-// The shortcut buttons, shared by the expanded toolbar and the collapsed
-// popover. Each runs its command through the registry, which loads the
-// plugin's module on first use.
-function ShortcutButtons({
-  shortcuts,
-}: {
-  shortcuts: Array<{ key: string; name: string; label: string; icon?: string }>;
-}) {
-  const run = useRun();
-  return (
-    <>
-      {shortcuts.map((s) => {
-        const Icon = iconFor(s.icon);
-        return (
-          <Toolbar.Button
-            key={s.key}
-            render={<Button size="xs" variant="ghost" />}
-            onClick={() => void run(s.name)}
-          >
-            <Icon size={14} aria-hidden="true" />
-            {s.label}
-          </Toolbar.Button>
-        );
-      })}
-    </>
   );
 }
 

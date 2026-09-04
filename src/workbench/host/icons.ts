@@ -11,6 +11,7 @@ import {
   HandWaving,
   Lightning,
   ListChecks,
+  Nut,
   PushPin,
   SquaresFour,
   Table,
@@ -29,6 +30,7 @@ export const ICONS: Readonly<Record<string, ComponentType<IconProps>>> = {
   HandWaving,
   Lightning,
   ListChecks,
+  Nut,
   SquaresFour,
   Table,
 };

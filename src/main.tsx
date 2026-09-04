@@ -41,7 +41,7 @@ installAuthExpiryWatcher(queryClient);
 const workbench = createWorkbench({
   installed: await loadInstalled(localPlugins),
   storage: window.localStorage,
-  defaultPinned: ['koros', 'data', 'jobs'],
+  defaultPinned: ['shortcuts', 'koros', 'data', 'jobs'],
   defaultAssistant: 'koros',
 });
 

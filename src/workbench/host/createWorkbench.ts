@@ -10,6 +10,7 @@ import { createPromptHandle } from '../react/services';
 import type { InstalledPlugin } from './installed';
 import { createHostIndex } from './installed';
 import { catalog } from './catalog';
+import { shortcutsPlugin } from './shortcuts';
 import { routeParams } from './routes';
 import { createSettingsStore } from './settings';
 
@@ -37,7 +38,7 @@ export function createWorkbench({
   const announcer = createAnnouncer();
   const prompt = createPromptHandle();
   const focusIntentRef: WorkbenchServices['focusIntentRef'] = { current: 'command' };
-  const source = createHostIndex([...installed, catalog]);
+  const source = createHostIndex([...installed, catalog, shortcutsPlugin]);
   const settings = createSettingsStore(storage, { assistant: defaultAssistant });
 
   const fallback = () => defaultLayout({ pinned: defaultPinned });

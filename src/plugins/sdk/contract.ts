@@ -42,7 +42,13 @@ export const ManifestSchema = z.object({
   contractVersion: z.literal(CONTRACT_VERSION),
   // A name from the host's icon table; unknown names fall back to a pin.
   icon: z.string().optional(),
-  navigator: z.object({}).optional(),
+  navigator: z
+    .object({
+      // `content`: the sidebar block hugs its content instead of taking a
+      // share of the stack's height — for toolbars and status panels.
+      fit: z.literal('content').optional(),
+    })
+    .optional(),
   document: z
     .object({
       // Path under /p/<id>, TanStack style: `/arc/$slug`. `/` for a document
