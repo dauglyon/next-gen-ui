@@ -71,9 +71,11 @@ export function HomeDocument() {
   );
 }
 
-// The prototype's own instructions: one action per line, and what it
-// does. A row in the prompt bar is a plugin's guess at the text, not a
-// search result, which is the one thing the screen cannot say for itself.
+// The prototype's own instructions, for someone who has never seen it and
+// does not know the vocabulary: no manifests, navigators or documents,
+// and nothing named after the code. The one thing worth insisting on is
+// that a suggestion is a guess, since it looks exactly like a search
+// result and is not one.
 function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
   return (
     <section className={styles.tour} aria-labelledby="home-tour">
@@ -83,37 +85,39 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
       </h2>
       <ol className={styles.tourList}>
         <li>
-          Type <Key>nifH</Key> in the prompt bar. Data, Jobs and Function Junction each offer a
-          place to land, all three guessing from the shape of the text; none of them looked anything
-          up. Picking one opens that plugin, which prints the action it was handed.{' '}
+          Type <Key>nifH</Key> in the box at the bottom. Three tools put their hand up — a dataset,
+          a job and a gene page. None of them searched for it; each one recognised the kind of thing
+          you typed and said what it would do with it. Click one to go there.{' '}
           <button type="button" className={styles.tourLink} onClick={onFocusPrompt}>
             Put the cursor there
           </button>
         </li>
         <li>
-          Open Function Junction below. A plugin can be a whole page instead of a sidebar panel, and
-          both kinds come from the same manifest.
+          Open Function Junction from the list below. Some tools are full pages like this one;
+          others are the small panels down the left. Either way, they are add-ons rather than parts
+          of the site.
         </li>
         <li>
-          Drag a sidebar block into a tab group, or drop a tab on a group&apos;s edge to split it.
-          Right-clicking a tab or a block header reaches the same operations.
+          Drag a panel out of the left column into the middle to give it a tab, or drop a tab near
+          the edge of another to see two things side by side.
         </li>
         <li>
-          Open More and drag the dashed block onto the stack. It pins where it lands; left alone, it
-          is gone on reload.
+          Click More at the bottom of the left column to take a quick look at a tool. It shows up in
+          a blue dashed frame; drag that frame into the column to keep it, or leave it and it goes
+          away when you reload.
         </li>
         <li>
-          Open Catalog. Pinning, unpinning and choosing which plugin answers free text are settings
-          there, not fixed in the shell.
+          Open Catalog to add and remove the panels on the left, and to choose which tool answers
+          the questions you type.
         </li>
         <li>
-          Reload. Arrangement, folds, focus and the document&apos;s URL come back. Lock layout, in
-          the Workbench menu, then refuses moves, resizes, pins and unpins.
+          Reload the page. Everything comes back where you left it, including the address of
+          whatever you were reading. Workbench → Lock layout stops things moving by accident.
         </li>
       </ol>
       <p className={`caption ${styles.tourNote}`}>
-        Datasets, jobs and arcs are fixtures. Function Junction and GenKnown are static HTML in
-        iframes. Nothing reaches a server.
+        The data is made up and none of it leaves this browser — a working sketch of how the pieces
+        fit together, not the pieces themselves.
       </p>
     </section>
   );
