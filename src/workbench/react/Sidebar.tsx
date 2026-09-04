@@ -7,6 +7,7 @@ import type { PluginInfo } from '../host/types';
 import { useDispatch, useLayout, useServices, useTitle } from './context';
 import { PanelHost } from './PanelHost';
 import { SplitView } from './SplitView';
+import { useDragPanel, useDragging, useDropTarget } from './useDnd';
 import styles from './Workbench.module.css';
 
 // The sidebar: an icon column that is the pinned list, one icon per plugin,
@@ -23,6 +24,8 @@ export function Sidebar() {
   const withNavigator = plugins.filter((p) => source.panel(`${p.id}/navigator`));
   const unpinned = withNavigator.filter((p) => !sidebar.pinned.includes(p.id));
   const blocks = sidebarPanels(layout);
+  const dragging = useDragging();
+  const { dropRef, isOver } = useDropTarget({ type: 'sidebar' }, dragging?.kind !== 'navigator');
 
   const focusPlugin = (plugin: PluginId) => {
     focusIntentRef.current = 'command';
@@ -90,10 +93,12 @@ export function Sidebar() {
 
       {!sidebar.collapsed && (
         <div
+          ref={dropRef}
           className={styles.blocks}
           style={{ width: sidebar.width }}
           role="region"
           aria-label="Sidebar"
+          data-over={isOver || undefined}
         >
           {blocks.length === 0 ? (
             <p className={`caption ${styles.panelMessage}`}>
@@ -132,6 +137,10 @@ function Block({ panel, info }: { panel: Panel; info: PluginInfo | undefined }) 
   const focused = layout.focus === panel.id;
   const headerId = `wb-block-${panel.plugin}`;
   const at = layout.sidebar.pinned.indexOf(panel.plugin);
+  const { dragRef, dragHandlers, isDragging } = useDragPanel({
+    panel: panel.id,
+    kind: 'navigator',
+  });
 
   return (
     <section
@@ -148,6 +157,9 @@ function Block({ panel, info }: { panel: Panel; info: PluginInfo | undefined }) 
             className={styles.blockToggle}
             aria-expanded={!folded}
             data-panel-tab={panel.id}
+            data-dragging={isDragging || undefined}
+            ref={dragRef}
+            {...dragHandlers}
             onClick={() => {
               focusIntentRef.current = 'user';
               dispatch({ type: 'fold', panel: panel.id, folded: !folded });

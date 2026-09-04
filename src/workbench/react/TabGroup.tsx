@@ -5,6 +5,8 @@ import type { Group, Panel, PanelId, Side } from '../core';
 import { useDispatch, useLayout, useServices, useTitle } from './context';
 import { panelDomId, tabDomId } from './domIds';
 import { PanelHost } from './PanelHost';
+import { useDragPanel, useDropTarget } from './useDnd';
+import { GroupDropZones } from './WorkbenchDnd';
 import styles from './Workbench.module.css';
 
 // One tab strip and its panels. Every panel stays mounted and is hidden
@@ -36,10 +38,13 @@ export function TabGroup({ group }: { group: Group }) {
   if (group.tabs.length === 0) {
     return (
       <div className={styles.group} data-group={group.id}>
-        <EmptyState
-          title="Nothing open"
-          description="Pick something in the sidebar, or press / and type a command."
-        />
+        <div className={styles.groupBody}>
+          <EmptyState
+            title="Nothing open"
+            description="Pick something in the sidebar, or press / and type a command."
+          />
+          <GroupDropZones group={group.id} />
+        </div>
       </div>
     );
   }
@@ -47,10 +52,11 @@ export function TabGroup({ group }: { group: Group }) {
   return (
     <div className={styles.group} data-group={group.id} data-focused={focused || undefined}>
       <div role="tablist" aria-label="Open panels" className={styles.tablist} onKeyDown={onKeyDown}>
-        {group.tabs.map((id) => (
+        {group.tabs.map((id, index) => (
           <Tab
             key={id}
             group={group}
+            index={index}
             panel={layout.panels[id]}
             id={id}
             active={group.active === id}
@@ -61,29 +67,33 @@ export function TabGroup({ group }: { group: Group }) {
             }}
           />
         ))}
+        <TabEnd group={group} />
       </div>
-      {group.tabs.map((id) => {
-        const panel = layout.panels[id];
-        return (
-          <div
-            key={id}
-            role="tabpanel"
-            id={panelDomId(id)}
-            aria-labelledby={tabDomId(id)}
-            hidden={group.active !== id}
-            className={styles.tabpanel}
-            data-panel={id}
-            onFocusCapture={() => {
-              if (layout.focus !== id) {
-                focusIntentRef.current = 'user';
-                dispatch({ type: 'focus', panel: id });
-              }
-            }}
-          >
-            {panel && <PanelHost panel={panel} focused={layout.focus === id} />}
-          </div>
-        );
-      })}
+      <div className={styles.groupBody}>
+        {group.tabs.map((id) => {
+          const panel = layout.panels[id];
+          return (
+            <div
+              key={id}
+              role="tabpanel"
+              id={panelDomId(id)}
+              aria-labelledby={tabDomId(id)}
+              hidden={group.active !== id}
+              className={styles.tabpanel}
+              data-panel={id}
+              onFocusCapture={() => {
+                if (layout.focus !== id) {
+                  focusIntentRef.current = 'user';
+                  dispatch({ type: 'focus', panel: id });
+                }
+              }}
+            >
+              {panel && <PanelHost panel={panel} focused={layout.focus === id} />}
+            </div>
+          );
+        })}
+        <GroupDropZones group={group.id} />
+      </div>
     </div>
   );
 }
@@ -97,6 +107,7 @@ const SIDES: Array<[Side, string]> = [
 
 function Tab({
   group,
+  index,
   panel,
   id,
   active,
@@ -104,6 +115,7 @@ function Tab({
   onSelect,
 }: {
   group: Group;
+  index: number;
   panel: Panel | undefined;
   id: PanelId;
   active: boolean;
@@ -112,6 +124,11 @@ function Tab({
 }) {
   const dispatch = useDispatch();
   const title = useTitle(panel, id);
+  const { dragRef, dragHandlers, isDragging } = useDragPanel({
+    panel: id,
+    kind: panel?.kind ?? 'document',
+  });
+  const { dropRef, isOver } = useDropTarget({ type: 'tab', group: group.id, index });
   const close = (event?: MouseEvent) => {
     event?.stopPropagation();
     dispatch({ type: 'close', panel: id });
@@ -131,9 +148,16 @@ function Tab({
             tabIndex={active ? 0 : -1}
             data-panel-tab={id}
             data-focused={focused || undefined}
+            data-dragging={isDragging || undefined}
+            data-over={isOver || undefined}
             className={styles.tab}
+            ref={(el) => {
+              dragRef(el);
+              dropRef(el);
+            }}
             onClick={onSelect}
             onAuxClick={(e) => e.button === 1 && close(e)}
+            {...dragHandlers}
           />
         }
       >
@@ -167,4 +191,14 @@ function Tab({
       </ContextMenu.Popup>
     </ContextMenu.Root>
   );
+}
+
+// The empty strip after the last tab: dropping there appends.
+function TabEnd({ group }: { group: Group }) {
+  const { dropRef, isOver } = useDropTarget({
+    type: 'tab',
+    group: group.id,
+    index: group.tabs.length,
+  });
+  return <div ref={dropRef} className={styles.tabEnd} data-over={isOver || undefined} />;
 }

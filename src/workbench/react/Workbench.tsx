@@ -4,6 +4,7 @@ import { MainArea } from './MainArea';
 import { PromptBar } from './PromptBar';
 import { Sidebar } from './Sidebar';
 import { StatusBar } from './StatusBar';
+import { WorkbenchDnd } from './WorkbenchDnd';
 import { WorkbenchMenubar } from './WorkbenchMenubar';
 import { useFocusSync } from './useFocusSync';
 import { useKeybindings } from './useKeybindings';
@@ -16,10 +17,12 @@ export function Workbench() {
   return (
     <div className={styles.root}>
       <WorkbenchMenubar />
-      <div className={styles.body}>
-        <Sidebar />
-        <MainArea />
-      </div>
+      <WorkbenchDnd>
+        <div className={styles.body}>
+          <Sidebar />
+          <MainArea />
+        </div>
+      </WorkbenchDnd>
       {layout.bars.prompt && <PromptBar />}
       {layout.bars.status && <StatusBar />}
       <LiveRegion />

@@ -326,3 +326,103 @@
   background: var(--c-surface);
   min-height: 24px;
 }
+
+/* Drag and drop */
+
+.dragGhost {
+  padding: var(--s-2) var(--s-3);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  box-shadow: var(--e-2);
+  font-size: var(--fs-4);
+  color: var(--c-ink2);
+  pointer-events: none;
+}
+
+.tab[data-dragging] {
+  opacity: 0.4;
+}
+
+.tab[data-over] {
+  box-shadow: inset 2px 0 0 var(--c-primary);
+}
+
+.tabEnd {
+  flex: 1;
+  min-width: var(--s-6);
+}
+
+.tabEnd[data-over] {
+  box-shadow: inset 2px 0 0 var(--c-primary);
+}
+
+.dropZones {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.dropZone {
+  position: absolute;
+  pointer-events: auto;
+}
+
+.dropZone[data-over] {
+  background: color-mix(in srgb, var(--c-primary) 18%, transparent);
+  outline: 2px solid var(--c-primary);
+  outline-offset: -2px;
+}
+
+.dropZone_left {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 25%;
+}
+
+.dropZone_right {
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 25%;
+}
+
+.dropZone_top {
+  left: 25%;
+  right: 25%;
+  top: 0;
+  height: 25%;
+}
+
+.dropZone_bottom {
+  left: 25%;
+  right: 25%;
+  bottom: 0;
+  height: 25%;
+}
+
+.dropZone_centre {
+  left: 25%;
+  right: 25%;
+  top: 25%;
+  bottom: 25%;
+}
+
+.groupBody {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.blocks[data-over] {
+  outline: 2px solid var(--c-primary);
+  outline-offset: -2px;
+}
+
+.blockToggle[data-dragging] {
+  opacity: 0.4;
+}
