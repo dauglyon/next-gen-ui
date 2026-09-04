@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import type { RefObject } from 'react';
 // Chrome glyphs come straight from Phosphor, never from the host's icon
 // table — the table is the plugins' namespace (host/icons.ts).
-import { CaretDown, DotsThree, PushPin, Sparkle, X } from '@phosphor-icons/react';
+import { CaretDown, CirclesThree, DotsThree, PushPin, X } from '@phosphor-icons/react';
 import { Button, ContextMenu, Menu, NavIcon, Popover, Toolbar } from '@kbase/design-system';
 import type { Panel, PluginId } from '../core';
 import { groups, makePanel, sidebarPanels } from '../core';
@@ -53,7 +53,7 @@ export function Sidebar({
         name: c.name,
         label: typeof c.shortcut === 'string' ? c.shortcut : c.title,
         // A command without its own icon wears its plugin's: provenance,
-        // and no collision with the toolbar's own ⚡ trigger.
+        // and no collision with the toolbar trigger.
         icon: c.icon ?? m.icon,
       })),
   );
@@ -80,7 +80,7 @@ export function Sidebar({
                 <Toolbar.Button
                   render={
                     <NavIcon aria-label="Shortcuts">
-                      <Sparkle size={18} aria-hidden="true" />
+                      <CirclesThree size={18} aria-hidden="true" />
                     </NavIcon>
                   }
                 />
@@ -92,7 +92,7 @@ export function Sidebar({
               className={styles.shortcutFlyout}
               aria-label="Shortcuts"
             >
-              {/* The toolbar itself, unfolding rightwards from the ⚡ —
+              {/* The toolbar itself, unfolding rightwards from its trigger —
                   not a menu card. */}
               <Toolbar.Root aria-label="Shortcuts">
                 <ShortcutButtons shortcuts={shortcuts} />

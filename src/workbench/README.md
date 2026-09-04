@@ -59,8 +59,8 @@ than repaired. Settings that are not layout (`assistant`) live under `workbench.
 ## Sidebar (provisional)
 
 A shortcut toolbar sits above the block stack: installed plugins' manifest commands flagged
-`shortcut`, as buttons that run before any plugin code loads. Collapsed, it becomes the rail's ⚡
-icon with the same buttons in a popover.
+`shortcut`, as buttons that run before any plugin code loads. Collapsed, it becomes a rail
+icon whose buttons unfold rightwards beside it.
 
 Pinned plugins' navigators stack vertically as blocks, splitting the height with dividers; each
 scrolls inside itself and the sidebar never scrolls. A block's header carries its plugin's icon

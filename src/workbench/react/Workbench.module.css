@@ -142,7 +142,7 @@
   border-radius: var(--r-lg);
 }
 
-/* The toolbar unfolding rightwards from the rail's ⚡: a horizontal strip
+/* The toolbar unfolding rightwards from the rail trigger: a horizontal strip
    at the icon's row, not a menu card. Scales out of its left edge. The
    class is doubled to outrank Popover.Popup's content padding and width. */
 .shortcutFlyout.shortcutFlyout {
