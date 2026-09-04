@@ -1,0 +1,170 @@
+import type { KeyboardEvent, MouseEvent } from 'react';
+import { X } from '@phosphor-icons/react';
+import { ContextMenu, EmptyState } from '@kbase/design-system';
+import type { Group, Panel, PanelId, Side } from '../core';
+import { useDispatch, useLayout, useServices, useTitle } from './context';
+import { panelDomId, tabDomId } from './domIds';
+import { PanelHost } from './PanelHost';
+import styles from './Workbench.module.css';
+
+// One tab strip and its panels. Every panel stays mounted and is hidden
+// when inactive, so switching tabs keeps scroll positions and iframe state.
+export function TabGroup({ group }: { group: Group }) {
+  const layout = useLayout();
+  const dispatch = useDispatch();
+  const { focusIntentRef } = useServices();
+  const focused = layout.focus !== null && group.tabs.includes(layout.focus);
+
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!group.active || event.ctrlKey || event.altKey || event.metaKey) return;
+    const at = group.tabs.indexOf(group.active);
+    let next: PanelId | undefined;
+    if (event.key === 'ArrowRight') next = group.tabs[(at + 1) % group.tabs.length];
+    else if (event.key === 'ArrowLeft')
+      next = group.tabs[(at - 1 + group.tabs.length) % group.tabs.length];
+    else if (event.key === 'Home') next = group.tabs[0];
+    else if (event.key === 'End') next = group.tabs[group.tabs.length - 1];
+    else if (event.key === 'Delete') {
+      event.preventDefault();
+      dispatch({ type: 'close', panel: group.active });
+      return;
+    } else return;
+    event.preventDefault();
+    if (next) dispatch({ type: 'focus', panel: next });
+  };
+
+  if (group.tabs.length === 0) {
+    return (
+      <div className={styles.group} data-group={group.id}>
+        <EmptyState
+          title="Nothing open"
+          description="Pick something in the sidebar, or press / and type a command."
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.group} data-group={group.id} data-focused={focused || undefined}>
+      <div role="tablist" aria-label="Open panels" className={styles.tablist} onKeyDown={onKeyDown}>
+        {group.tabs.map((id) => (
+          <Tab
+            key={id}
+            group={group}
+            panel={layout.panels[id]}
+            id={id}
+            active={group.active === id}
+            focused={layout.focus === id}
+            onSelect={() => {
+              focusIntentRef.current = 'user';
+              dispatch({ type: 'focus', panel: id });
+            }}
+          />
+        ))}
+      </div>
+      {group.tabs.map((id) => {
+        const panel = layout.panels[id];
+        return (
+          <div
+            key={id}
+            role="tabpanel"
+            id={panelDomId(id)}
+            aria-labelledby={tabDomId(id)}
+            hidden={group.active !== id}
+            className={styles.tabpanel}
+            data-panel={id}
+            onFocusCapture={() => {
+              if (layout.focus !== id) {
+                focusIntentRef.current = 'user';
+                dispatch({ type: 'focus', panel: id });
+              }
+            }}
+          >
+            {panel && <PanelHost panel={panel} focused={layout.focus === id} />}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+const SIDES: Array<[Side, string]> = [
+  ['left', 'Split left'],
+  ['right', 'Split right'],
+  ['top', 'Split up'],
+  ['bottom', 'Split down'],
+];
+
+function Tab({
+  group,
+  panel,
+  id,
+  active,
+  focused,
+  onSelect,
+}: {
+  group: Group;
+  panel: Panel | undefined;
+  id: PanelId;
+  active: boolean;
+  focused: boolean;
+  onSelect: () => void;
+}) {
+  const dispatch = useDispatch();
+  const title = useTitle(panel, id);
+  const close = (event?: MouseEvent) => {
+    event?.stopPropagation();
+    dispatch({ type: 'close', panel: id });
+  };
+  const alone = group.tabs.length < 2;
+
+  return (
+    <ContextMenu.Root>
+      <ContextMenu.Trigger
+        render={
+          <button
+            type="button"
+            role="tab"
+            id={tabDomId(id)}
+            aria-selected={active}
+            aria-controls={panelDomId(id)}
+            tabIndex={active ? 0 : -1}
+            data-panel-tab={id}
+            data-focused={focused || undefined}
+            className={styles.tab}
+            onClick={onSelect}
+            onAuxClick={(e) => e.button === 1 && close(e)}
+          />
+        }
+      >
+        <span className={styles.tabTitle}>{title}</span>
+        <span className={styles.tabClose} aria-hidden="true" onClick={close} title="Close">
+          <X size={12} weight="bold" />
+        </span>
+      </ContextMenu.Trigger>
+      <ContextMenu.Popup aria-label={`${title} actions`}>
+        <ContextMenu.Item onClick={() => close()}>Close</ContextMenu.Item>
+        <ContextMenu.Separator />
+        {SIDES.map(([side, label]) => (
+          <ContextMenu.Item
+            key={side}
+            disabled={alone}
+            onClick={() => dispatch({ type: 'move', panel: id, to: { group: group.id, side } })}
+          >
+            {label}
+          </ContextMenu.Item>
+        ))}
+        {panel?.kind === 'navigator' && (
+          <>
+            <ContextMenu.Separator />
+            <ContextMenu.Item
+              onClick={() => dispatch({ type: 'move', panel: id, to: { zone: 'sidebar' } })}
+            >
+              Move to sidebar
+            </ContextMenu.Item>
+          </>
+        )}
+      </ContextMenu.Popup>
+    </ContextMenu.Root>
+  );
+}

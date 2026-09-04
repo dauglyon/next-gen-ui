@@ -1,10 +1,20 @@
-import type { Layout, PanelId } from './layout';
+import type { Group, Layout, PanelId } from './layout';
 import type { Operation } from './operations';
 import { findNode, groupOf } from './tree';
 
 // The sentence the live region reads after an operation. Titles come from
 // the caller because the core does not know what a panel renders.
 export type TitleOf = (panel: PanelId) => string;
+
+// The tab the listener will see beside the moved one: the group's active tab,
+// or when that is the moved panel itself, the neighbour that takes over.
+function anchorIn(group: Group, moving: PanelId, title: TitleOf): string {
+  if (group.active && group.active !== moving) return title(group.active);
+  const at = group.tabs.indexOf(moving);
+  const rest = group.tabs.filter((t) => t !== moving);
+  const next = rest[Math.min(at, rest.length - 1)];
+  return next ? title(next) : 'the group';
+}
 
 const SIDE_WORDS = { left: 'left of', right: 'right of', top: 'above', bottom: 'below' } as const;
 
@@ -20,7 +30,7 @@ export function describe(op: Operation, before: Layout, title: TitleOf): string 
       const name = title(op.panel);
       if ('zone' in op.to) return `Moved ${name} to the sidebar`;
       const group = findNode(before.main, op.to.group);
-      const anchor = group?.kind === 'group' && group.active ? title(group.active) : 'the group';
+      const anchor = group?.kind === 'group' ? anchorIn(group, op.panel, title) : 'the group';
       if ('side' in op.to) return `Moved ${name} ${SIDE_WORDS[op.to.side]} ${anchor}`;
       const own = groupOf(before.main, op.panel);
       if (own && own.id === op.to.group && op.to.index !== undefined) {

@@ -9,6 +9,7 @@ import {
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import type { QueryClient } from '@tanstack/react-query';
+import type { WorkbenchServices } from '../workbench/react';
 import { Alert, Avatar, Button, Frame, Loader, NavIcon, Tooltip } from '@kbase/design-system';
 import { MapTrifold } from '@phosphor-icons/react';
 
@@ -24,11 +25,14 @@ import {
 declare module '@tanstack/react-router' {
   interface StaticDataRouteOption {
     title?: string;
+    // 'workbench' routes paint the whole viewport themselves.
+    chrome?: 'workbench';
   }
 }
 
 export interface RouterContext {
   queryClient: QueryClient;
+  workbench: WorkbenchServices;
 }
 
 // The design system is documentation, so it is readable without an account.
@@ -147,10 +151,17 @@ function RootLayout() {
     select: (s) => ({ pathname: s.location.pathname, matches: s.matches }),
   });
   const isAuthLayout = isPublic(pathname);
+  const ownChrome = matches.some((m) => m.staticData?.chrome === 'workbench');
 
   return (
     <>
-      {isAuthLayout ? <AuthLayout /> : <AppLayout pathname={pathname} matches={matches} />}
+      {ownChrome ? (
+        <Outlet />
+      ) : isAuthLayout ? (
+        <AuthLayout />
+      ) : (
+        <AppLayout pathname={pathname} matches={matches} />
+      )}
       {import.meta.env.DEV && (
         <>
           {/* Default bottom-left collides with the sidebar avatar; top-right is empty. */}
