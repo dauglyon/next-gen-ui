@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import type { RefObject } from 'react';
 // Chrome glyphs come straight from Phosphor, never from the host's icon
 // table — the table is the plugins' namespace (host/icons.ts).
-import { CaretDown, DotsThree, MagicWand, PushPin, X } from '@phosphor-icons/react';
+import { CaretDown, DotsThree, Nut, PushPin, X } from '@phosphor-icons/react';
 import { Button, ContextMenu, Menu, NavIcon, Popover, Toolbar } from '@kbase/design-system';
 import type { Panel, PluginId } from '../core';
 import { groups, makePanel, sidebarPanels } from '../core';
@@ -80,7 +80,7 @@ export function Sidebar({
                 <Toolbar.Button
                   render={
                     <NavIcon aria-label="Shortcuts">
-                      <MagicWand size={18} aria-hidden="true" />
+                      <Nut size={18} aria-hidden="true" />
                     </NavIcon>
                   }
                 />
