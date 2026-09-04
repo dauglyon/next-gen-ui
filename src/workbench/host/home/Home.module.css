@@ -74,3 +74,65 @@
   margin: 0;
   grid-column: 2;
 }
+
+/* The tour is instructions about the prototype, not part of it: raised
+   rather than surface, so it reads as a note pinned to the page. */
+.tour {
+  display: grid;
+  gap: var(--s-4);
+  padding: var(--s-5) var(--s-6);
+  background: var(--c-raised);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+}
+
+.tour h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin: 0;
+}
+
+.tourList {
+  display: grid;
+  gap: var(--s-3);
+  margin: 0;
+  padding-left: var(--s-6);
+  max-width: 78ch;
+  color: var(--c-ink2);
+}
+
+.tourList b {
+  color: var(--c-ink);
+}
+
+.key {
+  padding: 1px var(--s-2);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border2);
+  border-radius: var(--r-sm);
+  font-family: var(--f-mono);
+  font-size: var(--fs-3);
+  white-space: nowrap;
+}
+
+.tourLink {
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--c-primary);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.tourLink:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+.tourNote {
+  margin: 0;
+  max-width: 78ch;
+}
