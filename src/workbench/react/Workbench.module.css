@@ -127,26 +127,35 @@
     visibility 0s 0s;
 }
 
-/* The shortcut toolbar: a slim panel of manifest-flagged commands above
-   the accordion. */
-.shortcutBar {
+/* The shortcut toolbar: its glyph on the page background at the leading
+   glyphs' centre-line, the slim panel of manifest-flagged commands
+   beside it. */
+.shortcutRow {
   flex: none;
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--s-2);
+}
+
+.shortcutMark {
+  display: flex;
+  justify-content: center;
+  flex: none;
+  width: 32px;
+  color: var(--c-ink3);
+}
+
+.shortcutBar {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--s-1);
   padding: var(--s-1);
-  margin-bottom: var(--s-2);
   background: var(--c-surface);
   border: 1px solid var(--c-border);
   border-radius: var(--r-lg);
-}
-
-/* The toolbar's own glyph — what the collapsed rail folds it into. */
-.shortcutMark {
-  display: inline-flex;
-  color: var(--c-ink3);
-  padding: 0 var(--s-1) 0 var(--s-2);
 }
 
 /* The toolbar unfolding rightwards from the rail trigger: a horizontal strip

@@ -137,13 +137,16 @@ export function Sidebar({
         data-over={isOver || undefined}
       >
         {shortcuts.length > 0 && (
-          <Toolbar.Root className={styles.shortcutBar} aria-label="Shortcuts">
-            {/* The same glyph the collapsed rail folds this toolbar into. */}
+          <div className={styles.shortcutRow}>
+            {/* Beside the toolbar, not in it: the glyph the collapsed rail
+                folds this toolbar into, on the leading-glyph centre-line. */}
             <span className={styles.shortcutMark} aria-hidden="true">
               <Nut size={16} />
             </span>
-            <ShortcutButtons shortcuts={shortcuts} />
-          </Toolbar.Root>
+            <Toolbar.Root className={styles.shortcutBar} aria-label="Shortcuts">
+              <ShortcutButtons shortcuts={shortcuts} />
+            </Toolbar.Root>
+          </div>
         )}
         <div className={styles.accordion}>
           {blocks.length === 0 ? (
