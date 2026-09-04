@@ -71,8 +71,9 @@ export function HomeDocument() {
   );
 }
 
-// The prototype's own instructions. Each item names what to do and what
-// the code then does, in terms a reader can check against the screen.
+// The prototype's own instructions: one action per line, and what it
+// does. A row in the prompt bar is a plugin's guess at the text, not a
+// search result, which is the one thing the screen cannot say for itself.
 function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
   return (
     <section className={styles.tour} aria-labelledby="home-tour">
@@ -82,46 +83,37 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
       </h2>
       <ol className={styles.tourList}>
         <li>
-          <b>Type into the prompt bar.</b> Every installed plugin reads each keystroke and answers
-          with the pages it would open. <Key>P0A7B8</Key> gets two answers from Function Junction, a
-          dossier and a structure; <Key>nifH</Key> gets one each from Data, Jobs and Function
-          Junction; <Key>E. coli</Key> reaches GenKnown. The row nearest the field is the one Enter
-          runs, and it goes to the assistant. A leading <Key>/</Key> replaces the list with
-          commands.{' '}
+          Type <Key>nifH</Key> in the prompt bar. Data, Jobs and Function Junction each offer a
+          place to land, all three guessing from the shape of the text; none of them looked anything
+          up. Picking one opens that plugin, which prints the action it was handed.{' '}
           <button type="button" className={styles.tourLink} onClick={onFocusPrompt}>
             Put the cursor there
           </button>
         </li>
         <li>
-          <b>Pick one of those rows.</b> It opens Function Junction or GenKnown as a document and
-          passes it the row&apos;s action; each page prints the action it received. Those two
-          plugins have no sidebar panel, so the prompt bar and this page are the ways in.
+          Open Function Junction below. A plugin can be a whole page instead of a sidebar panel, and
+          both kinds come from the same manifest.
         </li>
         <li>
-          <b>Rearrange the sidebar.</b> A block header folds on click and reorders on drag.
-          Collapsing the sidebar leaves a 48-pixel icon rail in the same order, each icon opening
-          its panel in a flyout. More shows an unpinned plugin as a dashed block at the bottom of
-          the stack; that block is dropped on reload, and dragging it onto another block pins it at
-          that position.
+          Drag a sidebar block into a tab group, or drop a tab on a group&apos;s edge to split it.
+          Right-clicking a tab or a block header reaches the same operations.
         </li>
         <li>
-          <b>Move a panel between the sidebar and the tabs.</b> Dragging a sidebar block into a tab
-          group moves it there; dropping a tab on a group&apos;s edge splits the group in that
-          direction. Right-clicking a tab or a block header reaches the same operations without a
-          drag.
+          Open More and drag the dashed block onto the stack. It pins where it lands; left alone, it
+          is gone on reload.
         </li>
         <li>
-          <b>Reload.</b> The arrangement, the fold states, the focused panel and the focused
-          document&apos;s URL are stored in the browser and restored. Lock layout, in the Workbench
-          menu, then refuses moving, resizing, pinning and unpinning; opening, closing, focusing and
-          folding go on working.
+          Open Catalog. Pinning, unpinning and choosing which plugin answers free text are settings
+          there, not fixed in the shell.
+        </li>
+        <li>
+          Reload. Arrangement, folds, focus and the document&apos;s URL come back. Lock layout, in
+          the Workbench menu, then refuses moves, resizes, pins and unpins.
         </li>
       </ol>
       <p className={`caption ${styles.tourNote}`}>
-        The datasets, jobs and arcs are fixtures compiled into the page, and Function Junction and
-        GenKnown are iframes over static HTML. Nothing here reaches a server. The plugin contract,
-        the loading of a plugin on first use, the layout reducer and the URL round-trip are the
-        parts under test.
+        Datasets, jobs and arcs are fixtures. Function Junction and GenKnown are static HTML in
+        iframes. Nothing reaches a server.
       </p>
     </section>
   );
