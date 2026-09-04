@@ -172,7 +172,9 @@ function RootLayout() {
       ) : (
         <AppLayout pathname={pathname} matches={matches} />
       )}
-      {import.meta.env.DEV && (
+      {/* Opt-in: the floating badges cover real UI. VITE_DEVTOOLS=true in
+          .env.development.local brings them back. */}
+      {import.meta.env.DEV && import.meta.env.VITE_DEVTOOLS === 'true' && (
         <>
           {/* Default bottom-left collides with the sidebar avatar; top-right is empty. */}
           <TanStackRouterDevtools position="top-right" />
