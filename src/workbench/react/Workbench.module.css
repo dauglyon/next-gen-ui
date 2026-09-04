@@ -26,26 +26,27 @@
   border-bottom: 1px solid var(--c-border);
 }
 
-/* The design system's masthead RATIOS at menubar scale: per wordmark size
-   T, dots = 1.0 T and the mark→word gap = 0.75 T; the wordmark sits one
-   type step above its surroundings (triggers are --fs-4, so T = --fs-5),
-   bold ink2. */
+/* The design system's masthead (chrome.css, as function-junction wears
+   it): the mark at its canonical size — 24 high, 16px dots — and --s-5 to
+   the text, both fixed; only the text adapts to context. Here that is the
+   wordmark one type step above the --fs-4 triggers, bold ink2. */
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: var(--s-4);
+  gap: var(--s-5);
   font-size: var(--fs-5);
   font-weight: var(--fw-bold);
   color: var(--c-ink2);
   padding: 0 var(--s-2);
 }
 
-/* Bounds the line box: the Loader's square SVG is taller than its dots,
-   and overflow stays visible for the animated form. */
+/* Bounds the line box at the mark's canonical height: the Loader's square
+   SVG is taller than its dots, and overflow stays visible for the
+   animated form. */
 .brandMark {
   display: flex;
   align-items: center;
-  height: 18px;
+  height: 24px;
 }
 
 .body {

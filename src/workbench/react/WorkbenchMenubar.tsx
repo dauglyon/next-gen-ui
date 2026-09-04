@@ -18,11 +18,11 @@ export function WorkbenchMenubar() {
   return (
     <div className={styles.menubar}>
       <span className={styles.brand} aria-hidden="true">
-        {/* Dots at the wordmark's size (14px): the Loader's 48-unit
-            viewBox renders dots at 18/48 of `size`, so 37. Static until
-            something wires `active` to a loading state. */}
+        {/* The mark's canonical 16px dots: the Loader's 48-unit viewBox
+            renders dots at 18/48 of `size`, so 42. Static until something
+            wires `active` to a loading state. */}
         <span className={styles.brandMark}>
-          <Loader size={37} active={false} />
+          <Loader size={42} active={false} />
         </span>
         KBase
       </span>
