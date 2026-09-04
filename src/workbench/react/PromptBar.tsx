@@ -37,13 +37,27 @@ export function PromptBar() {
     focusKind: layout.focus ? (layout.panels[layout.focus]?.kind ?? null) : null,
   });
 
+  // The omnibox path to page-like plugins: a single short word that
+  // prefixes an app's name completes to opening it, so document-only
+  // plugins are reachable by typing their name — no launcher surface.
+  // One word only, so composing a sentence to the assistant stays quiet.
+  const appSuggestions = (text: string): Suggestion[] => {
+    const t = text.trim().toLowerCase();
+    if (t.length < 2 || /\s/.test(t)) return [];
+    return source
+      .manifests()
+      .filter((m) => m.document)
+      .filter((m) => m.title.toLowerCase().startsWith(t) || m.id.startsWith(t))
+      .map((m) => ({ value: `/open ${m.id}`, label: `Open ${m.title}`, detail: m.description }));
+  };
+
   // Completion follows the text; a stale async result for older text is dropped.
   useEffect(() => {
     let live = true;
     // complete() answers [] for anything that is not a slash command.
     void complete(registry, value, ctx()).then((list) => {
       if (!live) return;
-      setSuggestions(list);
+      setSuggestions(list.length ? list : appSuggestions(value));
       setHighlight(0);
     });
     return () => {

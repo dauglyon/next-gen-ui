@@ -89,6 +89,9 @@ and, once its module has loaded, what its `usePromptContext` hook reports: the c
 prompt will join, offered as a switcher over the hook's `options` and a jump to its document.
 With no assistant set the row says so.
 
+A short word that prefixes a document plugin.s name completes to opening it — the omnibox
+path to page-like apps, with no launcher surface.
+
 Default keybindings live in `commands/keys.ts` and avoid chords browsers own (Ctrl+W/T/N,
 Ctrl+Tab, Ctrl+PageUp/Down, Alt+Left/Right). `/` focuses the bar; `Escape` returns to the panel.
 
