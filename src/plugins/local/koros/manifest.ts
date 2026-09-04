@@ -11,11 +11,6 @@ export const manifest: Manifest = {
   document: { route: '/arc/$slug' },
   promptHandler: true,
   commands: [
-    {
-      name: 'new-question',
-      title: 'Start a new arc for a question',
-      icon: 'Lightning',
-      shortcut: 'New arc',
-    },
+    { name: 'new-question', title: 'Start a new arc for a question', shortcut: 'New arc' },
   ],
 };

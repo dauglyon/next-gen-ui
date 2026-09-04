@@ -50,7 +50,9 @@ export function Sidebar({
         key: `${m.id}/${c.name}`,
         name: c.name,
         label: typeof c.shortcut === 'string' ? c.shortcut : c.title,
-        icon: c.icon,
+        // A command without its own icon wears its plugin's: provenance,
+        // and no collision with the toolbar's own ⚡ trigger.
+        icon: c.icon ?? m.icon,
       })),
   );
 
@@ -300,7 +302,7 @@ function ShortcutButtons({
   return (
     <>
       {shortcuts.map((s) => {
-        const Icon = s.icon ? iconFor(s.icon) : Lightning;
+        const Icon = iconFor(s.icon);
         return (
           <Toolbar.Button
             key={s.key}

@@ -29,8 +29,8 @@ serves (read by the host before any code loads) and a **module** the host loads 
 `ManifestSchema` validates it. Ids are `^[a-z][a-z0-9-]{1,40}$` and never change once published.
 `document.route` uses `$name` segments; those names are the document's params and its identity.
 A command with `shortcut` (true, or a short button label) appears in the sidebar shortcut
-toolbar, with `icon` from the host's icon table; it should not
-require arguments the user must type.
+toolbar, with `icon` from the host's icon table (absent, the plugin's own icon); it should
+not require arguments the user must type.
 
 ## Module
 
