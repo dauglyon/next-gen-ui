@@ -142,6 +142,13 @@
   border-radius: var(--r-lg);
 }
 
+/* The toolbar's own glyph — what the collapsed rail folds it into. */
+.shortcutMark {
+  display: inline-flex;
+  color: var(--c-ink3);
+  padding: 0 var(--s-1) 0 var(--s-2);
+}
+
 /* The toolbar unfolding rightwards from the rail trigger: a horizontal strip
    at the icon's row, not a menu card. Scales out of its left edge. The
    class is doubled to outrank Popover.Popup's content padding and width. */

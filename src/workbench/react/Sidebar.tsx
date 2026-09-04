@@ -138,6 +138,10 @@ export function Sidebar({
       >
         {shortcuts.length > 0 && (
           <Toolbar.Root className={styles.shortcutBar} aria-label="Shortcuts">
+            {/* The same glyph the collapsed rail folds this toolbar into. */}
+            <span className={styles.shortcutMark} aria-hidden="true">
+              <Nut size={16} />
+            </span>
             <ShortcutButtons shortcuts={shortcuts} />
           </Toolbar.Root>
         )}
