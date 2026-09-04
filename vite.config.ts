@@ -5,7 +5,10 @@ import { loadEnv } from 'vite';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { tanstackRouter } from '@tanstack/router-plugin/vite';
+import { federation } from '@module-federation/vite';
 import { themeInitScript } from './src/design-system/theme/useTheme';
+import { SHARED_SINGLETONS } from './src/plugins/sdk/shared';
+import { localManifests } from './src/plugins/local/manifests';
 
 // `@kbase/design-system` is the public name; the canonical source
 // lives in this repo at `src/design-system/`. Keep this alias in
@@ -20,6 +23,25 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
     plugins: [
+      // Module Federation host. Remotes are registered at runtime from the
+      // registry, so none are declared here; the shared list is the SDK's.
+      // Vitest gets no federation runtime: nothing in tests loads a remote.
+      ...(mode === 'test'
+        ? []
+        : [federation({ name: 'host', remotes: {}, shared: SHARED_SINGLETONS, dts: false })]),
+      {
+        // Dev stand-in for the registry: the bundled manifests, so the fetch
+        // and merge path runs against real data. The container proxies this
+        // path to the registry service instead (nginx.conf).
+        name: 'local-plugin-registry',
+        apply: 'serve' as const,
+        configureServer(server) {
+          server.middlewares.use('/plugin-registry/plugins', (_req, res) => {
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(localManifests));
+          });
+        },
+      },
       tanstackRouter({
         target: 'react',
         autoCodeSplitting: true,
@@ -69,6 +91,9 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@kbase/design-system': designSystemSrc,
+        // Same idea for the plugin SDK: local plugins import the name external
+        // plugins will install, and Module Federation shares one instance of it.
+        '@kbase/plugin-sdk': fileURLToPath(new URL('./src/plugins/sdk/index.ts', import.meta.url)),
       },
     },
     css: {

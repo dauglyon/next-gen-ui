@@ -1,8 +1,8 @@
 import { useSyncExternalStore } from 'react';
 import { Button, Chip, Progress } from '@kbase/design-system';
 import type { ChipColor } from '@kbase/design-system';
-import { definePlugin, useHost, usePanel, usePanelTitle } from '../../sdk';
-import type { StatusItem } from '../../sdk';
+import { definePlugin, useHost, usePanel, usePanelTitle } from '@kbase/plugin-sdk';
+import type { StatusItem } from '@kbase/plugin-sdk';
 import type { JobStatus } from './store';
 import { jobStore } from './store';
 

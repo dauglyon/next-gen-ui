@@ -1,5 +1,5 @@
 import { Chip, Table, Tbody, Td, Th, Thead, Tr, Tree } from '@kbase/design-system';
-import { definePlugin, useHost, usePanel, usePanelTitle } from '../../sdk';
+import { definePlugin, useHost, usePanel, usePanelTitle } from '@kbase/plugin-sdk';
 import { dataset, datasets } from './data';
 
 function DataHomeNavigator() {

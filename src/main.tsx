@@ -18,7 +18,7 @@ import {
   installCrossTabAuthSync,
 } from './api/auth';
 import { localPlugins } from './plugins/local';
-import { createWorkbench } from './workbench/host';
+import { createWorkbench, loadInstalled } from './workbench/host';
 import './styles.css';
 
 const queryClient = new QueryClient({
@@ -36,8 +36,10 @@ installCrossTabAuthSync(queryClient);
 installAuthFailureInterceptor(queryClient);
 installAuthExpiryWatcher(queryClient);
 
+// Bundled plugins plus whatever the registry lists; a registry that is down
+// leaves the bundled ones working.
 const workbench = createWorkbench({
-  installed: localPlugins,
+  installed: await loadInstalled(localPlugins),
   storage: window.localStorage,
   defaultPinned: ['koros', 'data', 'jobs'],
   defaultAssistant: 'koros',

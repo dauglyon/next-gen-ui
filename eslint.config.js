@@ -6,7 +6,14 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['dist', 'dist-design-system', 'build', 'coverage', 'src/routeTree.gen.ts'],
+    ignores: [
+      'dist',
+      'dist-design-system',
+      'dist-plugin-sdk',
+      'build',
+      'coverage',
+      'src/routeTree.gen.ts',
+    ],
   },
   {
     files: ['**/*.{ts,tsx}'],

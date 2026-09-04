@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { Chip, Tree } from '@kbase/design-system';
-import { definePlugin, useHost, usePanel, usePanelTitle } from '../../sdk';
-import type { StatusItem } from '../../sdk';
+import { definePlugin, useHost, usePanel, usePanelTitle } from '@kbase/plugin-sdk';
+import type { StatusItem } from '@kbase/plugin-sdk';
 import { koros } from './store';
 
 function useKoros() {
