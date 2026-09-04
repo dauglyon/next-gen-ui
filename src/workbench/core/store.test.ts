@@ -29,9 +29,18 @@ describe('store in use mode', () => {
   it('announces with the caller-supplied titles', () => {
     const store = createWorkbenchStore({
       initial: defaultLayout(),
-      title: (id) => (id === arc.id ? 'Arc: nitro' : id),
+      title: (id, panel) => (panel?.plugin === 'koros' ? 'Arc: nitro' : id),
     });
     expect(store.dispatch({ type: 'open', panel: arc }).announcement).toBe('Opened Arc: nitro');
+  });
+
+  it('hands the panel record to the title lookup on open and on close', () => {
+    const store = createWorkbenchStore({
+      initial: defaultLayout(),
+      title: (_id, panel) => panel?.params.slug ?? 'gone',
+    });
+    expect(store.dispatch({ type: 'open', panel: arc }).announcement).toBe('Opened nitro');
+    expect(store.dispatch({ type: 'close', panel: arc.id }).announcement).toBe('Closed nitro');
   });
 
   it('a new operation clears the redo stack', () => {

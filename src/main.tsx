@@ -17,7 +17,8 @@ import {
   installAuthFailureInterceptor,
   installCrossTabAuthSync,
 } from './api/auth';
-import { createLocalSource, createWorkbench, helloPlugin } from './workbench/host';
+import { localPlugins } from './plugins/local';
+import { createWorkbench } from './workbench/host';
 import './styles.css';
 
 const queryClient = new QueryClient({
@@ -36,7 +37,7 @@ installAuthFailureInterceptor(queryClient);
 installAuthExpiryWatcher(queryClient);
 
 const workbench = createWorkbench({
-  source: createLocalSource([helloPlugin]),
+  installed: localPlugins,
   storage: window.localStorage,
   defaultPinned: ['hello'],
 });

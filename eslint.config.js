@@ -35,6 +35,15 @@ export default tseslint.config(
     },
   },
   {
+    // A plugin module exports components and its definePlugin() default
+    // together on purpose: that object is what the host loads. HMR for
+    // plugin code goes through the panel, not fast refresh.
+    files: ['src/plugins/local/**/plugin.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  {
     // The workbench's layout model and command registry are plain TypeScript
     // so they can be tested without a DOM and read without React knowledge.
     files: ['src/workbench/core/**/*.ts', 'src/workbench/commands/**/*.ts'],

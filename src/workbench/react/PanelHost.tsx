@@ -4,8 +4,9 @@ import { Button, Loader } from '@kbase/design-system';
 import { HostContext, PanelContext } from '../../plugins/sdk';
 import type { PanelHandle, PluginHost } from '../../plugins/sdk';
 import type { Panel } from '../core';
-import { makePanel, panelType } from '../core';
-import { useDispatch, useRun, useServices } from './context';
+import { panelType } from '../core';
+import { useServices } from './context';
+import { pluginHostFor } from '../host/createWorkbench';
 import styles from './Workbench.module.css';
 
 // Renders one panel: looks its component up in the host's index, gives it
@@ -13,8 +14,6 @@ import styles from './Workbench.module.css';
 // this box; the tab, its neighbours and the chrome keep working.
 export function PanelHost({ panel, focused }: { panel: Panel; focused: boolean }) {
   const services = useServices();
-  const dispatch = useDispatch();
-  const run = useRun();
   const definition = services.source.panel(panelType(panel.plugin, panel.kind));
 
   const setTitle = useCallback(
@@ -33,12 +32,8 @@ export function PanelHost({ panel, focused }: { panel: Panel; focused: boolean }
     [panel, focused, setTitle],
   );
   const host = useMemo<PluginHost>(
-    () => ({
-      openDocument: (params) =>
-        dispatch({ type: 'open', panel: makePanel(panel.plugin, 'document', params) }),
-      runCommand: (name, values) => run(name, values),
-    }),
-    [dispatch, run, panel.plugin],
+    () => pluginHostFor(services, panel.plugin),
+    [services, panel.plugin],
   );
 
   if (!definition) return <GhostPanel panel={panel} />;
@@ -67,7 +62,7 @@ function Loading() {
 // A panel whose plugin is no longer installed. The layout keeps the slot so
 // reinstalling brings it back where it was.
 function GhostPanel({ panel }: { panel: Panel }) {
-  const dispatch = useDispatch();
+  const { dispatch } = useServices();
   return (
     <div className={styles.panelMessage} role="group" aria-label="Unavailable panel">
       <p className="body">

@@ -1,5 +1,14 @@
 export { createWorkbench, LAYOUT_STORAGE_KEY } from './createWorkbench';
 export type { CreateWorkbenchOptions } from './createWorkbench';
-export { createLocalSource } from './types';
-export type { PanelSource, PanelDefinition, PluginInfo, LocalPlugin } from './types';
-export { helloPlugin } from './hello';
+export { createHostIndex } from './installed';
+export type {
+  HostIndex,
+  InstalledPlugin,
+  PanelDefinition,
+  PanelSource,
+  PluginInfo,
+} from './installed';
+export { matchRoute, buildPath, routeParams } from './routes';
+export { createSettingsStore, SETTINGS_STORAGE_KEY } from './settings';
+export type { Settings, SettingsStore } from './settings';
+export { iconFor, ICONS } from './icons';

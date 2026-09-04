@@ -3,7 +3,7 @@ import { CaretDown, CaretRight, DotsThree, SidebarSimple, PushPin } from '@phosp
 import { Button, ContextMenu, NavIcon, Popover, Tooltip } from '@kbase/design-system';
 import type { Panel, PluginId } from '../core';
 import { groups, makePanel, navigatorId, sidebarPanels } from '../core';
-import type { PluginInfo } from '../host/types';
+import type { PluginInfo } from '../host/installed';
 import { useDispatch, useLayout, useServices, useTitle } from './context';
 import { PanelHost } from './PanelHost';
 import { SplitView } from './SplitView';

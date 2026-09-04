@@ -77,8 +77,9 @@ export function createWorkbenchStore({
       const after = reduce(before, op, ctx);
       if (after === before) return { changed: false, announcement: '' };
       if (mode === 'use' && isUndoable(op)) push(before);
+      const announcement = describe(op, before, after, title);
       set(after);
-      return { changed: true, announcement: describe(op, before, title) };
+      return { changed: true, announcement };
     },
     replace(next) {
       set(next);

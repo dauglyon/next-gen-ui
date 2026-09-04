@@ -1,12 +1,8 @@
-import { createLocalSource, createWorkbench, helloPlugin } from '../workbench/host';
+import { localPlugins } from '../plugins/local';
+import { createWorkbench } from '../workbench/host';
 import type { WorkbenchServices } from '../workbench/react';
 
-// Router context for tests: a workbench with the throwaway plugin and no
-// persistence.
+// Router context for tests: the bundled plugins and no persistence.
 export function testWorkbench(): WorkbenchServices {
-  return createWorkbench({
-    source: createLocalSource([helloPlugin]),
-    storage: null,
-    defaultPinned: ['hello'],
-  });
+  return createWorkbench({ installed: localPlugins, storage: null, defaultPinned: ['hello'] });
 }

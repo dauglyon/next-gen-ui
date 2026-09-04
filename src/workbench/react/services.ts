@@ -1,6 +1,8 @@
 import type { WorkbenchStore } from '../core';
 import type { CommandRegistry } from '../commands';
-import type { PanelSource } from '../host/types';
+import type { Operation } from '../core';
+import type { HostIndex } from '../host/installed';
+import type { SettingsStore } from '../host/settings';
 import type { Announcer } from './announcer';
 import type { TitleStore } from './titles';
 
@@ -27,7 +29,10 @@ export function createPromptHandle(): PromptHandle {
 export interface WorkbenchServices {
   store: WorkbenchStore;
   registry: CommandRegistry;
-  source: PanelSource;
+  source: HostIndex;
+  settings: SettingsStore;
+  // dispatch + announce, for code outside React (route loaders, plugin hosts).
+  dispatch: (op: Operation) => boolean;
   titles: TitleStore;
   announcer: Announcer;
   // The prompt bar registers itself here on mount so commands can focus it.
