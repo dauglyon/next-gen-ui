@@ -64,19 +64,22 @@ export function Sidebar({
       data-collapsed={sidebar.collapsed || undefined}
       style={{ width: sidebar.collapsed ? 48 : sidebar.width }}
     >
-      <div
+      <Toolbar.Root
+        orientation="vertical"
         className={styles.iconColumn}
-        role="toolbar"
-        aria-orientation="vertical"
         aria-label="Pinned plugins"
       >
         {shortcuts.length > 0 && (
           <Popover.Root>
             <Popover.Trigger
               render={
-                <NavIcon aria-label="Shortcuts">
-                  <Lightning size={18} aria-hidden="true" />
-                </NavIcon>
+                <Toolbar.Button
+                  render={
+                    <NavIcon aria-label="Shortcuts">
+                      <Lightning size={18} aria-hidden="true" />
+                    </NavIcon>
+                  }
+                />
               }
             />
             <Popover.Popup
@@ -108,7 +111,7 @@ export function Sidebar({
             <MoreMenu plugins={unpinned} onPreview={onPreview} />
           </span>
         )}
-      </div>
+      </Toolbar.Root>
 
       {/* Collapsed, a preview flies out beside the ⋯ icon like the pinned
           popouts; the layout — and the collapsed state — are untouched. */}
@@ -352,9 +355,14 @@ export function MoreMenu({
               </span>
             </button>
           ) : (
-            <NavIcon aria-label="More plugins">
-              <DotsThree size={18} weight="bold" aria-hidden="true" />
-            </NavIcon>
+            // In the rail: a Toolbar.Button so arrow keys reach it.
+            <Toolbar.Button
+              render={
+                <NavIcon aria-label="More plugins">
+                  <DotsThree size={18} weight="bold" aria-hidden="true" />
+                </NavIcon>
+              }
+            />
           )
         }
       />
@@ -487,7 +495,11 @@ function PopoutIcon({
   const width = useLayout().sidebar.width;
   return (
     <Popover.Root>
-      <Popover.Trigger render={<NavIcon aria-label={label}>{children}</NavIcon>} />
+      <Popover.Trigger
+        render={
+          <Toolbar.Button render={<NavIcon aria-label={label}>{children}</NavIcon>} />
+        }
+      />
       {/* Beside the rail with its top at the icon: the default bottom-
           centered placement would cover the icons under the clicked one. */}
       <Popover.Popup
