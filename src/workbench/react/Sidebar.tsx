@@ -41,13 +41,13 @@ export function Sidebar({
   const previewing = preview && !sidebar.pinned.includes(preview) ? preview : null;
   // Anchors the collapsed preview flyout to the ⋯ icon that opened it.
   const moreAnchorRef = useRef<HTMLSpanElement>(null);
-  // Pinned plugins' manifest commands flagged as shortcuts, from the
-  // manifests alone — a shortcut runs before its plugin's code loads.
-  const shortcuts = sidebar.pinned.flatMap((id) =>
-    (source.manifest(id)?.commands ?? [])
+  // Every installed plugin's manifest commands flagged as shortcuts, from
+  // the manifests alone — a shortcut runs before its plugin's code loads.
+  const shortcuts = source.manifests().flatMap((m) =>
+    (m.commands ?? [])
       .filter((c) => c.shortcut)
       .map((c) => ({
-        key: `${id}/${c.name}`,
+        key: `${m.id}/${c.name}`,
         name: c.name,
         label: typeof c.shortcut === 'string' ? c.shortcut : c.title,
         icon: c.icon,

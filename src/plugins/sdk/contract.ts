@@ -24,9 +24,9 @@ export const CommandDeclSchema = z.object({
   // A name from the host's icon table, for surfaces that show the command
   // as a button.
   icon: z.string().optional(),
-  // Offered in the sidebar's shortcut toolbar while the plugin is pinned:
-  // true, or a short button label where the title is too long for one.
-  // A shortcut should not require arguments the user must type.
+  // Offered in the sidebar's shortcut toolbar: true, or a short button
+  // label where the title is too long for one. A shortcut should not
+  // require arguments the user must type.
   shortcut: z.union([z.boolean(), z.string()]).optional(),
 });
 export type CommandDecl = z.infer<typeof CommandDeclSchema>;

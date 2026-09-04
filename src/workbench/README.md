@@ -58,7 +58,7 @@ than repaired. Settings that are not layout (`assistant`) live under `workbench.
 
 ## Sidebar (provisional)
 
-A shortcut toolbar sits above the block stack: pinned plugins' manifest commands flagged
+A shortcut toolbar sits above the block stack: installed plugins' manifest commands flagged
 `shortcut`, as buttons that run before any plugin code loads. Collapsed, it becomes the rail's ⚡
 icon with the same buttons in a popover.
 
