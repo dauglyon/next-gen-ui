@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import type { RefObject } from 'react';
 import { CaretDown, DotsThree, Lightning, PushPin, X } from '@phosphor-icons/react';
-import { Button, ContextMenu, Menu, NavIcon, Popover } from '@kbase/design-system';
+import { Button, ContextMenu, Menu, NavIcon, Popover, Toolbar } from '@kbase/design-system';
 import type { Panel, PluginId } from '../core';
 import { groups, makePanel, sidebarPanels } from '../core';
 import type { PluginInfo } from '../host/installed';
@@ -87,7 +87,9 @@ export function Sidebar({
               className={styles.shortcutPop}
               aria-label="Shortcuts"
             >
-              <ShortcutButtons shortcuts={shortcuts} />
+              <Toolbar.Root orientation="vertical" aria-label="Shortcuts">
+                <ShortcutButtons shortcuts={shortcuts} />
+              </Toolbar.Root>
             </Popover.Popup>
           </Popover.Root>
         )}
@@ -128,9 +130,9 @@ export function Sidebar({
         data-over={isOver || undefined}
       >
         {shortcuts.length > 0 && (
-          <div className={styles.shortcutBar} role="toolbar" aria-label="Shortcuts">
+          <Toolbar.Root className={styles.shortcutBar} aria-label="Shortcuts">
             <ShortcutButtons shortcuts={shortcuts} />
-          </div>
+          </Toolbar.Root>
         )}
         <div className={styles.accordion}>
           {blocks.length === 0 ? (
@@ -297,10 +299,14 @@ function ShortcutButtons({
       {shortcuts.map((s) => {
         const Icon = s.icon ? iconFor(s.icon) : Lightning;
         return (
-          <Button key={s.key} size="xs" variant="ghost" onClick={() => void run(s.name)}>
+          <Toolbar.Button
+            key={s.key}
+            render={<Button size="xs" variant="ghost" />}
+            onClick={() => void run(s.name)}
+          >
             <Icon size={14} aria-hidden="true" />
             {s.label}
-          </Button>
+          </Toolbar.Button>
         );
       })}
     </>

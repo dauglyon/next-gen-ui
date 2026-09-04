@@ -142,13 +142,9 @@
   border-radius: var(--r-lg);
 }
 
-/* The same buttons behind the rail's ⚡ icon. The class is doubled to
-   outrank Popover.Popup's content padding. */
+/* The same toolbar behind the rail's ⚡ icon, vertical. The class is
+   doubled to outrank Popover.Popup's content padding. */
 .shortcutPop.shortcutPop {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--s-1);
   min-width: 160px;
   padding: var(--s-2);
 }
