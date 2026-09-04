@@ -1,4 +1,4 @@
-import { useLayout } from './context';
+import { useLayout, useMode } from './context';
 import { FrameLayerProvider } from './FrameLayer';
 import { LiveRegion } from './LiveRegion';
 import { MainArea } from './MainArea';
@@ -13,10 +13,11 @@ import styles from './Workbench.module.css';
 
 export function Workbench() {
   const layout = useLayout();
+  const mode = useMode();
   useKeybindings();
   useFocusSync();
   return (
-    <div className={styles.root}>
+    <div className={styles.root} data-mode={mode}>
       <WorkbenchMenubar />
       <WorkbenchDnd>
         <FrameLayerProvider>

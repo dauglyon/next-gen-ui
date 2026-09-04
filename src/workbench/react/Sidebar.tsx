@@ -4,7 +4,7 @@ import { Button, ContextMenu, NavIcon, Popover, Tooltip } from '@kbase/design-sy
 import type { Panel, PluginId } from '../core';
 import { groups, makePanel, navigatorId, sidebarPanels } from '../core';
 import type { PluginInfo } from '../host/installed';
-import { useDispatch, useLayout, useServices, useTitle } from './context';
+import { useDispatch, useLayout, useMode, useServices, useTitle } from './context';
 import { PanelHost } from './PanelHost';
 import { SplitView } from './SplitView';
 import { useDragPanel, useDragging, useDropTarget } from './useDnd';
@@ -16,6 +16,7 @@ import styles from './Workbench.module.css';
 // Unpinned plugins sit under "More" and pop out without touching the layout.
 export function Sidebar() {
   const layout = useLayout();
+  const mode = useMode();
   const dispatch = useDispatch();
   const { source, focusIntentRef } = useServices();
   const { sidebar } = layout;
@@ -121,6 +122,22 @@ export function Sidebar() {
                 <Block key={panel.id} panel={panel} info={infoOf(panel.plugin)} />
               ))}
             </SplitView>
+          )}
+
+          {mode === 'customize' && unpinned.length > 0 && (
+            <div className={styles.addStrip} role="group" aria-label="Add to sidebar">
+              <span className="caption">Add to sidebar</span>
+              {unpinned.map((p) => (
+                <Button
+                  key={p.id}
+                  size="xs"
+                  variant="ghost"
+                  onClick={() => dispatch({ type: 'pin', plugin: p.id })}
+                >
+                  {p.title}
+                </Button>
+              ))}
+            </div>
           )}
         </div>
       )}

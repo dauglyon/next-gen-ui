@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { Chip } from '@kbase/design-system';
+import { Button, Chip } from '@kbase/design-system';
 import type { StatusItem } from '../../plugins/sdk';
 import { useLayout, useMode, useRun, useServices, useTitle } from './context';
 import styles from './Workbench.module.css';
@@ -7,7 +7,7 @@ import styles from './Workbench.module.css';
 export function StatusBar() {
   const layout = useLayout();
   const mode = useMode();
-  const { source } = useServices();
+  const { source, store, announcer } = useServices();
   useSyncExternalStore(source.subscribe, source.version, source.version);
   const focused = layout.focus ? layout.panels[layout.focus] : undefined;
   const title = useTitle(focused, layout.focus ?? '');
@@ -20,7 +20,32 @@ export function StatusBar() {
 
   return (
     <div className={styles.statusBar} aria-label="Status bar">
-      {mode === 'customize' && <Chip color="purple" label="Customize mode" />}
+      {mode === 'customize' && (
+        <div className={styles.customizeControls} role="group" aria-label="Customize mode">
+          <Chip color="purple" label="Customizing" />
+          <span className="caption">Arrange panels, then keep or discard the result.</span>
+          <Button
+            size="xs"
+            variant="primary"
+            onClick={() => {
+              store.commitCustomize();
+              announcer.announce('Layout kept');
+            }}
+          >
+            Keep
+          </Button>
+          <Button
+            size="xs"
+            variant="outline"
+            onClick={() => {
+              store.cancelCustomize();
+              announcer.announce('Layout changes discarded');
+            }}
+          >
+            Discard
+          </Button>
+        </div>
+      )}
       {withStatus.map(({ id, hook }) => (
         <PluginStatus key={id} useStatus={hook} />
       ))}

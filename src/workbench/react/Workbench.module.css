@@ -504,3 +504,30 @@
   font-family: var(--f-mono);
   font-size: var(--fs-4);
 }
+
+/* Customize mode */
+
+.customizeControls {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.addStrip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  border-top: 1px dashed var(--c-border2);
+}
+
+.root[data-mode='customize'] .tab,
+.root[data-mode='customize'] .blockHeader {
+  cursor: grab;
+}
+
+.root[data-mode='customize'] .group {
+  outline: 1px dashed var(--c-border2);
+  outline-offset: -1px;
+}

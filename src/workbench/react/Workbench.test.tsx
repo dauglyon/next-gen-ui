@@ -175,6 +175,39 @@ describe('Workbench', () => {
     expect(await screen.findByRole('tab', { name: /arc:/i })).toBeInTheDocument();
   });
 
+  it('customize mode collapses a session of changes into one undo step, or discards them', async () => {
+    const user = userEvent.setup();
+    const services = mount();
+    await openJob(user, /assemble reads/i);
+    await user.type(screen.getByRole('combobox', { name: 'Prompt' }), '/customize{Enter}');
+    const controls = await screen.findByRole('group', { name: 'Customize mode' });
+    await user.click(
+      within(screen.getByRole('group', { name: 'Add to sidebar' })).getByRole('button', {
+        name: 'Catalog',
+      }),
+    );
+    await user.click(within(controls).getByRole('button', { name: 'Keep' }));
+    expect(services.store.mode()).toBe('use');
+    expect(services.store.get().sidebar.pinned).toContain('catalog');
+    await user.type(screen.getByRole('combobox', { name: 'Prompt' }), '/undo{Enter}');
+    expect(services.store.get().sidebar.pinned).not.toContain('catalog');
+    expect(screen.getByRole('tab', { name: /job 12/i })).toBeInTheDocument();
+
+    await user.type(screen.getByRole('combobox', { name: 'Prompt' }), '/customize{Enter}');
+    await user.click(
+      within(screen.getByRole('group', { name: 'Add to sidebar' })).getByRole('button', {
+        name: 'Catalog',
+      }),
+    );
+    await user.click(
+      within(screen.getByRole('group', { name: 'Customize mode' })).getByRole('button', {
+        name: 'Discard',
+      }),
+    );
+    expect(services.store.get().sidebar.pinned).not.toContain('catalog');
+    expect(status()).toHaveTextContent('Layout changes discarded');
+  });
+
   it('shows a loaded plugin status item', async () => {
     const user = userEvent.setup();
     mount();
