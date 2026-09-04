@@ -55,6 +55,8 @@
   transition: width var(--t-slow) ease;
 }
 
+/* 48px wide so the rail glyphs centre on x=24 — the same line the brand
+   logo and the accordion header icons sit on. */
 .iconColumn {
   position: absolute;
   inset-block: 0;
@@ -65,7 +67,7 @@
   align-items: center;
   gap: var(--s-2);
   box-sizing: border-box;
-  width: 42px;
+  width: 48px;
   padding: var(--s-3) var(--s-2);
   background: var(--c-bg);
   transition:
@@ -151,7 +153,7 @@
 .previewHeader {
   align-items: center;
   gap: var(--s-3);
-  padding: var(--s-1) var(--s-2) var(--s-1) var(--s-4);
+  padding: var(--s-1) var(--s-2) var(--s-1) var(--s-3);
 }
 
 .previewTitle {
@@ -189,7 +191,9 @@
   display: flex;
   align-items: center;
   gap: var(--s-3);
-  padding: var(--s-3) var(--s-4);
+  /* Left inset --s-3, not --s-4: the icon centres on x=24 with the rail
+     glyphs and the brand logo. */
+  padding: var(--s-3) var(--s-4) var(--s-3) var(--s-3);
   background: none;
   border: none;
   color: var(--c-ink);
@@ -376,7 +380,7 @@
   align-items: center;
   gap: var(--s-3);
   width: 100%;
-  padding: var(--s-2) var(--s-4);
+  padding: var(--s-2) var(--s-4) var(--s-2) var(--s-3);
   background: var(--c-raised);
   border: none;
   border-top: 1px solid var(--c-border);

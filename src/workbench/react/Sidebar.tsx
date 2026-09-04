@@ -49,7 +49,7 @@ export function Sidebar({
     <div
       className={styles.sidebar}
       data-collapsed={sidebar.collapsed || undefined}
-      style={{ width: sidebar.collapsed ? 42 : sidebar.width }}
+      style={{ width: sidebar.collapsed ? 48 : sidebar.width }}
     >
       <div
         className={styles.iconColumn}
