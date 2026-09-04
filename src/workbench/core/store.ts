@@ -6,8 +6,6 @@ import { isUndoable } from './operations';
 import type { ReduceContext } from './reduce';
 import { defaultContext, reduce } from './reduce';
 
-export type Mode = 'use' | 'customize';
-
 export interface DispatchResult {
   changed: boolean;
   announcement: string;
@@ -15,7 +13,6 @@ export interface DispatchResult {
 
 export interface WorkbenchStore {
   get(): Layout;
-  mode(): Mode;
   subscribe(listener: () => void): () => void;
   dispatch(op: Operation): DispatchResult;
   // Restore from storage or a deep link; not undoable.
@@ -24,9 +21,6 @@ export interface WorkbenchStore {
   redo(): boolean;
   canUndo(): boolean;
   canRedo(): boolean;
-  enterCustomize(): void;
-  commitCustomize(): void;
-  cancelCustomize(): void;
 }
 
 export interface StoreOptions {
@@ -36,10 +30,8 @@ export interface StoreOptions {
   limit?: number;
 }
 
-// Undo is a stack of whole layouts. In use mode each structural operation
-// pushes the layout it replaced; in customize mode the layout at entry is
-// held aside and pushed once on commit, so a session of rearranging undoes
-// as one step.
+// Undo is a stack of whole layouts: each structural operation pushes the
+// layout it replaced.
 export function createWorkbenchStore({
   initial,
   title = (id) => id,
@@ -47,8 +39,6 @@ export function createWorkbenchStore({
   limit = 50,
 }: StoreOptions): WorkbenchStore {
   let layout = initial;
-  let mode: Mode = 'use';
-  let entry: Layout | null = null;
   const past: Layout[] = [];
   const future: Layout[] = [];
   const listeners = new Set<() => void>();
@@ -67,7 +57,6 @@ export function createWorkbenchStore({
 
   return {
     get: () => layout,
-    mode: () => mode,
     subscribe(listener) {
       listeners.add(listener);
       return () => listeners.delete(listener);
@@ -76,7 +65,7 @@ export function createWorkbenchStore({
       const before = layout;
       const after = reduce(before, op, ctx);
       if (after === before) return { changed: false, announcement: '' };
-      if (mode === 'use' && isUndoable(op)) push(before);
+      if (isUndoable(op)) push(before);
       const announcement = describe(op, before, after, title);
       set(after);
       return { changed: true, announcement };
@@ -100,26 +89,5 @@ export function createWorkbenchStore({
     },
     canUndo: () => past.length > 0,
     canRedo: () => future.length > 0,
-    enterCustomize() {
-      if (mode === 'customize') return;
-      mode = 'customize';
-      entry = layout;
-      listeners.forEach((l) => l());
-    },
-    commitCustomize() {
-      if (mode !== 'customize') return;
-      if (entry && entry !== layout) push(entry);
-      mode = 'use';
-      entry = null;
-      listeners.forEach((l) => l());
-    },
-    cancelCustomize() {
-      if (mode !== 'customize') return;
-      const restore = entry;
-      mode = 'use';
-      entry = null;
-      if (restore) set(restore);
-      else listeners.forEach((l) => l());
-    },
   };
 }

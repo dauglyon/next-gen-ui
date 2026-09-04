@@ -67,6 +67,9 @@ export const LayoutSchema = z.object({
   bars: BarsSchema,
   focus: z.string().nullable(),
   keybindings: z.record(z.string(), z.string()),
+  // A locked layout keeps its arrangement: structural operations no-op.
+  // Defaulted so layouts saved before the field still parse.
+  locked: z.boolean().default(false),
 });
 export type Layout = z.infer<typeof LayoutSchema>;
 
@@ -132,5 +135,6 @@ export function defaultLayout({
     bars: { status: true, prompt: true },
     focus: null,
     keybindings: {},
+    locked: false,
   };
 }

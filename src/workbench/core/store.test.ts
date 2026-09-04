@@ -52,36 +52,26 @@ describe('store in use mode', () => {
   });
 });
 
-describe('store in customize mode', () => {
-  it('collapses everything between enter and commit into one undo step', () => {
+describe('locked layout', () => {
+  it('refuses structural operations and keeps usage free', () => {
     const store = createWorkbenchStore({ initial: defaultLayout() });
     store.dispatch({ type: 'open', panel: arc });
-    store.enterCustomize();
-    store.dispatch({ type: 'open', panel: job });
-    store.dispatch({ type: 'pin', plugin: 'jobs' });
-    expect(store.canUndo()).toBe(true);
-    store.commitCustomize();
-    expect(store.mode()).toBe('use');
-    store.undo();
-    expect(store.get().sidebar.pinned).toEqual([]);
-    expect(Object.keys(store.get().panels)).toEqual([arc.id]);
+    store.dispatch({ type: 'lock', locked: true });
+    expect(store.dispatch({ type: 'pin', plugin: 'jobs' }).changed).toBe(false);
+    expect(store.dispatch({ type: 'move', panel: arc.id, to: { zone: 'sidebar' } }).changed).toBe(
+      false,
+    );
+    // Opening, closing and folding are usage, not arrangement.
+    expect(store.dispatch({ type: 'open', panel: job }).changed).toBe(true);
+    expect(store.dispatch({ type: 'close', panel: job.id }).changed).toBe(true);
   });
 
-  it('cancel restores the layout at entry without touching the undo stack', () => {
+  it('unlocking restores structural operations; the toggle is not an undo step', () => {
     const store = createWorkbenchStore({ initial: defaultLayout() });
-    store.dispatch({ type: 'open', panel: arc });
-    store.enterCustomize();
-    store.dispatch({ type: 'open', panel: job });
-    store.cancelCustomize();
-    expect(Object.keys(store.get().panels)).toEqual([arc.id]);
-    store.undo();
-    expect(Object.keys(store.get().panels)).toEqual([]);
-  });
-
-  it('commit with no changes pushes nothing', () => {
-    const store = createWorkbenchStore({ initial: defaultLayout() });
-    store.enterCustomize();
-    store.commitCustomize();
+    store.dispatch({ type: 'lock', locked: true });
     expect(store.canUndo()).toBe(false);
+    store.dispatch({ type: 'lock', locked: false });
+    store.dispatch({ type: 'pin', plugin: 'jobs' });
+    expect(store.get().sidebar.pinned).toEqual(['jobs']);
   });
 });

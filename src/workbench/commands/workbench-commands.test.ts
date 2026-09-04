@@ -54,12 +54,14 @@ describe('workbench commands', () => {
     expect(store.get().sidebar.pinned).toEqual(['koros', 'jobs']);
   });
 
-  it('customize toggles the mode and undo speaks up when empty', async () => {
+  it('lock-layout toggles the lock and undo speaks up when empty', async () => {
     const { store, registry, announced } = setup();
-    await registry.run('customize', {});
-    expect(store.mode()).toBe('customize');
-    await registry.run('customize', {});
-    expect(store.mode()).toBe('use');
+    await registry.run('lock-layout', {});
+    expect(store.get().locked).toBe(true);
+    expect(announced.at(-1)).toBe('Layout locked');
+    await registry.run('lock-layout', {});
+    expect(store.get().locked).toBe(false);
+    // The lock toggles are not undo steps; only setup's opens drain.
     await registry.run('undo', {});
     await registry.run('undo', {});
     await registry.run('undo', {});

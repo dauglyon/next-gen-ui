@@ -8,4 +8,4 @@ export { describe } from './describe';
 export type { TitleOf } from './describe';
 export { serialize, deserialize, validate } from './serialize';
 export { createWorkbenchStore } from './store';
-export type { WorkbenchStore, StoreOptions, Mode, DispatchResult } from './store';
+export type { WorkbenchStore, StoreOptions, DispatchResult } from './store';

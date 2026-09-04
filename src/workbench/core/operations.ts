@@ -19,7 +19,8 @@ export type Operation =
   | { type: 'fold'; panel: PanelId; folded: boolean }
   | { type: 'sidebar'; collapsed?: boolean; width?: number; sizes?: Record<PluginId, number> }
   | { type: 'bar'; bar: BarName; visible: boolean }
-  | { type: 'bind'; key: string; command: string | null };
+  | { type: 'bind'; key: string; command: string | null }
+  | { type: 'lock'; locked: boolean };
 
 export type OperationType = Operation['type'];
 

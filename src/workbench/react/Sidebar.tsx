@@ -5,7 +5,7 @@ import { Button, ContextMenu, Menu, NavIcon, Popover } from '@kbase/design-syste
 import type { Panel, PluginId } from '../core';
 import { groups, makePanel, sidebarPanels } from '../core';
 import type { PluginInfo } from '../host/installed';
-import { useDispatch, useLayout, useMode, useServices, useTitle } from './context';
+import { useDispatch, useLayout, useServices, useTitle } from './context';
 import { PanelHost } from './PanelHost';
 import { SplitView } from './SplitView';
 import { useDragPanel, useDragging, useDropTarget } from './useDnd';
@@ -27,7 +27,6 @@ export function Sidebar({
   onDismissPreview: () => void;
 }) {
   const layout = useLayout();
-  const mode = useMode();
   const dispatch = useDispatch();
   const { source } = useServices();
   const { sidebar } = layout;
@@ -118,22 +117,6 @@ export function Sidebar({
             <MoreMenu plugins={unpinned} variant="row" onPreview={onPreview} />
           )}
         </div>
-
-        {mode === 'customize' && unpinned.length > 0 && (
-          <div className={styles.addStrip} role="group" aria-label="Add to sidebar">
-            <span className="caption">Add to sidebar</span>
-            {unpinned.map((p) => (
-              <Button
-                key={p.id}
-                size="xs"
-                variant="ghost"
-                onClick={() => dispatch({ type: 'pin', plugin: p.id })}
-              >
-                {p.title}
-              </Button>
-            ))}
-          </div>
-        )}
 
         {previewing && (
           <PreviewBlock

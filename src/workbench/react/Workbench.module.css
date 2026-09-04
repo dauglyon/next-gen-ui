@@ -770,29 +770,14 @@
   font-size: var(--fs-4);
 }
 
-/* Customize mode */
+/* Locked layout: the arrangement is fixed (the reducer refuses structural
+   operations); hiding the resize handles removes the affordance too. */
+.root[data-locked] .separator {
+  display: none;
+}
 
-.customizeControls {
-  display: flex;
+.lockedNote {
+  display: inline-flex;
   align-items: center;
-  gap: var(--s-3);
-}
-
-.addStrip {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--s-2);
-  padding: var(--s-2) var(--s-3);
-  border-top: 1px dashed var(--c-border2);
-}
-
-.root[data-mode='customize'] .tab,
-.root[data-mode='customize'] .blockHeader {
-  cursor: grab;
-}
-
-.root[data-mode='customize'] .group {
-  outline: 1px dashed var(--c-border2);
-  outline-offset: -1px;
+  gap: var(--s-1);
 }

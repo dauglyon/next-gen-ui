@@ -6,7 +6,7 @@ import type { PromptContext } from '../../plugins/sdk';
 import { makePanel } from '../core';
 import type { Suggestion } from '../commands';
 import { complete, parse, resolve, usage } from '../commands';
-import { useDispatch, useLayout, useMode, useRun, useServices } from './context';
+import { useDispatch, useLayout, useRun, useServices } from './context';
 import { focusPanelElement } from './useFocusSync';
 import styles from './Workbench.module.css';
 
@@ -21,7 +21,6 @@ export function PromptBar() {
   const [error, setError] = useState<string | null>(null);
   const { registry, announcer, prompt, settings, source, dispatch } = useServices();
   const layout = useLayout();
-  const mode = useMode();
   const run = useRun();
   const wrapper = useRef<HTMLDivElement>(null);
   const abort = useRef<AbortController | null>(null);
@@ -35,7 +34,6 @@ export function PromptBar() {
   );
 
   const ctx = () => ({
-    mode,
     focusKind: layout.focus ? (layout.panels[layout.focus]?.kind ?? null) : null,
   });
 
@@ -51,7 +49,7 @@ export function PromptBar() {
     return () => {
       live = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- ctx() reads layout/mode, which change how commands filter but should not refetch on every layout change
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ctx() reads the layout, which changes how commands filter but should not refetch on every layout change
   }, [value, registry]);
 
   const parsed = parse(value);

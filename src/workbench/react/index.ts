@@ -2,7 +2,7 @@ export { Workbench } from './Workbench';
 export { WorkbenchPage } from './WorkbenchPage';
 export { WORKBENCH_PATH, pathForPanel } from './useUrlSync';
 export { WorkbenchProvider } from './WorkbenchProvider';
-export { useServices, useLayout, useMode, useDispatch, useRun, useTitle } from './context';
+export { useServices, useLayout, useDispatch, useRun, useTitle } from './context';
 export type { WorkbenchServices } from './services';
 export { createAnnouncer } from './announcer';
 export type { Announcer } from './announcer';

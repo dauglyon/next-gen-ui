@@ -16,7 +16,7 @@ function registry() {
     name: 'customize',
     title: 'Customize',
     source: 'workbench',
-    when: (ctx) => ctx.mode === 'use',
+    when: (ctx) => ctx.focusKind !== 'navigator',
     run: () => {},
   });
   return r;
@@ -58,7 +58,7 @@ describe('resolve', () => {
   });
 
   it('hides a command whose when-clause is false', () => {
-    const result = resolve(registry(), '/customize', { mode: 'customize', focusKind: null });
+    const result = resolve(registry(), '/customize', { focusKind: 'navigator' });
     expect(!result.ok && result.code).toBe('unknown-command');
   });
 });

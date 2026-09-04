@@ -1,14 +1,13 @@
 import { Menu, Menubar } from '@kbase/design-system';
 import type { Side } from '../core';
 import { groupOf } from '../core';
-import { useDispatch, useLayout, useMode, useRun, useServices } from './context';
+import { useDispatch, useLayout, useRun, useServices } from './context';
 import styles from './Workbench.module.css';
 
 // Menus are another surface over the same commands the keyboard and the
 // prompt bar reach; nothing here does anything a command cannot.
 export function WorkbenchMenubar() {
   const layout = useLayout();
-  const mode = useMode();
   const run = useRun();
   const dispatch = useDispatch();
   const { source, store } = useServices();
@@ -32,9 +31,9 @@ export function WorkbenchMenubar() {
               Redo
             </Menu.Item>
             <Menu.Separator />
-            <Menu.Item onClick={() => run('customize')}>
-              {mode === 'use' ? 'Customize layout' : 'Keep layout'}
-            </Menu.Item>
+            <Menu.CheckboxItem checked={layout.locked} onCheckedChange={() => run('lock-layout')}>
+              Lock layout
+            </Menu.CheckboxItem>
             <Menu.Separator />
             <Menu.CheckboxItem
               checked={!layout.sidebar.collapsed}

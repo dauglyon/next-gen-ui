@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { PluginId } from '../core';
-import { useLayout, useMode } from './context';
+import { useLayout } from './context';
 import { FrameLayerProvider } from './FrameLayer';
 import { LiveRegion } from './LiveRegion';
 import { MainArea } from './MainArea';
@@ -15,14 +15,13 @@ import styles from './Workbench.module.css';
 
 export function Workbench() {
   const layout = useLayout();
-  const mode = useMode();
   useKeybindings();
   useFocusSync();
   // Ephemeral: which unpinned plugin's navigator the sidebar previews —
   // a block in the stack expanded, a flyout beside the rail collapsed.
   const [preview, setPreview] = useState<PluginId | null>(null);
   return (
-    <div className={styles.root} data-mode={mode}>
+    <div className={styles.root} data-locked={layout.locked || undefined}>
       <WorkbenchMenubar />
       <WorkbenchDnd>
         <FrameLayerProvider>

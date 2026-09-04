@@ -24,7 +24,17 @@ export const defaultContext: ReduceContext = {
   newId: () => `n${(counter++).toString(36)}${Math.random().toString(36).slice(2, 6)}`,
 };
 
+// What a locked layout refuses: changes to the arrangement itself. Usage
+// (open, close, focus, fold, bars, collapse) stays free.
+const STRUCTURAL: ReadonlySet<Operation['type']> = new Set<Operation['type']>([
+  'move',
+  'resize',
+  'pin',
+  'unpin',
+]);
+
 export function reduce(layout: Layout, op: Operation, ctx: ReduceContext = defaultContext): Layout {
+  if (layout.locked && STRUCTURAL.has(op.type)) return layout;
   switch (op.type) {
     case 'open':
       return open(layout, op, ctx);
@@ -60,6 +70,8 @@ export function reduce(layout: Layout, op: Operation, ctx: ReduceContext = defau
       else keybindings[op.key] = op.command;
       return { ...layout, keybindings };
     }
+    case 'lock':
+      return op.locked === layout.locked ? layout : { ...layout, locked: op.locked };
   }
 }
 

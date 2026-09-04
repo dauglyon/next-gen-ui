@@ -190,16 +190,11 @@ export function workbenchCommands({
     },
     {
       ...base,
-      name: 'customize',
-      title: 'Enter or leave customize mode',
+      name: 'lock-layout',
+      title: 'Lock or unlock the layout',
+      description: 'A locked layout keeps its arrangement; opening and closing panels stays free',
       run: () => {
-        if (store.mode() === 'use') {
-          store.enterCustomize();
-          announce('Customize mode. Arrange panels, then run /customize again to keep the result.');
-        } else {
-          store.commitCustomize();
-          announce('Layout kept');
-        }
+        dispatch({ type: 'lock', locked: !store.get().locked });
       },
     },
   ];

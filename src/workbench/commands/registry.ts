@@ -1,10 +1,9 @@
-import type { Mode, PanelKind, PluginId } from '../core';
+import type { PanelKind, PluginId } from '../core';
 import type { ArgSpec, ArgValues } from './args';
 
 // What a command may ask about before deciding it applies. Kept tiny on
 // purpose; a `when` is a function, not a grammar.
 export interface CommandContext {
-  mode: Mode;
   focusKind: PanelKind | null;
 }
 

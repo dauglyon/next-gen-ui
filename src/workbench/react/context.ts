@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useSyncExternalStore } from 'react';
-import type { Layout, Mode, Operation, Panel, PanelId } from '../core';
+import type { Layout, Operation, Panel, PanelId } from '../core';
 import type { ArgValues } from '../commands';
 import type { WorkbenchServices } from './services';
 
@@ -16,10 +16,6 @@ export function useLayout(): Layout {
   return useSyncExternalStore(store.subscribe, store.get, store.get);
 }
 
-export function useMode(): Mode {
-  const { store } = useServices();
-  return useSyncExternalStore(store.subscribe, store.mode, store.mode);
-}
 
 export function useDispatch(): (op: Operation) => boolean {
   const { store, announcer } = useServices();

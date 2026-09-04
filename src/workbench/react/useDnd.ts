@@ -2,6 +2,7 @@ import { createContext, useContext } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import type { DragData, DropData } from './dnd';
 import { dragId, dropId } from './dnd';
+import { useLayout } from './context';
 
 export const DraggingContext = createContext<DragData | null>(null);
 
@@ -12,9 +13,13 @@ export function useDragging(): DragData | null {
 }
 
 export function useDragPanel(data: DragData) {
+  // A locked layout keeps its arrangement; drags are off at the source
+  // (the reducer refuses the move anyway — this removes the affordance).
+  const locked = useLayout().locked;
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: dragId(data.panel),
     data,
+    disabled: locked,
   });
   // dnd-kit's attributes describe keyboard dragging, which this workbench
   // does through commands instead; only the pointer handlers are kept.

@@ -1,15 +1,14 @@
 import { useSyncExternalStore } from 'react';
-import { SidebarSimple } from '@phosphor-icons/react';
-import { Button, Chip } from '@kbase/design-system';
+import { LockSimple, SidebarSimple } from '@phosphor-icons/react';
+import { Button } from '@kbase/design-system';
 import type { StatusItem } from '../../plugins/sdk';
-import { useDispatch, useLayout, useMode, useRun, useServices, useTitle } from './context';
+import { useDispatch, useLayout, useRun, useServices, useTitle } from './context';
 import styles from './Workbench.module.css';
 
 export function StatusBar() {
   const layout = useLayout();
-  const mode = useMode();
   const dispatch = useDispatch();
-  const { source, store, announcer } = useServices();
+  const { source } = useServices();
   useSyncExternalStore(source.subscribe, source.version, source.version);
   const focused = layout.focus ? layout.panels[layout.focus] : undefined;
   const title = useTitle(focused, layout.focus ?? '');
@@ -32,31 +31,11 @@ export function StatusBar() {
       >
         <SidebarSimple size={14} aria-hidden="true" />
       </Button>
-      {mode === 'customize' && (
-        <div className={styles.customizeControls} role="group" aria-label="Customize mode">
-          <Chip color="purple" label="Customizing" />
-          <span className="caption">Arrange panels, then keep or discard the result.</span>
-          <Button
-            size="xs"
-            variant="primary"
-            onClick={() => {
-              store.commitCustomize();
-              announcer.announce('Layout kept');
-            }}
-          >
-            Keep
-          </Button>
-          <Button
-            size="xs"
-            variant="outline"
-            onClick={() => {
-              store.cancelCustomize();
-              announcer.announce('Layout changes discarded');
-            }}
-          >
-            Discard
-          </Button>
-        </div>
+      {layout.locked && (
+        <span className={`caption ${styles.lockedNote}`}>
+          <LockSimple size={12} aria-hidden="true" />
+          Layout locked
+        </span>
       )}
       {withStatus.map(({ id, hook }) => (
         <PluginStatus key={id} useStatus={hook} />

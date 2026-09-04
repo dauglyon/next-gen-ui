@@ -29,6 +29,7 @@ Layout = {
   bars: { status, prompt },
   focus: PanelId | null,
   keybindings: Record<chord, commandName>,
+  locked: boolean,                       // arrangement fixed; usage stays free
 }
 ```
 
@@ -44,11 +45,12 @@ splits merge, the root is always at least one (possibly empty) group.
 ## Operations, announcements, undo
 
 `Operation` is the dispatch vocabulary (`open`, `close`, `focus`, `move`, `resize`, `pin`,
-`unpin`, `fold`, `sidebar`, `bar`, `bind`). `reduce` is pure and returns the same object for a
-no-op. `describe` words an operation for the one live region (`role="status"`, sr-only); titles
-come from the panels, so the store receives a title lookup. Undo restores whole snapshots: one
-push per structural operation in use mode, one per customize session (snapshot on enter, push on
-Keep, restore on Discard). Focus, resizing and bindings are not undo steps.
+`unpin`, `fold`, `sidebar`, `bar`, `bind`, `lock`). `reduce` is pure and returns the same object
+for a no-op; with `locked` set it refuses the structural operations (`move`, `resize`, `pin`,
+`unpin`) while usage (open, close, focus, fold, bars, collapse) stays free. `describe` words an
+operation for the one live region (`role="status"`, sr-only); titles come from the panels, so
+the store receives a title lookup. Undo restores whole snapshots: one push per structural
+operation. Focus, resizing, bindings and the lock toggle are not undo steps.
 
 Persistence: `workbench.layout.v1` in localStorage, written on every change, read before first
 render. A layout that fails schema or invariant validation is replaced by the default rather
@@ -73,7 +75,7 @@ tab; closing it there returns it to the sidebar if its plugin is still pinned.
 Commands are one kind: a slash name plus typed argument specs, registered before any plugin
 code loads, so the bar completes and validates cold; running a plugin's command loads its module.
 The workbench's own commands (`close`, `focus-*`, `move-*`, `fold`, `pin`, `unpin`, `undo`,
-`redo`, `customize`, `sidebar`, `prompt`) and the host's `/open <plugin> [value]` live beside
+`redo`, `lock-layout`, `sidebar`, `prompt`) and the host's `/open <plugin> [value]` live beside
 plugin commands in one registry. Menus, keybindings and the bar are three surfaces over it.
 
 Free text goes to the plugin the settings name as **assistant** (a manifest with
