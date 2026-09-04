@@ -759,6 +759,11 @@
 
 .completions {
   position: absolute;
+  /* The list sits above the field, so row zero — what Enter will do —
+     is painted at the bottom, nearest the text it answers. DOM order is
+     unchanged, so the listbox still reads in priority order. */
+  display: flex;
+  flex-direction: column-reverse;
   left: var(--s-4);
   /* A palette anchored where the text is typed, not a bar spanning the
      viewport — full width would put each description a screen away from

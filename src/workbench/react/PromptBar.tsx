@@ -243,10 +243,12 @@ export function PromptBar() {
       return;
     }
     if (!suggestions.length) return;
-    if (event.key === 'ArrowDown') {
+    // The list opens upward, so the arrows follow the screen, not the
+    // array: Up walks away from the field, Down walks back toward it.
+    if (event.key === 'ArrowUp') {
       event.preventDefault();
       setHighlight((h) => (h + 1) % suggestions.length);
-    } else if (event.key === 'ArrowUp') {
+    } else if (event.key === 'ArrowDown') {
       event.preventDefault();
       setHighlight((h) => (h <= 0 ? suggestions.length : h) - 1);
     } else if (event.key === 'Tab') {
