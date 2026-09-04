@@ -3,7 +3,7 @@ import type { ComponentType, KeyboardEvent } from 'react';
 import { ArrowUpRight, CaretUpDown, Check } from '@phosphor-icons/react';
 import type { IconProps } from '@phosphor-icons/react';
 import { Menu, PromptInput } from '@kbase/design-system';
-import type { PromptContext } from '../../plugins/sdk';
+import type { Manifest, PromptContext } from '../../plugins/sdk';
 import { makePanel } from '../core';
 import type { Suggestion } from '../commands';
 import { complete, parse, resolve, usage } from '../commands';
@@ -32,7 +32,7 @@ export function PromptBar() {
   const [highlight, setHighlight] = useState(-1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { registry, announcer, prompt, settings, source, dispatch } = useServices();
+  const { registry, announcer, prompt, settings, source, dispatch, preview } = useServices();
   const layout = useLayout();
   const run = useRun();
   const wrapper = useRef<HTMLDivElement>(null);
@@ -138,46 +138,92 @@ export function PromptBar() {
         ]
       : [];
 
-  // The omnibox path to page-like plugins. Descriptions are matched as
-  // well as names, so "protein evidence" reaches Function Junction
-  // without knowing it exists; every term must appear somewhere, and a
-  // name being typed outranks a description hit.
-  const appSuggestions = (text: string): BarSuggestion[] => {
+  // Every term must appear somewhere in a plugin's name, id or
+  // description; a name being typed outranks a description hit. Shared
+  // by the app and panel rows below.
+  const nameHits = (text: string, of: (m: Manifest) => boolean): Manifest[] => {
     const query = text.trim().toLowerCase();
     const terms = query.split(/\s+/).filter(Boolean);
     if (query.length < 2) return [];
-    const hits = source
+    return source
       .manifests()
-      .filter((m) => m.document && routeParams(m.document.route).length === 0)
+      .filter(of)
       .flatMap((m) => {
         const title = m.title.toLowerCase();
         const haystack = `${title} ${m.id} ${m.description?.toLowerCase() ?? ''}`;
         if (!terms.every((t) => haystack.includes(t))) return [];
-        const named = title.startsWith(terms[0]) || m.id.startsWith(terms[0]);
-        return [{ m, rank: named ? 0 : 1 }];
+        return [{ m, rank: title.startsWith(terms[0]) || m.id.startsWith(terms[0]) ? 0 : 1 }];
       })
       .sort((a, b) => a.rank - b.rank || a.m.title.localeCompare(b.m.title))
-      .slice(0, 4)
-      .map(({ m }) => ({
+      .slice(0, 3)
+      .map(({ m }) => m);
+  };
+
+  // The omnibox path to page-like plugins: "protein evidence" reaches
+  // Function Junction without knowing it exists.
+  const appSuggestions = (text: string): BarSuggestion[] =>
+    nameHits(text, (m) => Boolean(m.document) && routeParams(m.document!.route).length === 0).map(
+      (m) => ({
         value: `/open ${m.id}`,
         label: `Open ${m.title}`,
         detail: m.description,
         icon: iconFor(m.icon),
         run: () => void submit(`/open ${m.id}`),
-      }));
-    // The full-density form of this same search, when the inline list is
-    // not the answer.
-    return hits.length
-      ? [
-          ...hits,
-          {
-            value: '/open home',
-            label: 'Browse everything',
-            icon: iconFor(source.manifest('home')?.icon),
-            run: () => void submit('/open home'),
-          },
-        ]
-      : [];
+      }),
+    );
+
+  // Panels are reached the way Home reaches them: a pinned navigator is
+  // focused where it already lives, an unpinned one is previewed. The
+  // bar never changes the layout to show you something.
+  const panelSuggestions = (text: string): BarSuggestion[] =>
+    nameHits(text, (m) => Boolean(m.navigator)).map((m) => {
+      const pinned = layout.sidebar.pinned.includes(m.id);
+      return {
+        value: text,
+        label: `Show ${m.title}`,
+        detail: pinned ? 'In the sidebar' : m.description,
+        icon: iconFor(m.icon),
+        run: () =>
+          pinned
+            ? void dispatch({ type: 'open', panel: makePanel(m.id, 'navigator') })
+            : preview.set(m.id),
+      };
+    });
+
+  // The verbs plugins put on the Shortcuts toolbar, reachable by name as
+  // well as by button. One that takes arguments completes into the bar
+  // instead of running, since the bar is where they get typed.
+  const shortcutSuggestions = (text: string): BarSuggestion[] => {
+    const query = text.trim().toLowerCase();
+    if (query.length < 2) return [];
+    return source
+      .manifests()
+      .flatMap((m) =>
+        (m.commands ?? [])
+          .filter((c) => c.shortcut)
+          .map((c) => ({ m, c, label: typeof c.shortcut === 'string' ? c.shortcut : c.title })),
+      )
+      .filter(({ c, label }) => `${label} ${c.title} ${c.name}`.toLowerCase().includes(query))
+      .slice(0, 3)
+      .map(({ m, c, label }) => {
+        const needsArgs = (c.args ?? []).some((a) => a.required);
+        return {
+          value: `/${c.name}${needsArgs ? ' ' : ''}`,
+          label,
+          detail: c.title,
+          icon: iconFor(c.icon ?? m.icon),
+          run: needsArgs ? undefined : () => void run(c.name),
+        };
+      });
+  };
+
+  // The full-density form of the same search, offered whenever the
+  // inline list is not the answer.
+  const browseSuggestion: BarSuggestion = {
+    value: '/open home',
+    label: 'Browse everything',
+    icon: iconFor(source.manifest('home')?.icon),
+    run: () => void submit('/open home'),
   };
 
   // Completion follows the text; a stale async result for older text is dropped.
@@ -192,15 +238,23 @@ export function PromptBar() {
         const manifest = owner ? source.manifest(owner) : undefined;
         return { ...s, mono: true, icon: manifest ? iconFor(manifest.icon) : undefined };
       });
+      // Priority order, painted bottom-up: a plugin recognising its own
+      // data beats a shortcut's name, which beats a word shared with a
+      // description.
       const alternatives = list.length
         ? []
-        : [...offerSuggestions(value), ...appSuggestions(value)];
+        : [
+            ...offerSuggestions(value),
+            ...shortcutSuggestions(value),
+            ...appSuggestions(value),
+            ...panelSuggestions(value),
+          ];
       // Nothing worth choosing between: no list, and Enter behaves as if
       // there were none.
       const found = list.length
         ? commands
         : alternatives.length
-          ? [...defaultSuggestion(value), ...alternatives]
+          ? [...defaultSuggestion(value), ...alternatives, browseSuggestion]
           : [];
       setSuggestions(found);
       // Row zero is always the default action, so it is always selected;

@@ -96,8 +96,16 @@ every keystroke) returning offers. An offer names where the row lands you, in th
 words, and the action that gets there; the host is only the courier — the action becomes the
 document's params and the plugin reads it back. Only the plugin knows what its data looks like,
 so the host never interprets the query; it calls every matcher, drops one that throws with a
-warning, and shows what came back. Second, the host matches an app's **name or description** (`protein evidence`
-finds Function Junction), with a `Browse everything` entry opening **Home**.
+warning, and shows what came back. The bundled matchers show the two shapes this takes: an app
+recognises identifiers before it has the data (an accession, an assembly, a binomial), while
+Data and Jobs answer from an inventory they already hold, so nothing is offered that is not
+there to open.
+
+Under the offers the host adds what it can see for itself: **shortcut** commands by name (one
+taking arguments completes into the bar rather than running), apps by **name or description**
+(`protein evidence` finds Function Junction), and panels — shown the way Home shows them, a
+pinned navigator focused where it lives and an unpinned one previewed, never a layout change to
+look at something. `Browse everything` closes the list, opening **Home**.
 
 Row zero of that list is what Enter will do, always rendered: the assistant, with the
 alternatives beneath it. Nothing is guessed — the default is visible before the key is pressed
