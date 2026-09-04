@@ -165,9 +165,27 @@
   max-height: 45%;
   margin-top: var(--s-2);
   background: var(--c-surface);
-  border: 1px dashed var(--c-border2);
+  /* Dashed for ephemeral, primary for the offer it makes: drag this onto
+     the stack and it joins the layout there. */
+  border: 1px dashed var(--c-primary);
   border-radius: var(--r-lg);
   overflow: hidden;
+}
+
+.previewBlock[data-dragging] {
+  opacity: 0.5;
+}
+
+.previewGrip {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+  cursor: grab;
+}
+
+.previewGrip:active {
+  cursor: grabbing;
 }
 
 .previewHeader {

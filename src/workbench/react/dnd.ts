@@ -1,4 +1,4 @@
-import type { GroupId, Operation, PanelId, PanelKind, Side } from '../core';
+import type { GroupId, Operation, PanelId, PanelKind, PluginId, Side } from '../core';
 
 // Pointer drag and drop. dnd-kit supplies the sensors; this module names what
 // can be dragged and where it can land, and turns a drop into an operation.
@@ -8,6 +8,10 @@ import type { GroupId, Operation, PanelId, PanelKind, Side } from '../core';
 export interface DragData {
   panel: PanelId;
   kind: PanelKind;
+  // Set when the thing being dragged is the sidebar's preview, which is
+  // not in the layout: dropping it pins this plugin rather than moving a
+  // panel that does not exist yet.
+  pins?: PluginId;
 }
 
 export type DropData =
@@ -43,9 +47,11 @@ export function dropOperation(active: DragData, over: DropData): Operation | nul
     case 'edge':
       return { type: 'move', panel: active.panel, to: { group: over.group, side: over.side } };
     case 'pin':
+      if (active.pins) return { type: 'pin', plugin: active.pins, index: over.index };
       if (active.kind !== 'navigator') return null;
       return { type: 'move', panel: active.panel, to: { zone: 'sidebar', index: over.index } };
     case 'sidebar':
+      if (active.pins) return { type: 'pin', plugin: active.pins };
       if (active.kind !== 'navigator') return null;
       return { type: 'move', panel: active.panel, to: { zone: 'sidebar' } };
   }

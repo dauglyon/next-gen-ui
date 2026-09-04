@@ -11,7 +11,7 @@ import {
 } from '@dnd-kit/core';
 import type { CollisionDetection, DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import type { Side } from '../core';
-import { useDispatch, useLayout, useTitle } from './context';
+import { useDispatch, useLayout, useServices, useTitle } from './context';
 import type { DragData, DropData } from './dnd';
 import { dropOperation } from './dnd';
 import { DraggingContext, useDragging, useDropTarget } from './useDnd';
@@ -39,6 +39,7 @@ const silent = {
 export function WorkbenchDnd({ children }: { children: ReactNode }) {
   const [dragging, setDragging] = useState<DragData | null>(null);
   const dispatch = useDispatch();
+  const { preview } = useServices();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
   const onDragStart = (event: DragStartEvent) => {
@@ -50,7 +51,10 @@ export function WorkbenchDnd({ children }: { children: ReactNode }) {
     const over = event.over?.data.current as DropData | undefined;
     if (!active || !over) return;
     const op = dropOperation(active, over);
-    if (op) dispatch(op);
+    if (!op) return;
+    dispatch(op);
+    // A dropped preview has become a real block; the ephemeral one goes.
+    if (op.type === 'pin') preview.set(null);
   };
 
   return (

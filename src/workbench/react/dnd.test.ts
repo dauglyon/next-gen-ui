@@ -38,4 +38,18 @@ describe('dropOperation', () => {
       to: { zone: 'sidebar', index: 1 },
     });
   });
+  // The sidebar's preview is not in the layout, so there is no panel to
+  // move: the drop pins its plugin, at the slot it was dropped on.
+  it('pins the preview where it lands', () => {
+    const preview = { ...nav, pins: 'catalog' as const };
+    expect(dropOperation(preview, { type: 'pin', index: 2 })).toEqual({
+      type: 'pin',
+      plugin: 'catalog',
+      index: 2,
+    });
+    expect(dropOperation(preview, { type: 'sidebar' })).toEqual({
+      type: 'pin',
+      plugin: 'catalog',
+    });
+  });
 });

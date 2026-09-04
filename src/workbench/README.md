@@ -71,7 +71,10 @@ order, each popping its navigator out beside it without changing the layout. Unp
 live under **More** (in the footer strip expanded, among the icons collapsed): a menu naming
 them, and choosing one shows its navigator as an ephemeral dashed _preview block_ at the bottom
 of the stack — two clicks to look at a plugin without pinning it; Pin or dismiss from the
-preview's header, and a reload forgets it. Home offers the same preview for an unpinned panel,
+preview's header, and a reload forgets it. Pin drops it at the end of the stack; dragging the
+preview by its header onto a block pins it at that block's slot instead. It is painted at the
+bottom of the stack wherever it would land — where it sits now is not a claim about the layout
+it has not joined. Home offers the same preview for an unpinned panel,
 over the one ephemeral preview the sidebar shows (`services.preview`). Any navigator can be dragged into the main area as a
 tab; closing it there returns it to the sidebar if its plugin is still pinned.
 

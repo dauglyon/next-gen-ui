@@ -330,7 +330,10 @@ export function MoreMenu({
 }
 
 // An unpinned plugin's navigator, shown until pinned or dismissed. Not part
-// of the layout: a reload forgets it, and the dashed border says so.
+// of the layout: a reload forgets it, and the dashed border says so. It
+// always sits at the bottom of the stack, wherever it would land: dragging
+// it onto a block pins it at that block's position, which is a choice about
+// the layout it is about to join, not about where it is being shown now.
 function PreviewBlock({
   plugin,
   info,
@@ -343,13 +346,27 @@ function PreviewBlock({
   const dispatch = useDispatch();
   const title = info?.title ?? plugin;
   const Icon = info?.icon ?? PushPin;
+  const { dragRef, dragHandlers, isDragging } = useDragPanel({
+    panel: makePanel(plugin, 'navigator').id,
+    kind: 'navigator',
+    pins: plugin,
+  });
   return (
-    <section className={`${styles.block} ${styles.previewBlock}`} aria-label={`${title} preview`}>
+    <section
+      className={`${styles.block} ${styles.previewBlock}`}
+      aria-label={`${title} preview`}
+      data-dragging={isDragging || undefined}
+    >
       <div className={`${styles.blockHeader} ${styles.previewHeader}`}>
-        <span className={styles.blockIcon} aria-hidden="true">
-          <Icon size={14} />
+        {/* The grip is the icon and title, as on a pinned block, where the
+            header button is the drag source. The Pin and Dismiss buttons
+            stay clickable beside it. */}
+        <span className={styles.previewGrip} ref={dragRef} {...dragHandlers}>
+          <span className={styles.blockIcon} aria-hidden="true">
+            <Icon size={14} />
+          </span>
+          <span className={styles.previewTitle}>{title}</span>
         </span>
-        <span className={styles.previewTitle}>{title}</span>
         <div className={styles.spacer} />
         <Button
           size="xs"
