@@ -698,9 +698,15 @@
   flex-direction: column;
 }
 
-.blocks[data-over] {
-  outline: 2px solid var(--c-primary);
-  outline-offset: -2px;
+/* The region is the end slot; the indicator is an insertion line at the
+   end of the pins — the More row's top edge, matching the per-block
+   lines — not a whole-region outline that reads as "into the sidebar". */
+.blocks[data-over] .moreRow {
+  box-shadow: inset 0 3px 0 var(--c-primary);
+}
+
+.blocks[data-over] .accordion:not(:has(.moreRow)) {
+  box-shadow: inset 0 -3px 0 var(--c-primary);
 }
 
 .blockToggle[data-dragging] {
