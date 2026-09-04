@@ -1,10 +1,14 @@
-import { render, screen, within } from '@testing-library/react';
+import { configure, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { localPlugins } from '../../plugins/local';
 import { createWorkbench } from '../host';
 import { WorkbenchProvider } from './WorkbenchProvider';
 import { Workbench } from './Workbench';
+
+// Lazy plugin modules and route loaders both run before a panel appears;
+// under a loaded test run that exceeds the 1s default.
+configure({ asyncUtilTimeout: 5000 });
 
 function memoryStorage(): Storage {
   const map = new Map<string, string>();

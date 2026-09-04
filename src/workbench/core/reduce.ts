@@ -136,6 +136,9 @@ function close(layout: Layout, id: PanelId): Layout {
 function focus(layout: Layout, id: PanelId): Layout {
   const placement = placementOf(layout, id);
   if (placement.zone === 'none') return layout;
+  const settled =
+    layout.focus === id && (placement.zone === 'main' ? placement.active : !placement.folded);
+  if (settled) return layout;
   let next: Layout = { ...layout, focus: id };
   if (placement.zone === 'main') next = { ...next, main: activateTab(layout.main, id) };
   if (placement.zone === 'sidebar' && placement.folded) {

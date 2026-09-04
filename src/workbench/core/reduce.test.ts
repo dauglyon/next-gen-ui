@@ -68,6 +68,13 @@ describe('open', () => {
   });
 });
 
+describe('focus', () => {
+  it('is a no-op when the panel is already focused and active', () => {
+    const start = run(defaultLayout(), { type: 'open', panel: arc });
+    expect(reduce(start, { type: 'focus', panel: arc.id })).toBe(start);
+  });
+});
+
 describe('close', () => {
   it('removes the panel, collapses the empty group and moves focus', () => {
     const l = run(

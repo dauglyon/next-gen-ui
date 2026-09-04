@@ -1,16 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { Workbench, WorkbenchProvider } from '../../workbench/react';
 
+// The bare workbench: the restored layout, no document addressed. The
+// shell itself is drawn by the _workbench layout route.
 export const Route = createFileRoute('/_workbench/workbench')({
-  component: WorkbenchPage,
+  component: () => null,
   staticData: { title: 'Workbench' },
 });
-
-function WorkbenchPage() {
-  const { workbench } = Route.useRouteContext();
-  return (
-    <WorkbenchProvider services={workbench}>
-      <Workbench />
-    </WorkbenchProvider>
-  );
-}
