@@ -79,6 +79,16 @@ export function createWorkbench({
   registry.register(openCommand(services));
   source.registerCommands(registry, (plugin) => pluginHostFor(services, plugin));
 
+  // A saved layout may pin a plugin that has since stopped being a sidebar
+  // panel — the catalog did. Installed and navigator-less means the block
+  // could only ever render as a ghost, so the pin goes; an uninstalled
+  // plugin keeps its place, because reinstalling should restore it.
+  for (const plugin of store.get().sidebar.pinned) {
+    if (source.manifest(plugin) && !source.panel(`${plugin}/navigator`)) {
+      store.dispatch({ type: 'unpin', plugin });
+    }
+  }
+
   if (storage) {
     store.subscribe(() => {
       try {

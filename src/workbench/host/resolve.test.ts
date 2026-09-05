@@ -45,7 +45,7 @@ describe('resolveDeepLink', () => {
 
   it.each([
     ['nope', 'x', 'unknown-plugin'],
-    ['catalog', 'x', 'no-document'],
+    ['shortcuts', 'x', 'no-document'],
     ['jobs', 'arc/12', 'no-match'],
   ])('%s/%s fails with %s and leaves the layout alone', (plugin, rest, reason) => {
     const s = services();

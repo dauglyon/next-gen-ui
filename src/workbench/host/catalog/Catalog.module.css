@@ -1,7 +1,11 @@
 .root {
-  padding: var(--s-4);
+  /* A page now, not a sidebar block: room to breathe, and a measure that
+     keeps the rows readable however wide the pane is. */
+  padding: var(--s-7);
   display: grid;
-  gap: var(--s-6);
+  gap: var(--s-7);
+  align-content: start;
+  max-width: 720px;
 }
 
 .section {

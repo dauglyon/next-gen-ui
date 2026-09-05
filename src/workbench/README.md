@@ -6,14 +6,14 @@ go and remembers it. (`workspace` is the KBase data service and is not used here
 
 ## Directories
 
-| path                | contents                                                                                                                                 | may import                                               |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| `core/`             | `Layout` schema, operations, `reduce`, `describe`, snapshot undo store, serialization                                                    | zod only (ESLint fences React and the design system out) |
-| `commands/`         | command registry, slash parser and completion, keybinding chords, the workbench's own commands                                           | `core`                                                   |
-| `host/`             | index of installed plugins, manifest routes, icons, settings, registry fetch, deep-link resolver, the catalog panel, `createWorkbench()` | everything                                               |
-| `react/`            | the components, DnD, URL sync, frame layer, live region                                                                                  | everything                                               |
-| `../plugins/sdk/`   | what a plugin imports: manifest contract, `definePlugin`, `usePanel`, `useHost`, `AppFrame`, the federation preset                       | React, zod; nothing from the workbench                   |
-| `../plugins/local/` | the bundled plugins: koros, data, jobs, function-junction, genknown                                                                      | the SDK                                                  |
+| path                | contents                                                                                                                                | may import                                               |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `core/`             | `Layout` schema, operations, `reduce`, `describe`, snapshot undo store, serialization                                                   | zod only (ESLint fences React and the design system out) |
+| `commands/`         | command registry, slash parser and completion, keybinding chords, the workbench's own commands                                          | `core`                                                   |
+| `host/`             | index of installed plugins, manifest routes, icons, settings, registry fetch, deep-link resolver, the catalog page, `createWorkbench()` | everything                                               |
+| `react/`            | the components, DnD, URL sync, frame layer, live region                                                                                 | everything                                               |
+| `../plugins/sdk/`   | what a plugin imports: manifest contract, `definePlugin`, `usePanel`, `useHost`, `AppFrame`, the federation preset                      | React, zod; nothing from the workbench                   |
+| `../plugins/local/` | the bundled plugins: koros, data, jobs, function-junction, genknown                                                                     | the SDK                                                  |
 
 Routes: `src/routes/_workbench.tsx` draws the shell once; `_workbench/workbench.tsx` is the bare
 workbench and `_workbench/p.$pluginId.$.tsx` resolves a deep link. Both children render nothing.
@@ -58,7 +58,7 @@ than repaired. Settings that are not layout (`assistant`) live under `workbench.
 
 ## Sidebar (provisional)
 
-A host **Shortcuts** plugin (like the catalog, installed over the same index) shows every
+A host **Shortcuts** plugin (like the catalog and Home, installed over the same index) shows every
 plugin's manifest commands flagged `shortcut` as buttons; being an ordinary navigator, it pins,
 folds, drags and pops out of the rail like any block.
 
@@ -173,16 +173,16 @@ non-array, or a network failure logs a warning and the bundled plugins run alone
 Schema: `src/plugins/sdk/contract.ts` (`ManifestSchema`). Invalid entries are skipped
 individually with a console warning; one bad manifest does not take the list down.
 
-| field                          | use                                                                                                                                                |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`                           | plugin id; remote name; URL segment                                                                                                                |
-| `title`, `description`, `icon` | catalog, sidebar icon (icon is a name from `host/icons.ts`; unknown → pin)                                                                         |
-| `contractVersion`              | must equal `CONTRACT_VERSION` (1); anything else is invalid                                                                                        |
-| `navigator: {}`                | the module exports `navigator`                                                                                                                     |
-| `document: { route }`          | the module exports `document`; `route` is TanStack-style (`/arc/$slug`, `/` for an app page) and defines the document's params                     |
-| `commands[]`                   | `{ name, title, description?, args[] }`; registered before code loads                                                                              |
-| `promptHandler`                | the module exports `prompt`; offered as an assistant in the catalog                                                                                |
-| `entry: { url, module }`       | Module Federation remote entry (relative to the registry base or absolute same-origin) and exposed module (`./plugin`); absent for bundled plugins |
+| field                                   | use                                                                                                                                                |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                                    | plugin id; remote name; URL segment                                                                                                                |
+| `title`, `description`, `icon`, `color` | catalog, sidebar icon (both are names from `host/icons.ts`; an unknown icon falls back to a pin, an unknown colour to the surrounding ink)         |
+| `contractVersion`                       | must equal `CONTRACT_VERSION` (1); anything else is invalid                                                                                        |
+| `navigator: {}`                         | the module exports `navigator`                                                                                                                     |
+| `document: { route }`                   | the module exports `document`; `route` is TanStack-style (`/arc/$slug`, `/` for an app page) and defines the document's params                     |
+| `commands[]`                            | `{ name, title, description?, args[] }`; registered before code loads                                                                              |
+| `promptHandler`                         | the module exports `prompt`; offered as an assistant in the catalog                                                                                |
+| `entry: { url, module }`                | Module Federation remote entry (relative to the registry base or absolute same-origin) and exposed module (`./plugin`); absent for bundled plugins |
 
 ### Id rules
 
@@ -216,7 +216,12 @@ overrides; layout migrations past `version: 1`.
 ## Verification
 
 `npm run typecheck && npm run lint && npm test && npm run build && npm run build:plugin-sdk`.
-Manual: `npm run dev` → `/workbench`; pin/unpin from the catalog (under More); fold a block; drag
+Manual: `npm run dev` → `/workbench`; pin/unpin from the catalog (its Shortcuts button); fold a block; drag
 a navigator into the main area; move a tab by menu and by keyboard; reload; paste
 `/p/koros/arc/nitro`; type `/op` and `/cancel 1`; type a question; open Data → Fixtures → Crash
 test panel; switch the assistant to None in the catalog.
+
+The catalog and Home are pages, not sidebar panels: what is installed and what to open are read
+now and then, and a permanent block for each crowds the sidebar. A saved layout that pins a
+plugin the index has since made navigator-less is unpinned once at startup, because that block
+could only render as a ghost; an uninstalled plugin keeps its slot, since reinstalling restores it.

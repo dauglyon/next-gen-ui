@@ -5,10 +5,10 @@ import { useDispatch, useLayout, useServices } from '../../react/context';
 import { iconFor } from '../icons';
 import styles from './Catalog.module.css';
 
-// The host's own navigator: what is installed, what is pinned, and which
-// plugin answers the prompt bar. Reaches host services directly, which no
-// plugin over the SDK can.
-export function CatalogNavigator() {
+// The host's own page: what is installed, what is pinned, and which plugin
+// answers the prompt bar. Reaches host services directly, which no plugin
+// over the SDK can.
+export function CatalogDocument() {
   usePanelTitle('Catalog');
   const { source, settings } = useServices();
   const layout = useLayout();
