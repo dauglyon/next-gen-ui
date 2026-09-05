@@ -15,9 +15,13 @@ export interface InstalledPlugin {
   manifest: Manifest;
   load: () => Promise<PluginModule>;
   // Eager, unlike `load`: matching runs on every keystroke, so it cannot
-  // wait for the plugin's bundle. A remote would expose it separately
-  // from its UI for the same reason.
+  // wait for the plugin's bundle. A bundled plugin sets this directly; a
+  // remote exposes it as a second module and supplies `loadMatch`.
   match?: Matcher;
+  // A remote's matcher, fetched once at startup rather than on first use.
+  // Resolving to undefined, or rejecting, means the plugin makes no offers:
+  // one plugin's missing matcher cannot break the bar.
+  loadMatch?: () => Promise<Matcher | undefined>;
 }
 
 // A plugin's offer, with the plugin it came from.
@@ -70,7 +74,15 @@ export function createHostIndex(installed: InstalledPlugin[]): HostIndex {
   const loading = new Map<PluginId, Promise<PluginModule>>();
   const panels = new Map<string, PanelDefinition>();
   const listeners = new Set<() => void>();
+  // A remote's matcher lands after construction. Kept beside the plugin rather
+  // than written into it so `installed` stays the caller's data.
+  const fetched = new Map<PluginId, Matcher>();
   let version = 0;
+
+  const bump = () => {
+    version += 1;
+    listeners.forEach((l) => l());
+  };
 
   const load = (id: PluginId): Promise<PluginModule> => {
     const have = modules.get(id);
@@ -82,13 +94,30 @@ export function createHostIndex(installed: InstalledPlugin[]): HostIndex {
     const promise = plugin.load().then((module) => {
       modules.set(id, module);
       loading.delete(id);
-      version += 1;
-      listeners.forEach((l) => l());
+      bump();
       return module;
     });
     loading.set(id, promise);
     return promise;
   };
+
+  // A remote's matcher is fetched now, not on first use: the prompt bar calls
+  // matchers synchronously on every keystroke, so one that has not arrived
+  // simply makes no offers until it does, and the bar re-renders when it
+  // lands. A rejection is the plugin's problem, not the bar's.
+  for (const plugin of installed) {
+    if (plugin.match || !plugin.loadMatch) continue;
+    plugin
+      .loadMatch()
+      .then((match) => {
+        if (!match) return;
+        fetched.set(plugin.manifest.id, match);
+        bump();
+      })
+      .catch((err: unknown) => {
+        console.warn(`plugin ${plugin.manifest.id}: its matcher failed to load; ignoring it`, err);
+      });
+  }
 
   // One lazy component per declared panel. React.lazy wants a default
   // export, so the plugin module is reshaped in the loader.
@@ -117,7 +146,8 @@ export function createHostIndex(installed: InstalledPlugin[]): HostIndex {
     panel: (type) => panels.get(type),
     offers(text) {
       const found: PluginOffer[] = [];
-      for (const { manifest, match } of installed) {
+      for (const { manifest, match: own } of installed) {
+        const match = own ?? fetched.get(manifest.id);
         if (!match) continue;
         try {
           for (const offer of match(text)) {

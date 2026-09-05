@@ -22,7 +22,7 @@ serves (read by the host before any code loads) and a **module** the host loads 
     { "name": "new-thing", "title": "Make a thing", "icon": "Lightning", "shortcut": "New thing" }
   ],
   "promptHandler": false,
-  "entry": { "url": "jobs/remoteEntry.js", "module": "./plugin" }
+  "entry": { "url": "jobs/remoteEntry.js", "module": "./plugin", "matcher": "./match" }
 }
 ```
 
@@ -89,8 +89,15 @@ export default definePlugin({
 ```ts
 // vite.config.ts
 import { pluginFederation } from '@kbase/plugin-sdk/vite';
-export default { plugins: [pluginFederation({ name: 'jobs' }), react()] };
+export default {
+  plugins: [pluginFederation({ name: 'jobs', matcher: './src/match.ts' }), react()],
+};
 ```
 
-Emits `remoteEntry.js` exposing `./plugin`. `react`, `react-dom`, `zod`, `@kbase/design-system`
-and this SDK are shared singletons with the host.
+Emits `remoteEntry.js` exposing `./plugin`, and `./match` when a matcher is named. `react`,
+`react-dom`, `zod`, `@kbase/design-system` and this SDK are shared singletons with the host.
+
+The matcher is a separate module because the host fetches it at startup while the UI module stays
+lazy: matching is synchronous on every keystroke, so it cannot wait for a panel bundle. Keep that
+module small and free of imports — it is downloaded whether or not the plugin is ever opened. A
+matcher that fails to load makes no offers and is otherwise ignored, like one that throws.

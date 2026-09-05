@@ -1,5 +1,5 @@
 import { loadRemote, registerRemotes } from '@module-federation/runtime';
-import type { Manifest, PluginModule } from '../../plugins/sdk';
+import type { Manifest, Matcher, PluginModule } from '../../plugins/sdk';
 import { ManifestSchema } from '../../plugins/sdk';
 import type { InstalledPlugin } from './installed';
 
@@ -34,20 +34,40 @@ export function remotePlugin(manifest: Manifest, base: string = REGISTRY_BASE): 
   if (!entry) throw new Error(`manifest ${manifest.id} has no entry`);
   const url =
     entry.url.startsWith('/') || /^https?:/.test(entry.url) ? entry.url : `${base}/${entry.url}`;
+
+  const register = () => {
+    registerRemotes([{ name: manifest.id, entry: url }], { force: registered.has(manifest.id) });
+    registered.add(manifest.id);
+  };
+  const exposed = (name: string) => `${manifest.id}/${name.replace(/^\.\//, '')}`;
+
   return {
     manifest,
     load: async () => {
-      registerRemotes([{ name: manifest.id, entry: url }], { force: registered.has(manifest.id) });
-      registered.add(manifest.id);
-      const exposed = entry.module.replace(/^\.\//, '');
+      register();
       const mod = await loadRemote<{ default?: PluginModule } | PluginModule>(
-        `${manifest.id}/${exposed}`,
+        exposed(entry.module),
       );
       const module =
         mod && 'default' in mod && mod.default ? mod.default : (mod as PluginModule | null);
       if (!module) throw new Error(`plugin ${manifest.id} exposed nothing at ${entry.module}`);
       return module;
     },
+    // Declared separately from the UI module so it can be fetched on its own:
+    // a matcher runs on every keystroke and must not wait for a panel bundle.
+    // Nothing here is lazy — the host calls this at startup.
+    loadMatch: entry.matcher
+      ? async () => {
+          register();
+          const mod = await loadRemote<{ default?: Matcher } | Matcher>(exposed(entry.matcher!));
+          const match =
+            typeof mod === 'function' ? mod : mod && 'default' in mod ? mod.default : undefined;
+          if (typeof match !== 'function') {
+            throw new Error(`plugin ${manifest.id} exposed no matcher at ${entry.matcher}`);
+          }
+          return match;
+        }
+      : undefined,
   };
 }
 

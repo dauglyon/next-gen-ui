@@ -70,6 +70,12 @@ export const ManifestSchema = z.object({
       url: z.string(),
       // Exposed module name, e.g. './plugin'.
       module: z.string(),
+      // A second exposed module, default-exporting the plugin's Matcher.
+      // Separate from `module` because matching runs on every keystroke and
+      // cannot wait for a UI bundle: the host fetches this one eagerly, so it
+      // holds a matcher and nothing else. Absent means the plugin makes no
+      // offers, which is the normal answer.
+      matcher: z.string().optional(),
     })
     .optional(),
 });
