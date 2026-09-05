@@ -4,6 +4,8 @@ import { Button, ContextMenu, EmptyState, Tabs } from '@kbase/design-system';
 import type { Group, Panel, PanelId, Side } from '../core';
 import { makePanel } from '../core';
 import { useDispatch, useLayout, useServices, useTitle } from './context';
+import { Breadcrumbs } from './Breadcrumbs';
+import { useGroupLabels } from './useGroupLabels';
 import { panelDomId, tabDomId } from './domIds';
 import { PanelHost } from './PanelHost';
 import { useDragPanel, useDropTarget } from './useDnd';
@@ -17,6 +19,9 @@ export function TabGroup({ group }: { group: Group }) {
   const dispatch = useDispatch();
   const { focusIntentRef } = useServices();
   const focused = layout.focus !== null && group.tabs.includes(layout.focus);
+  // A tab's label depends on its neighbours, so it is settled for the
+  // group rather than by each tab for itself.
+  const labels = useGroupLabels(group.tabs);
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!group.active || event.ctrlKey || event.altKey || event.metaKey) return;
@@ -76,6 +81,7 @@ export function TabGroup({ group }: { group: Group }) {
             id={id}
             active={group.active === id}
             focused={layout.focus === id}
+            label={labels[id]}
             onSelect={() => {
               focusIntentRef.current = 'user';
               dispatch({ type: 'focus', panel: id });
@@ -84,6 +90,7 @@ export function TabGroup({ group }: { group: Group }) {
         ))}
         <TabEnd group={group} />
       </div>
+      {group.active && <Breadcrumbs panel={group.active} />}
       <div className={styles.groupBody}>
         {group.tabs.map((id) => {
           const panel = layout.panels[id];
@@ -136,6 +143,7 @@ function Tab({
   id,
   active,
   focused,
+  label,
   onSelect,
 }: {
   group: Group;
@@ -144,11 +152,15 @@ function Tab({
   id: PanelId;
   active: boolean;
   focused: boolean;
+  label: string | undefined;
   onSelect: () => void;
 }) {
   const dispatch = useDispatch();
   const { source } = useServices();
-  const title = useTitle(panel, id);
+  // The negotiated label names the tab; the panel's own title still names
+  // it everywhere one tab is described on its own.
+  const own = useTitle(panel, id);
+  const title = label ?? own;
   const Icon = panel ? source.plugins().find((p) => p.id === panel.plugin)?.icon : undefined;
   const { dragRef, dragHandlers, isDragging } = useDragPanel({
     panel: id,

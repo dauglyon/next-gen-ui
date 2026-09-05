@@ -3,7 +3,7 @@ import type { PluginId } from '../core';
 import { createWorkbenchStore, defaultLayout, deserialize, makePanel, serialize } from '../core';
 import type { Command } from '../commands';
 import { createCommandRegistry, workbenchCommands } from '../commands';
-import { createAnnouncer, createTitleStore } from '../react';
+import { createAnnouncer, createCrumbStore, createTitleStore } from '../react';
 import type { WorkbenchServices } from '../react';
 import { fallbackTitle } from '../react/context';
 import { createPreviewHandle, createPromptHandle } from '../react/services';
@@ -36,6 +36,7 @@ export function createWorkbench({
   defaultAssistant = null,
 }: CreateWorkbenchOptions): WorkbenchServices {
   const titles = createTitleStore();
+  const crumbs = createCrumbStore();
   const announcer = createAnnouncer();
   const prompt = createPromptHandle();
   const preview = createPreviewHandle();
@@ -61,6 +62,7 @@ export function createWorkbench({
     source,
     settings,
     titles,
+    crumbs,
     announcer,
     prompt,
     preview,

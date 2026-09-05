@@ -78,6 +78,21 @@ it has not joined. Home offers the same preview for an unpinned panel,
 over the one ephemeral preview the sidebar shows (`services.preview`). Any navigator can be dragged into the main area as a
 tab; closing it there returns it to the sidebar if its plugin is still pinned.
 
+## Breadcrumbs and tab labels
+
+A panel may declare a trail with `usePanelBreadcrumbs([{ label, action? }])`; the host draws it in
+a row between a group's tabs and its panel, for that group's active panel only. A panel that
+declares none gets no row and no gap, so a split can carry a trail on one side and nothing on the
+other. A crumb with an `action` opens it the way a prompt-bar offer does — same shape, same
+dispatch; the last crumb is where you are and links nowhere.
+
+A tab and a trail are different content. The tab names the thing you would switch to; the trail
+says where you are inside it, and the two are written separately. They meet in one place: when
+two tabs **in one group** carry the same title, `negotiateLabels` borrows the deepest crumb at
+which their trails differ (`Structure · P0A7B8` beside `Evidence · P0A7B8`), and numbers only what
+no trail can separate. A borrowed crumb equal to the title is not borrowed. Labels are settled per
+group, so opening or closing a tab can rename its neighbour.
+
 ## Commands and the prompt bar
 
 Commands are one kind: a slash name plus typed argument specs, registered before any plugin

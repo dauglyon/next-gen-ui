@@ -2,7 +2,7 @@ import { Component, Suspense, useCallback, useMemo } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { Button, EmptyState, Loader } from '@kbase/design-system';
 import { HostContext, PanelContext } from '../../plugins/sdk';
-import type { PanelHandle, PluginHost } from '../../plugins/sdk';
+import type { Crumb, PanelHandle, PluginHost } from '../../plugins/sdk';
 import type { Panel } from '../core';
 import { panelType } from '../core';
 import { useServices } from './context';
@@ -20,6 +20,10 @@ export function PanelHost({ panel, focused }: { panel: Panel; focused: boolean }
     (title: string) => services.titles.set(panel.id, title),
     [services.titles, panel.id],
   );
+  const setCrumbs = useCallback(
+    (crumbs: Crumb[]) => services.crumbs.set(panel.id, crumbs),
+    [services.crumbs, panel.id],
+  );
   const handle = useMemo<PanelHandle>(
     () => ({
       id: panel.id,
@@ -28,8 +32,9 @@ export function PanelHost({ panel, focused }: { panel: Panel; focused: boolean }
       params: panel.params,
       focused,
       setTitle,
+      setCrumbs,
     }),
-    [panel, focused, setTitle],
+    [panel, focused, setTitle, setCrumbs],
   );
   const host = useMemo<PluginHost>(
     () => pluginHostFor(services, panel.plugin),

@@ -7,4 +7,6 @@ export type { WorkbenchServices } from './services';
 export { createAnnouncer } from './announcer';
 export type { Announcer } from './announcer';
 export { createTitleStore } from './titles';
+export { createCrumbStore } from './crumbs';
+export type { CrumbStore } from './crumbs';
 export type { TitleStore } from './titles';

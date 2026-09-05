@@ -5,6 +5,7 @@ import type { HostIndex } from '../host/installed';
 import type { SettingsStore } from '../host/settings';
 import type { Announcer } from './announcer';
 import type { TitleStore } from './titles';
+import type { CrumbStore } from './crumbs';
 
 export interface PromptHandle {
   register: (focus: () => void) => () => void;
@@ -61,6 +62,7 @@ export interface WorkbenchServices {
   // dispatch + announce, for code outside React (route loaders, plugin hosts).
   dispatch: (op: Operation) => boolean;
   titles: TitleStore;
+  crumbs: CrumbStore;
   announcer: Announcer;
   // The prompt bar registers itself here on mount so commands can focus it.
   prompt: PromptHandle;

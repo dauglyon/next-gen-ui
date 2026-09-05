@@ -72,6 +72,9 @@ export default definePlugin({
   prompt bar once the module has loaded; `options` + `select` let the user switch the destination
   before sending, `documentParams` lets them jump to its document.
 - `AppFrame` renders an iframe that survives its panel being moved between groups.
+- `usePanelBreadcrumbs(crumbs)` declares where the panel sits: `{ label, action? }` per step, in
+  the plugin's own words. The host draws the row above the panel and borrows from the trail when
+  two tabs in a group share a title. Declaring none is normal and costs nothing.
 - A `Matcher` — `match(text) => Offer[]` — volunteers the plugin for what the user is typing.
   Each `Offer` names a destination in the plugin's own words (`label`: "Protein dossier for
   P0A7B8") and the `action` that gets there. The host only carries the action: it becomes the

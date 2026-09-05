@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useSyncExternalStore } from 'react';
+import type { Crumb } from '../../plugins/sdk';
 import type { Layout, Operation, Panel, PanelId } from '../core';
 import type { ArgValues } from '../commands';
 import type { WorkbenchServices } from './services';
@@ -50,6 +51,12 @@ export function fallbackTitle(services: WorkbenchServices, panel: Panel | undefi
   const base = plugin?.title ?? panel.plugin;
   const values = Object.values(panel.params);
   return values.length ? `${base}: ${values.join(' ')}` : base;
+}
+
+export function useCrumbs(id: PanelId): Crumb[] {
+  const { crumbs } = useServices();
+  useSyncExternalStore(crumbs.subscribe, crumbs.version, crumbs.version);
+  return crumbs.get(id);
 }
 
 export function useTitle(panel: Panel | undefined, id: PanelId = panel?.id ?? ''): string {
