@@ -42,6 +42,9 @@ export const ManifestSchema = z.object({
   contractVersion: z.literal(CONTRACT_VERSION),
   // A name from the host's icon table; unknown names fall back to a pin.
   icon: z.string().optional(),
+  // A name from the host's colour table, tinting this plugin's icon
+  // wherever it appears. Unknown or absent draws in the surrounding ink.
+  color: z.string().optional(),
   navigator: z
     .object({
       // `content`: the sidebar block hugs its content instead of taking a

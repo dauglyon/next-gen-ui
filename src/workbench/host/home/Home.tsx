@@ -154,7 +154,7 @@ function Section({
       ) : (
         <ul className={styles.grid}>
           {items.map((m) => {
-            const Icon = iconFor(m.icon);
+            const Icon = iconFor(m.icon, m.color);
             const hint = note?.(m);
             return (
               <li key={m.id}>

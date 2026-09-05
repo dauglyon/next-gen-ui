@@ -115,7 +115,7 @@ export function PromptBar() {
         // The offer says where you land; the app is who takes you.
         label: offer.label,
         detail: title,
-        icon: iconFor(source.manifest(plugin)?.icon),
+        icon: iconFor(source.manifest(plugin)?.icon, source.manifest(plugin)?.color),
         run: () =>
           void dispatch({
             type: 'open',
@@ -132,7 +132,7 @@ export function PromptBar() {
           {
             value: text,
             label: `Ask ${assistantTitle ?? assistant}`,
-            icon: iconFor(source.manifest(assistant)?.icon),
+            icon: iconFor(source.manifest(assistant)?.icon, source.manifest(assistant)?.color),
             run: () => void submit(text),
           },
         ]
@@ -167,7 +167,7 @@ export function PromptBar() {
         value: `/open ${m.id}`,
         label: `Open ${m.title}`,
         detail: m.description,
-        icon: iconFor(m.icon),
+        icon: iconFor(m.icon, m.color),
         run: () => void submit(`/open ${m.id}`),
       }),
     );
@@ -182,7 +182,7 @@ export function PromptBar() {
         value: text,
         label: `Show ${m.title}`,
         detail: pinned ? 'In the sidebar' : m.description,
-        icon: iconFor(m.icon),
+        icon: iconFor(m.icon, m.color),
         run: () =>
           pinned
             ? void dispatch({ type: 'open', panel: makePanel(m.id, 'navigator') })
@@ -211,7 +211,7 @@ export function PromptBar() {
           value: `/${c.name}${needsArgs ? ' ' : ''}`,
           label,
           detail: c.title,
-          icon: iconFor(c.icon ?? m.icon),
+          icon: iconFor(c.icon ?? m.icon, m.color),
           run: needsArgs ? undefined : () => void run(c.name),
         };
       });
@@ -222,7 +222,7 @@ export function PromptBar() {
   const browseSuggestion: BarSuggestion = {
     value: '/open home',
     label: 'Browse everything',
-    icon: iconFor(source.manifest('home')?.icon),
+    icon: iconFor(source.manifest('home')?.icon, source.manifest('home')?.color),
     run: () => void submit('/open home'),
   };
 
@@ -236,7 +236,11 @@ export function PromptBar() {
       const commands: BarSuggestion[] = list.map((s) => {
         const owner = registry.get(s.value.trim().replace(/^\//, '').split(/\s+/)[0])?.source;
         const manifest = owner ? source.manifest(owner) : undefined;
-        return { ...s, mono: true, icon: manifest ? iconFor(manifest.icon) : undefined };
+        return {
+          ...s,
+          mono: true,
+          icon: manifest ? iconFor(manifest.icon, manifest.color) : undefined,
+        };
       });
       // Priority order, painted bottom-up: a plugin recognising its own
       // data beats a shortcut's name, which beats a word shared with a

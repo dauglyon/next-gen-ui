@@ -24,6 +24,7 @@ export function ShortcutsNavigator() {
         title: c.title,
         // A command without its own icon wears its plugin's: provenance.
         icon: c.icon ?? m.icon,
+        color: m.color,
       })),
   );
 
@@ -33,7 +34,7 @@ export function ShortcutsNavigator() {
   return (
     <Toolbar.Root className={styles.list} aria-label="Shortcuts">
       {shortcuts.map((s) => {
-        const Icon = iconFor(s.icon);
+        const Icon = iconFor(s.icon, s.color);
         return (
           <Toolbar.Button
             key={s.key}

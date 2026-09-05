@@ -7,6 +7,7 @@ export const manifest: Manifest = {
   description: 'Background work: queued, running and finished jobs.',
   contractVersion: CONTRACT_VERSION,
   icon: 'ListChecks',
+  color: 'orange',
   navigator: {},
   document: { route: '/job/$id' },
   commands: [

@@ -112,7 +112,7 @@ export function createHostIndex(installed: InstalledPlugin[]): HostIndex {
       installed.map(({ manifest }) => ({
         id: manifest.id,
         title: manifest.title,
-        icon: iconFor(manifest.icon),
+        icon: iconFor(manifest.icon, manifest.color),
       })),
     panel: (type) => panels.get(type),
     offers(text) {

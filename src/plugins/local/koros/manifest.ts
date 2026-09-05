@@ -7,6 +7,7 @@ export const manifest: Manifest = {
   description: 'The assistant: projects, arcs and the questions asked in them.',
   contractVersion: CONTRACT_VERSION,
   icon: 'ChatCircleDots',
+  color: 'blue',
   navigator: {},
   document: { route: '/arc/$slug' },
   promptHandler: true,

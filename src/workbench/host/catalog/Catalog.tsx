@@ -26,7 +26,7 @@ export function CatalogNavigator() {
         </h2>
         <ul className={styles.list}>
           {manifests.map((m) => {
-            const Icon = iconFor(m.icon);
+            const Icon = iconFor(m.icon, m.color);
             const pinned = layout.sidebar.pinned.includes(m.id);
             const loaded = !!source.loaded(m.id);
             return (

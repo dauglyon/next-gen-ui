@@ -7,6 +7,7 @@ export const manifest: Manifest = {
   description: 'Genome knowledge browser.',
   contractVersion: CONTRACT_VERSION,
   icon: 'GraduationCap',
+  color: 'purple',
   // One page, so the document has no params.
   document: { route: '/' },
 };

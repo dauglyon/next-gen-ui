@@ -7,6 +7,7 @@ export const manifest: Manifest = {
   description: 'Per-protein evidence report card.',
   contractVersion: CONTRACT_VERSION,
   icon: 'Flask',
+  color: 'green',
   // One page, so the document has no params.
   document: { route: '/' },
 };
