@@ -195,7 +195,7 @@
 }
 
 .previewTitle {
-  font-size: var(--fs-5);
+  font-size: var(--fs-4);
   font-weight: var(--fw-bold);
   color: var(--c-ink);
 }
@@ -234,17 +234,22 @@
   padding: var(--s-3) var(--s-4) var(--s-3) var(--s-3);
   background: none;
   border: none;
-  color: var(--c-ink);
+  /* The More row's treatment: a section header names the section, so it
+     sits back in ink3 and comes forward on hover. */
+  color: var(--c-ink3);
   font-family: inherit;
-  font-size: var(--fs-5);
+  font-size: var(--fs-4);
   font-weight: var(--fw-bold);
   text-align: left;
   cursor: pointer;
 }
 
+.blockToggle:hover {
+  color: var(--c-ink);
+}
+
 .blockIcon {
   display: inline-flex;
-  color: var(--c-ink3);
 }
 
 .blockChevron {
@@ -313,7 +318,7 @@
 }
 
 .popoutTitle {
-  font-size: var(--fs-5);
+  font-size: var(--fs-4);
   font-weight: var(--fw-bold);
   color: var(--c-ink);
 }

@@ -8,7 +8,7 @@ export const shortcutsPlugin: InstalledPlugin = {
     title: 'Shortcuts',
     description: "Every installed plugin's shortcut commands, as buttons.",
     contractVersion: CONTRACT_VERSION,
-    icon: 'Nut',
+    icon: 'Lightning',
     navigator: { fit: 'content' },
   },
   load: () => import('./Shortcuts').then((m) => ({ navigator: m.ShortcutsNavigator })),
