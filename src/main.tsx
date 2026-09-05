@@ -38,8 +38,21 @@ installAuthExpiryWatcher(queryClient);
 
 // Bundled plugins plus whatever the registry lists; a registry that is down
 // leaves the bundled ones working.
+//
+// A bundled plugin wins over a registry entry with the same id, which is what
+// stops a registry from replacing first-party code. That also hides the real
+// plugin while one is being extracted from this repo into its own, so dev
+// builds can stand a bundled one down by id: VITE_DEV_UNBUNDLE=function-junction.
+const standDown = new Set(
+  (import.meta.env.DEV ? (import.meta.env.VITE_DEV_UNBUNDLE ?? '') : '')
+    .split(',')
+    .map((id: string) => id.trim())
+    .filter(Boolean),
+);
+const bundled = localPlugins.filter((p) => !standDown.has(p.manifest.id));
+
 const workbench = createWorkbench({
-  installed: await loadInstalled(localPlugins),
+  installed: await loadInstalled(bundled),
   storage: window.localStorage,
   defaultPinned: ['shortcuts', 'koros', 'data', 'jobs'],
   defaultAssistant: 'koros',

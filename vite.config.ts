@@ -16,6 +16,21 @@ import { localManifests } from './src/plugins/local/manifests';
 // resolve the same way.
 const designSystemSrc = fileURLToPath(new URL('./src/design-system', import.meta.url));
 
+// `/services/function-junction=http://127.0.0.1:8771` — one entry per backend
+// serving its own plugin. Same shape nginx is given in the container.
+function serviceProxies(spec: string | undefined) {
+  const entries = (spec ?? '')
+    .split(',')
+    .map((pair) => pair.trim())
+    .filter(Boolean)
+    .map((pair) => {
+      const at = pair.indexOf('=');
+      if (at < 1) throw new Error(`VITE_DEV_SERVICE_PROXY entry is not <prefix>=<origin>: ${pair}`);
+      return [pair.slice(0, at), { target: pair.slice(at + 1), changeOrigin: false }] as const;
+    });
+  return Object.fromEntries(entries);
+}
+
 export default defineConfig(({ mode }) => {
   // .env files are loaded into import.meta.env for the client by
   // default; loadEnv brings them into the config too so allowedHosts
@@ -38,7 +53,23 @@ export default defineConfig(({ mode }) => {
         configureServer(server) {
           server.middlewares.use('/plugin-registry/plugins', (_req, res) => {
             res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify(localManifests));
+            // A proxied service publishes its own manifest, so a plugin under
+            // development is registered by running its backend rather than by
+            // editing this repo. Asked for on each request: restarting the
+            // service is enough, no dev-server restart.
+            const proxied = Object.keys(serviceProxies(env.VITE_DEV_SERVICE_PROXY));
+            Promise.all(
+              proxied.map(async (prefix) => {
+                try {
+                  const answer = await fetch(`http://127.0.0.1:${server.config.server.port}${prefix}/manifest.json`);
+                  return answer.ok ? await answer.json() : undefined;
+                } catch {
+                  return undefined;
+                }
+              }),
+            ).then((manifests) => {
+              res.end(JSON.stringify([...localManifests, ...manifests.filter(Boolean)]));
+            });
           });
         },
       },
@@ -115,8 +146,14 @@ export default defineConfig(({ mode }) => {
       // are same-origin from the browser. The Origin header rewrite
       // matters because ci.kbase.us inspects it for policy decisions
       // and rejects (403) requests with the dev-server origin.
-      proxy: env.VITE_DEV_AUTH_PROXY
-        ? {
+      proxy: {
+        // A plugin served by its own backend. In the container nginx proxies
+        // this prefix; in dev the dev server does, so a remote entry stays
+        // same-origin either way and `script-src 'self'` keeps covering it.
+        // VITE_DEV_SERVICE_PROXY is `<prefix>=<origin>`, comma-separated.
+        ...serviceProxies(env.VITE_DEV_SERVICE_PROXY),
+        ...(env.VITE_DEV_AUTH_PROXY
+          ? {
             '/services/auth': {
               target: env.VITE_DEV_AUTH_PROXY,
               changeOrigin: true,
@@ -139,7 +176,8 @@ export default defineConfig(({ mode }) => {
               },
             },
           }
-        : undefined,
+          : {}),
+      },
     },
     test: {
       globals: true,
