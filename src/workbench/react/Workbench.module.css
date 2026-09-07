@@ -884,11 +884,20 @@
 
 .crumbLink,
 .crumbHere {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
   padding: 2px var(--s-2);
   border-radius: var(--r-sm);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* A crumb's own mark, where it names one. Sits with the label rather than
+   apart from it, so the pair reads as one crumb. */
+.crumbIcon {
+  flex: none;
 }
 
 .crumbLink {

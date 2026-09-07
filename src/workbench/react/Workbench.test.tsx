@@ -144,11 +144,11 @@ describe('Workbench', () => {
     await user.keyboard('{Tab}');
     expect(box).toHaveValue('/open ');
     // Not pinned, so nothing of it has loaded yet.
-    expect(services.source.loaded('function-junction')).toBeUndefined();
-    await user.type(box, 'function-junction{Enter}');
-    expect(await screen.findByRole('tab', { name: /function junction/i })).toBeInTheDocument();
-    expect(await screen.findByRole('group', { name: 'Function Junction' })).toBeInTheDocument();
-    expect(services.source.loaded('function-junction')).toBeDefined();
+    expect(services.source.loaded('genknown')).toBeUndefined();
+    await user.type(box, 'genknown{Enter}');
+    expect(await screen.findByRole('tab', { name: /genknown/i })).toBeInTheDocument();
+    expect(await screen.findByRole('group', { name: 'GenKnown' })).toBeInTheDocument();
+    expect(services.source.loaded('genknown')).toBeDefined();
   });
 
   it('sends free text to the assistant and lands it in an arc', async () => {

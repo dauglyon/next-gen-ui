@@ -8,6 +8,13 @@ import { iconFor } from '../icons';
 import { routeParams } from '../routes';
 import styles from './Home.module.css';
 
+// An app is a document that can be opened with nothing: either its route takes
+// no params, or it declares that it renders a landing state when they are
+// absent. Function Junction is the second kind — its route names a protein so a
+// dossier has a readable URL, and it asks for one when none is given.
+export const isApp = (m: Manifest) =>
+  Boolean(m.document && (m.document.opensEmpty || routeParams(m.document.route).length === 0));
+
 // The launcher as a page: everything installed, searchable. The prompt
 // bar completes the same names inline; this is that search given room,
 // and the only path to a page-like plugin that does not need its name
@@ -27,9 +34,7 @@ export function HomeDocument() {
     m.id.includes(q) ||
     (m.description?.toLowerCase().includes(q) ?? false);
   const listed = source.manifests().filter((m) => m.id !== 'home' && matches(m));
-  // An app is a document that names itself completely: no route params to
-  // fill, so it can be opened from a list.
-  const apps = listed.filter((m) => m.document && routeParams(m.document.route).length === 0);
+  const apps = listed.filter(isApp);
   const panels = listed.filter((m) => m.navigator);
 
   const openApp = (m: Manifest) =>

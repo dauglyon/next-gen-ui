@@ -35,11 +35,11 @@ describe('resolveDeepLink', () => {
   // second one on every round trip.
   it('takes params from the query as well as the path', () => {
     const s = services();
-    expect(resolveDeepLink(s, 'function-junction', '', '?q=P0A7B8')).toEqual({ ok: true });
-    expect(Object.keys(s.store.get().panels)).toContain('function-junction/document?q=P0A7B8');
-    resolveDeepLink(s, 'function-junction', '', '?q=P0A7B8');
+    expect(resolveDeepLink(s, 'genknown', '', '?q=P0A7B8')).toEqual({ ok: true });
+    expect(Object.keys(s.store.get().panels)).toContain('genknown/document?q=P0A7B8');
+    resolveDeepLink(s, 'genknown', '', '?q=P0A7B8');
     expect(
-      Object.keys(s.store.get().panels).filter((k) => k.startsWith('function-junction/document')),
+      Object.keys(s.store.get().panels).filter((k) => k.startsWith('genknown/document')),
     ).toHaveLength(1);
   });
 

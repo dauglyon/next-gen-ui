@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { match as data } from './data/match';
 import { match as jobs } from './jobs/match';
-import { match as functionJunction } from './function-junction/match';
 import { match as genknown } from './genknown/match';
 
-const matchers = { data, jobs, functionJunction, genknown };
+const matchers = { data, jobs, genknown };
 
 describe('local matchers', () => {
   it('say nothing about empty or unrelated text', () => {
@@ -25,21 +24,8 @@ describe('local matchers', () => {
   });
 
   it('recognises identifiers by shape', () => {
-    expect(functionJunction('P0A7B8').map((o) => o.action)).toEqual([
-      { view: 'dossier', accession: 'P0A7B8' },
-      { view: 'structure', accession: 'P0A7B8' },
-    ]);
-    expect(functionJunction('nifH')[0].action).toEqual({ view: 'dossier', gene: 'nifH' });
     expect(genknown('GCF_000005845.2')[0].action.assembly).toBe('GCF_000005845.2');
     expect(genknown('E. coli')[0].action).toEqual({ view: 'organism', organism: 'E. coli' });
-  });
-
-  // A gene symbol is a lowercase stem with a capital; ordinary words are
-  // not, which is what keeps the bar quiet while a sentence is typed.
-  it('leaves ordinary words alone', () => {
-    for (const word of ['the', 'nitrogen', 'Escherichia']) {
-      expect(functionJunction(word), word).toEqual([]);
-    }
   });
 
   it('answers from an inventory where the plugin has one', () => {

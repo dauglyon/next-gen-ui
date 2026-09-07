@@ -13,6 +13,10 @@ export type PanelKind = 'navigator' | 'document';
 export interface Crumb {
   label: string;
   action?: PanelParams;
+  // A mark beside the label, by name from the host's icon set. A plugin naming
+  // itself as the root of its own trail wants its own mark there, and the
+  // manifest's `icon` is the name to give.
+  icon?: string;
 }
 export type PanelParams = Record<string, string>;
 

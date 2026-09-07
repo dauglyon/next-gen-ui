@@ -57,6 +57,13 @@ export const ManifestSchema = z.object({
       // Path under /p/<id>, TanStack style: `/arc/$slug`. `/` for a document
       // with no params (an app that is one page).
       route: z.string().regex(/^\/([A-Za-z0-9_$-]+(\/[A-Za-z0-9_$-]+)*)?$/),
+      // The document renders with none of its params supplied — a landing
+      // state that asks for what it needs. Without this, a route carrying a
+      // param can only be reached by a link that already knows the value, so
+      // the launcher cannot list it: there would be nothing to open. A plugin
+      // that wants both a readable deep link and a place in the launcher says
+      // so here rather than dropping the param from its route.
+      opensEmpty: z.boolean().optional(),
     })
     .optional(),
   commands: z.array(CommandDeclSchema).optional(),
