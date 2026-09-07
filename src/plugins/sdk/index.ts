@@ -29,3 +29,5 @@ export { FrameLayerContext, useFrameLayer } from './frames';
 export type { FrameLayer, FrameSpec } from './frames';
 export { useCart } from './cart';
 export type { CartAddition, CartHandle, CartItem } from './cart';
+
+export * from './related';

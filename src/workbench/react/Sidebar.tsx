@@ -11,6 +11,7 @@ import { useDispatch, useLayout, useServices, useTitle } from './context';
 import { PanelHost } from './PanelHost';
 import { SplitView } from './SplitView';
 import { useDragPanel, useDragging, useDropTarget } from './useDnd';
+import { RelatedBlock } from './RelatedBlock';
 import styles from './Workbench.module.css';
 
 // The sidebar: the pinned plugins' navigators stacked as blocks, each
@@ -99,6 +100,10 @@ export function Sidebar() {
         aria-label="Sidebar"
         data-over={isOver || undefined}
       >
+        {/* Above the navigators, below Shortcuts: it is about what is on
+            screen, and it comes and goes, so it should not push the stack of
+            blocks around from the middle. */}
+        <RelatedBlock />
         <div className={styles.accordion}>
           {blocks.length === 0 ? (
             <p className={`caption ${styles.panelMessage}`}>

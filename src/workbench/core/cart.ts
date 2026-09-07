@@ -41,6 +41,9 @@ export const CartItemSchema = z.object({
   subject: z.string().optional(),
   // One line a person reads on the chip's tooltip and an assistant reads first.
   summary: z.string().optional(),
+  // Namespaced keys another plugin may recognise (`uniprot:P0AEX9`). The
+  // workbench asks with them; it never interprets them.
+  terms: z.array(z.string()).optional(),
 
   // POINTER — how to get back to it. `params` opens the plugin's document; the
   // href is for anything outside the workbench.

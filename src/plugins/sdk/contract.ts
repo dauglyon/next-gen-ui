@@ -83,6 +83,11 @@ export const ManifestSchema = z.object({
       // holds a matcher and nothing else. Absent means the plugin makes no
       // offers, which is the normal answer.
       matcher: z.string().optional(),
+      // A third exposed module, exporting `related` and `resolve`. Separate
+      // from `module` for the matcher's reason inverted: this one does I/O and
+      // is slow, so it is fetched only when the pane has terms to ask about
+      // rather than eagerly or with the UI bundle.
+      related: z.string().optional(),
     })
     .optional(),
 });

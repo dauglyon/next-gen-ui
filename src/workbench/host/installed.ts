@@ -1,7 +1,14 @@
 import { lazy } from 'react';
 import type { ComponentType } from 'react';
 import type { IconProps } from '@phosphor-icons/react';
-import type { Manifest, Matcher, Offer, PluginModule, PromptHandler } from '../../plugins/sdk';
+import type {
+  Manifest,
+  Matcher,
+  Offer,
+  PluginModule,
+  PromptHandler,
+  RelatedModule,
+} from '../../plugins/sdk';
 import type { PanelKind, PluginId } from '../core';
 import type { ArgSpec, Command, CommandRegistry } from '../commands';
 import type { PluginHost } from '../../plugins/sdk';
@@ -22,6 +29,10 @@ export interface InstalledPlugin {
   // Resolving to undefined, or rejecting, means the plugin makes no offers:
   // one plugin's missing matcher cannot break the bar.
   loadMatch?: () => Promise<Matcher | undefined>;
+  // What the plugin has to say about someone else's terms. Unlike the matcher
+  // this is fetched on first need, not at startup: it does I/O, and a session
+  // that never opens the Related pane should never pay for it.
+  loadRelated?: () => Promise<RelatedModule | undefined>;
 }
 
 // A plugin's offer, with the plugin it came from.
@@ -66,6 +77,10 @@ export interface HostIndex extends PanelSource {
   // command runs against.
   registerCommands: (registry: CommandRegistry, host: (plugin: PluginId) => PluginHost) => void;
   promptHandler: (id: PluginId) => Promise<PromptHandler | undefined>;
+  // Every plugin that answers about terms, with its module loaded on first
+  // ask and cached after. A plugin whose module fails to load is dropped with
+  // a warning: one bad plugin cannot empty the pane.
+  relatedModules: () => Promise<{ plugin: PluginId; title: string; module: RelatedModule }[]>;
 }
 
 export function createHostIndex(installed: InstalledPlugin[]): HostIndex {
@@ -77,6 +92,7 @@ export function createHostIndex(installed: InstalledPlugin[]): HostIndex {
   // A remote's matcher lands after construction. Kept beside the plugin rather
   // than written into it so `installed` stays the caller's data.
   const fetched = new Map<PluginId, Matcher>();
+  const relatedCache = new Map<PluginId, RelatedModule>();
   let version = 0;
 
   const bump = () => {
@@ -190,6 +206,26 @@ export function createHostIndex(installed: InstalledPlugin[]): HostIndex {
           registry.register(command);
         }
       }
+    },
+    async relatedModules() {
+      const answering = installed.filter((p) => p.loadRelated);
+      const loaded = await Promise.all(
+        answering.map(async (p) => {
+          const id = p.manifest.id;
+          const have = relatedCache.get(id);
+          if (have) return { plugin: id, title: p.manifest.title, module: have };
+          try {
+            const module = await p.loadRelated?.();
+            if (!module) return undefined;
+            relatedCache.set(id, module);
+            return { plugin: id, title: p.manifest.title, module };
+          } catch (err) {
+            console.warn(`plugin ${id}: its related module failed to load; ignoring it`, err);
+            return undefined;
+          }
+        }),
+      );
+      return loaded.filter((x) => x !== undefined);
     },
     async promptHandler(id) {
       if (!byId.get(id)?.manifest.promptHandler) return undefined;

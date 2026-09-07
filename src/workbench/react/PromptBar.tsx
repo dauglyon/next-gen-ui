@@ -8,6 +8,7 @@ import { makePanel } from '../core';
 import type { Suggestion } from '../commands';
 import { complete, parse, resolve, usage } from '../commands';
 import { iconFor } from '../host/icons';
+import { PluginMark } from '../host/PluginMark';
 import { routeParams } from '../host/routes';
 import { CartTray } from './CartTray';
 import { useDispatch, useLayout, useRun, useServices } from './context';
@@ -428,11 +429,16 @@ function PromptDestination() {
   }
   const manifest = source.manifest(assistant);
   const title = manifest?.title ?? assistant;
-  const Mark = iconFor(manifest?.icon, manifest?.color);
   const usePromptContext = source.loaded(assistant)?.usePromptContext;
   return (
     <p className={styles.promptContext}>
-      <Mark size={13} className={styles.promptMark} aria-hidden="true" />
+      <PluginMark
+        icon={manifest?.icon}
+        color={manifest?.color}
+        size={13}
+        className={styles.promptMark}
+        aria-hidden="true"
+      />
       <span className={styles.promptDestination}>{title}</span>
       {usePromptContext && (
         <AssistantContext assistant={assistant} usePromptContext={usePromptContext} />

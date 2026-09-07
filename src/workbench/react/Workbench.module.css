@@ -817,13 +817,34 @@
   margin: 0 0 var(--s-2);
   padding: var(--s-2);
   list-style: none;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
+  /* Above the composer, and read as above it: the composer is the surface
+     tier, so the list takes the one over it, the border that goes with it and
+     the dialog's shadow. At surface-on-surface with e-3 it was a panel that
+     happened to overlap. */
+  background: var(--c-raised);
+  border: 1px solid var(--c-border2);
   border-radius: var(--r-lg);
-  box-shadow: var(--e-3);
+  box-shadow: var(--e-4);
   max-height: 40vh;
   overflow: auto;
   z-index: var(--z-anchored);
+  transform-origin: bottom center;
+  animation: completionsIn var(--t-fast) ease-out;
+}
+
+/* It appears while the reader is looking at the field below it, so it moves
+   from there: a short rise and a small scale, over in one frame of thought. */
+@keyframes completionsIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.985);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .completions {
+    animation: none;
+  }
 }
 
 .completion {
@@ -836,8 +857,12 @@
   cursor: pointer;
 }
 
+/* The row Enter will run. Against a raised list, a raised row is invisible —
+   this one takes the primary tint and its ink, so which row is armed is
+   legible from the far side of the screen. */
 .completion[data-highlighted] {
-  background: var(--c-raised);
+  background: var(--bg-primary);
+  color: var(--ct-primary);
 }
 
 /* Whose row this is. The slot is kept when a row has no plugin (the
@@ -1257,4 +1282,129 @@
 .cartRemove:focus-visible {
   outline: 2px solid var(--c-focus);
   outline-offset: 1px;
+}
+
+
+/* The Related pane: a host-owned sidebar block, like Shortcuts. Hidden
+   entirely when no plugin has anything to say — a pane reading "Related · 0"
+   is furniture. */
+.relatedBlock {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--c-border);
+  background: var(--c-surface);
+}
+
+.relatedHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-4) var(--s-2) var(--s-3);
+  background: var(--c-raised);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.relatedTitle {
+  margin: 0;
+  font-size: var(--fs-5);
+  font-weight: var(--fw-bold);
+  color: var(--c-ink);
+}
+
+.relatedCount {
+  margin-inline-start: auto;
+  font-size: var(--fs-3);
+  color: var(--c-ink4);
+}
+
+.relatedSection {
+  padding-block-end: var(--s-2);
+}
+
+/* What the list was computed from, and nothing else: the block says what the
+   relation is. Both sections take the same weight — the difference between
+   them is order, not rank. */
+.relatedFrom {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: 0;
+  padding: var(--s-3) var(--s-4) var(--s-1);
+  font-size: var(--fs-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--c-ink4);
+}
+
+.relatedList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.relatedRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3) var(--s-2) var(--s-4);
+  font-size: var(--fs-4);
+  color: var(--c-ink2);
+}
+
+.relatedRow:hover {
+  background: var(--c-raised);
+}
+
+.relatedMark {
+  flex: none;
+}
+
+.relatedLabel {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.relatedDetail {
+  color: var(--c-ink4);
+  margin-inline-start: var(--s-2);
+}
+
+.relatedAdd {
+  margin-inline-start: auto;
+  display: inline-flex;
+  flex: none;
+  padding: 2px;
+  border: 1px solid var(--bo-primary);
+  border-radius: var(--r-full);
+  background: none;
+  color: var(--ct-primary);
+  cursor: pointer;
+}
+
+/* Turning one down. Quiet until the row is under the pointer: a list of
+   suggestions should not read as a list of things to close. */
+.relatedDismiss {
+  display: inline-flex;
+  flex: none;
+  padding: 2px;
+  border: none;
+  background: none;
+  color: var(--c-ink4);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.relatedRow:hover .relatedDismiss,
+.relatedDismiss:focus-visible {
+  opacity: 1;
+}
+
+/* What the per-plugin cap is holding back, counted rather than dropped. */
+.relatedMore {
+  margin: 0;
+  padding: var(--s-1) var(--s-4) 0;
+  font-size: var(--fs-3);
+  color: var(--c-ink4);
 }

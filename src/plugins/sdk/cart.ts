@@ -28,6 +28,11 @@ import { HostContext } from './host';
 //            tile leads with this and the figure sits under it, so an item
 //            whose summary is a bare number still says what of.
 //
+//   terms    Namespaced keys anything else might recognise:
+//            `uniprot:P0AEX9`, `taxon:562`. They are how the workbench asks
+//            other plugins what relates to this item — omit them and the item
+//            is still a cart item, just an isolated one.
+//
 //   content  What was added, as JSON. Send the data, not a handle to it: an
 //            item outlives the panel it came from, and a consumer should never
 //            have to call back into your plugin to find out what it holds.
@@ -51,6 +56,12 @@ export interface CartAddition {
   name: string;
   subject?: string;
   summary?: string;
+  // Namespaced keys other plugins may recognise — `uniprot:P0AEX9`,
+  // `taxon:562`. Optional and unpoliced: a plugin answers on the prefixes it
+  // knows and stays silent on the rest, the same way a matcher does. This is
+  // what lets a second plugin say something about an item without knowing
+  // anything about the plugin that added it.
+  terms?: string[];
   source?: { params?: Record<string, string>; href?: string };
   content?: unknown;
   context?: Record<string, unknown>;

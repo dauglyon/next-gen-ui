@@ -1,3 +1,5 @@
+import type { RelatedStore } from '../core';
+import type { RelatedRunner } from '../host/related';
 import type { CartStore, PluginId, WorkbenchStore } from '../core';
 import type { CommandRegistry } from '../commands';
 import type { Operation } from '../core';
@@ -59,6 +61,9 @@ export interface WorkbenchServices {
   // Things the user has set aside. Host-owned: items come from plugins and are
   // consumed by assistants, and neither can hold state the other reaches.
   cart: CartStore;
+  // What other plugins have to say about the front tab and the cart.
+  related: RelatedStore;
+  relatedRunner: RelatedRunner;
   registry: CommandRegistry;
   source: HostIndex;
   settings: SettingsStore;

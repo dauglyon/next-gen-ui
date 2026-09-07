@@ -3,6 +3,7 @@ import type { PluginId } from '../core';
 import {
   CART_STORAGE_KEY,
   createCartStore,
+  createRelatedStore,
   createWorkbenchStore,
   defaultLayout,
   deserialize,
@@ -23,6 +24,8 @@ import { home } from './home';
 import { shortcutsPlugin } from './shortcuts';
 import { routeParams } from './routes';
 import { createSettingsStore } from './settings';
+import { createRelatedRunner } from './related';
+import type { RelatedRunner } from './related';
 
 export const LAYOUT_STORAGE_KEY = 'workbench.layout.v1';
 
@@ -68,9 +71,13 @@ export function createWorkbench({
     if (result.changed) announcer.announce(result.announcement);
     return result.changed;
   };
+  const related = createRelatedStore();
   const services: WorkbenchServices = {
     store,
     cart,
+    related,
+    // Set below: the runner needs `source`, which the services object holds.
+    relatedRunner: undefined as unknown as RelatedRunner,
     registry,
     source,
     settings,
@@ -121,6 +128,7 @@ export function createWorkbench({
       }
     });
   }
+  services.relatedRunner = createRelatedRunner(services.source, cart, related);
   return services;
 }
 

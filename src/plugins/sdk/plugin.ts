@@ -82,6 +82,15 @@ export interface PluginModule {
   // A hook naming where free text will land (see PromptContext). Called
   // once the module has loaded; until then the bar names only the plugin.
   usePromptContext?: () => PromptContext | null;
+  // A hook naming what the front panel is currently about, as namespaced
+  // terms — `uniprot:P0AEX9`, `taxon:562`. The host asks every other plugin
+  // what it has about them; a plugin is never offered its own answer about its
+  // own view.
+  //
+  // The panel's params are handed in rather than read from context: the host
+  // runs this outside the panel, in the sidebar, so `usePanel()` is not
+  // available to it. Everything else a hook may do, it may do.
+  useViewTerms?: (params: Record<string, string>) => string[];
 }
 
 export function definePlugin(module: PluginModule): PluginModule {

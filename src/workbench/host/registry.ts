@@ -1,5 +1,5 @@
 import { loadRemote, registerRemotes } from '@module-federation/runtime';
-import type { Manifest, Matcher, PluginModule } from '../../plugins/sdk';
+import type { Manifest, Matcher, PluginModule, RelatedModule } from '../../plugins/sdk';
 import { ManifestSchema } from '../../plugins/sdk';
 import type { InstalledPlugin } from './installed';
 
@@ -66,6 +66,20 @@ export function remotePlugin(manifest: Manifest, base: string = REGISTRY_BASE): 
             throw new Error(`plugin ${manifest.id} exposed no matcher at ${entry.matcher}`);
           }
           return match;
+        }
+      : undefined,
+    // Fetched on first need rather than at startup: unlike a matcher this does
+    // I/O, and a session that never opens the Related pane never loads it.
+    loadRelated: entry.related
+      ? async () => {
+          register();
+          const mod = await loadRemote<Partial<RelatedModule>>(exposed(entry.related!));
+          if (typeof mod?.related !== 'function' || typeof mod.resolve !== 'function') {
+            throw new Error(
+              `plugin ${manifest.id} exposed no related/resolve pair at ${entry.related}`,
+            );
+          }
+          return { related: mod.related, resolve: mod.resolve };
         }
       : undefined,
   };
