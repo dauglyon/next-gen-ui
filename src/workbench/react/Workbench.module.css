@@ -1370,7 +1370,16 @@
 }
 
 .relatedLabel {
+  display: flex;
+  flex-direction: column;
   min-inline-size: 0;
+}
+
+/* Two lines, because a sidebar row is about thirty characters wide and a
+   proposal has two things to say: which thing it opens, and what that thing
+   is. On one line the second was always the half that got cut. */
+.relatedName,
+.relatedDetail {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1378,7 +1387,7 @@
 
 .relatedDetail {
   color: var(--c-ink4);
-  margin-inline-start: var(--s-2);
+  font-size: var(--fs-2);
 }
 
 /* Where the row goes, shown on the row rather than only in the tooltip. */

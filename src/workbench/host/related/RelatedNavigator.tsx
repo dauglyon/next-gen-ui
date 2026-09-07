@@ -151,7 +151,7 @@ function Row({ item, title }: { item: RelatedItem; title: string }) {
                 aria-hidden="true"
               />
               <span className={styles.relatedLabel}>
-                {item.proposal.label}
+                <span className={styles.relatedName}>{item.proposal.label}</span>
                 {item.proposal.detail && (
                   <span className={styles.relatedDetail}>{item.proposal.detail}</span>
                 )}
