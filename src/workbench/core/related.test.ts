@@ -48,7 +48,7 @@ describe('the store', () => {
   const section = (items: RelatedItem[]) => ({
     context: 'view' as const,
     subject: 'P0AEX9',
-    count: 1,
+    alsoCart: false,
     items,
     overflow: {},
   });

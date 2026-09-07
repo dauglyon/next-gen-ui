@@ -18,7 +18,7 @@ import { capped, keyOf, split } from '../../core';
 export const SETTLE_MS = 250;
 
 export interface RelatedInput {
-  view: { plugin: string; subject: string; terms: string[] } | null;
+  view: { plugin: string; subject: string; terms: string[]; params: Record<string, string> } | null;
   cart: { count: number; terms: string[] };
   // Cart item ids, so something already carried is not proposed again.
   held: string[];
@@ -103,16 +103,36 @@ export function createRelatedRunner(
     // item would be added under — the plugin's own, stamped the same way
     // `accept` will stamp it.
     const held = new Set(input.held);
+    // The page already open is not a suggestion. Excluding the front panel's
+    // own plugin covers the view context, but the cart reaches the same page
+    // by another road: a protein in the cart carries the taxon whose dossier
+    // is the tab you are reading, and genKnown would offer it back to you.
+    const onScreen = input.view
+      ? `${input.view.plugin} ${JSON.stringify(input.view.params ?? {})}`
+      : null;
     const fresh = (items: RelatedItem[]) =>
       items.filter(
-        (i) => !store.dismissed(i.key) && !(i.proposal.item && held.has(itemIdOf(i))),
+        (i) =>
+          !store.dismissed(i.key) &&
+          !(i.proposal.item && held.has(itemIdOf(i))) &&
+          `${i.plugin} ${JSON.stringify(i.proposal.params)}` !== onScreen,
       );
 
     const sections: RelatedSection[] = [];
     if (input.view) {
       const { items, overflow } = capped(fresh(viewItems), titleOf);
       if (items.length)
-        sections.push({ context: 'view', subject: input.view.subject, items, overflow });
+        sections.push({
+          context: 'view',
+          subject: input.view.subject,
+          // The cart holds this page's own subject: adding it produced no new
+          // question, so there is no second section — but the pane still has
+          // to show that the cart is part of what is being asked, or adding
+          // something appears to do nothing at all.
+          alsoCart: input.cart.count > 0 && cartTerms.length === 0,
+          items,
+          overflow,
+        });
     }
     {
       const { items, overflow } = capped(fresh(cartItems), titleOf);

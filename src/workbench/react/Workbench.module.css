@@ -1316,6 +1316,12 @@
   color: var(--c-ink4);
 }
 
+/* The cart is asking the same question as the page: one list, and a mark
+   saying both are behind it. */
+.relatedAlso {
+  color: var(--c-ink4);
+}
+
 .relatedList {
   margin: 0;
   padding: 0;

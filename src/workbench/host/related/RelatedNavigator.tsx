@@ -45,7 +45,12 @@ export function RelatedNavigator() {
     relatedRunner.run({
       view:
         front && viewKey
-          ? { plugin: front.plugin, subject: subjectOf(front), terms: viewTerms }
+          ? {
+              plugin: front.plugin,
+              subject: subjectOf(front),
+              terms: viewTerms,
+              params: front.params ?? {},
+            }
           : null,
       cart: { count: items.length, terms: cartTerms },
       held: items.map((i) => i.id),
@@ -99,7 +104,14 @@ function Section({ section }: { section: RelatedSection }) {
             {`${section.count} item${section.count === 1 ? '' : 's'}`}
           </>
         ) : (
-          section.subject
+          <>
+            {section.subject}
+            {section.alsoCart && (
+              <span className={styles.relatedAlso} aria-label="and the cart">
+                <span aria-hidden="true">· 🛒</span>
+              </span>
+            )}
+          </>
         )}
       </p>
       <ul className={styles.relatedList}>

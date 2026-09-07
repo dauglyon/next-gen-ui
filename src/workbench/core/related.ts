@@ -33,7 +33,10 @@ interface SectionBase {
 }
 
 export type RelatedSection =
-  | (SectionBase & { context: 'view'; subject: string })
+  // `alsoCart` when the cart holds nothing the view does not already cover:
+  // one list answers both, and the heading says so rather than the pane
+  // looking inert when someone adds the page they are on.
+  | (SectionBase & { context: 'view'; subject: string; alsoCart: boolean })
   | (SectionBase & { context: 'cart'; count: number });
 
 export interface RelatedState {
