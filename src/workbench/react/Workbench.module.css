@@ -1293,9 +1293,12 @@
   padding-block-end: var(--s-2);
 }
 
+/* EmptyState centres in whatever it is given; in a sidebar block that is a
+   narrow column, so it takes the block's own padding and no more height than
+   its text. */
 .relatedEmpty {
-  margin: 0;
-  padding: var(--s-3) var(--s-4);
+  padding: var(--s-2) var(--s-3) var(--s-4);
+  font-size: var(--fs-3);
 }
 
 /* What the list was computed from, and nothing else: the block's own header

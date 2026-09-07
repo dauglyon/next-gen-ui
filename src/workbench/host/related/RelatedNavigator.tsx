@@ -1,6 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { ArrowUpRight, Plus, X } from '@phosphor-icons/react';
-import { Tooltip } from '@kbase/design-system';
+import { EmptyState, Loader, Tooltip } from '@kbase/design-system';
 import { groupOf, groups, makePanel } from '../../core';
 import type { RelatedItem, RelatedSection } from '../../core';
 import { PluginMark } from '../PluginMark';
@@ -57,14 +57,25 @@ export function RelatedNavigator() {
   useEffect(() => () => relatedRunner.stop(), [relatedRunner]);
 
   const { sections, loading } = related.get();
-  // The block's header is drawn by the sidebar whether or not this has
-  // anything in it, so an empty body is furniture with nothing under it. It
-  // says which of the two it is instead.
+  // The sidebar draws this block's header whether or not there is anything in
+  // it, so the body has to account for itself. The house form is EmptyState —
+  // a title, a line saying what would fill it, and the loading case wearing
+  // the Loader as its icon, exactly as a panel does.
   if (sections.length === 0) {
     return (
-      <p className={`caption ${styles.relatedEmpty}`}>
-        {loading ? 'Asking…' : 'Nothing else here is about this page.'}
-      </p>
+      <div className={styles.relatedEmpty}>
+        {loading ? (
+          <EmptyState
+            icon={<Loader size={28} label="Asking the other plugins" />}
+            title="Asking…"
+          />
+        ) : (
+          <EmptyState
+            title="Nothing related"
+            description="Open a page or add to the cart, and anything else that knows about it appears here."
+          />
+        )}
+      </div>
     );
   }
 
