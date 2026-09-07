@@ -70,6 +70,11 @@ export const LayoutSchema = z.object({
   // A locked layout keeps its arrangement: structural operations no-op.
   // Defaulted so layouts saved before the field still parse.
   locked: z.boolean().default(false),
+  // Host blocks this layout has already been offered. A block added to the
+  // host after a layout was saved is pinned once, on the next load, and never
+  // again — so a new one arrives for existing users, and one they unpinned
+  // stays unpinned. Defaulted for layouts saved before the field.
+  introduced: z.array(z.string()).default([]),
 });
 export type Layout = z.infer<typeof LayoutSchema>;
 
@@ -136,5 +141,6 @@ export function defaultLayout({
     focus: null,
     keybindings: {},
     locked: false,
+    introduced: [...pinned],
   };
 }

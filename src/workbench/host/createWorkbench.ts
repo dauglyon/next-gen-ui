@@ -8,6 +8,7 @@ import {
   createWorkbenchStore,
   defaultLayout,
   deserialize,
+  introduce,
   makePanel,
   readCart,
   serialize,
@@ -62,8 +63,13 @@ export function createWorkbench({
   const cart = createCartStore(readCart(storage?.getItem(CART_STORAGE_KEY) ?? null));
 
   const fallback = () => defaultLayout({ pinned: defaultPinned });
+  const saved = deserialize(read(storage), fallback);
+  // `introduce` is what makes a newly added host block appear for someone
+  // whose layout predates it; the saved layout is otherwise restored verbatim,
+  // and defaultPinned only ever builds a fresh one.
+  const initial = introduce(saved, defaultPinned);
   const store = createWorkbenchStore({
-    initial: deserialize(read(storage), fallback),
+    initial,
     title: (id, panel) => titles.get(id) ?? fallbackTitle(services, panel, id),
   });
 
@@ -114,6 +120,17 @@ export function createWorkbench({
   }
 
   if (storage) {
+    // Written now, not on the next change: the record of which blocks have
+    // been offered is part of the layout, and if nothing else happens to save
+    // it the same block is introduced again on every load — which looks like
+    // the workbench re-pinning something the user just removed.
+    if (initial !== saved) {
+      try {
+        storage.setItem(LAYOUT_STORAGE_KEY, serialize(store.get()));
+      } catch {
+        // Quota or privacy mode; the introduction simply repeats next time.
+      }
+    }
     store.subscribe(() => {
       try {
         storage.setItem(LAYOUT_STORAGE_KEY, serialize(store.get()));
