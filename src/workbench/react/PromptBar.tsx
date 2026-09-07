@@ -149,7 +149,10 @@ export function PromptBar() {
       ? [
           {
             value: text,
-            label: `Ask ${assistantTitle ?? assistant}`,
+            // `Ask` only fits a question, and most of what is typed here is
+            // an accession or a name. Send is what the row does, and the word
+            // the composer's own button already uses.
+            label: `Send to ${assistantTitle ?? assistant}`,
             icon: iconFor(source.manifest(assistant)?.icon, source.manifest(assistant)?.color),
             run: () => void submit(text),
           },
@@ -235,8 +238,8 @@ export function PromptBar() {
       });
   };
 
-  // The full-density form of the same search, offered whenever the
-  // inline list is not the answer.
+  // The full-density form of the same search, for when the rows above are
+  // guesses rather than answers.
   const browseSuggestion: BarSuggestion = {
     value: '/open home',
     label: 'Browse everything',
@@ -263,20 +266,28 @@ export function PromptBar() {
       // Priority order, painted bottom-up: a plugin recognising its own
       // data beats a shortcut's name, which beats a word shared with a
       // description.
-      const alternatives = list.length
+      // An offer is a plugin saying it recognises this text and what it would
+      // do with it. The rows under it are name and description matches — the
+      // same search the Browse page runs, inline.
+      const offers = list.length ? [] : offerSuggestions(value);
+      const guesses = list.length
         ? []
-        : [
-            ...offerSuggestions(value),
-            ...shortcutSuggestions(value),
-            ...appSuggestions(value),
-            ...panelSuggestions(value),
-          ];
+        : [...shortcutSuggestions(value), ...appSuggestions(value), ...panelSuggestions(value)];
+      const alternatives = [...offers, ...guesses];
       // Nothing worth choosing between: no list, and Enter behaves as if
       // there were none.
+      // Browse only where it adds something: no plugin claimed the text, so
+      // what is on offer is a name match and the full list may do better. With
+      // an offer present it was a fourth row saying "or look somewhere else"
+      // under an answer.
       const found = list.length
         ? commands
         : alternatives.length
-          ? [...defaultSuggestion(value), ...alternatives, browseSuggestion]
+          ? [
+              ...defaultSuggestion(value),
+              ...alternatives,
+              ...(offers.length ? [] : [browseSuggestion]),
+            ]
           : [];
       setSuggestions(found);
       // Row zero is always the default action, so it is always selected;
@@ -378,7 +389,7 @@ export function PromptBar() {
         onValueChange={setValue}
         onSubmit={(text) => void submit(text)}
         label="Prompt"
-        placeholder="Ask the assistant, or type / for commands"
+        placeholder="Type a name, an id, or a question — / for commands"
         hint={hint}
         error={error}
         busy={busy}

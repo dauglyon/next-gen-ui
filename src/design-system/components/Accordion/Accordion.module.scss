@@ -17,7 +17,9 @@
   display: flex;
   align-items: center;
   gap: var(--s-4);
-  padding: var(--s-3) 0;
+  /* A header is a line of text and a chevron; two steps of padding made it
+     taller than the row it labels, and a stack of them is mostly padding. */
+  padding: var(--s-2) 0;
   border: none;
   background: none;
   font-family: var(--f-sans);

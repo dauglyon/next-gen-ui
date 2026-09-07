@@ -231,8 +231,9 @@
   align-items: center;
   gap: var(--s-3);
   /* Left inset --s-3, not --s-4: the icon centres on x=24 with the rail
-     glyphs and the brand logo. */
-  padding: var(--s-3) var(--s-4) var(--s-3) var(--s-3);
+     glyphs and the brand logo. Vertically one step tighter: the sidebar
+     stacks four of these, so the header height is paid four times over. */
+  padding: var(--s-2) var(--s-4) var(--s-2) var(--s-3);
   background: none;
   border: none;
   /* The More row's treatment: a section header names the section, so it
@@ -883,7 +884,9 @@
   align-items: center;
   flex-wrap: nowrap;
   gap: var(--s-1);
-  padding: var(--s-2) var(--s-4);
+  /* One step of vertical padding, not two: the trail is a locator strip above
+     a panel, and every pixel it takes is one the panel does not get. */
+  padding: var(--s-1) var(--s-4);
   /* A plugin's manifest colour, where it names one; the neutral bar otherwise.
      Set as custom properties on the element by Breadcrumbs, so the host's
      table stays the only place a colour name becomes a token. */

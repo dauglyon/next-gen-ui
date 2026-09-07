@@ -124,9 +124,10 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
           <div className={styles.stepBody}>
             <h3 className={styles.stepTitle}>Type what you are after</h3>
             <p className={styles.stepText}>
-              Put <Key>nifH</Key> in the box at the bottom. The workbench does not know what nifH
-              is. It hands the text to every installed plugin and shows you the ones that answered,
-              so recognising an identifier is the plugin's job and routing you to it is the shell's.{' '}
+              Put <Key>P0AEX9</Key> in the box at the bottom. The workbench does not know what that
+              is. It hands the text to every installed plugin and lists the ones that answered —
+              here, Function Junction offering a dossier on it. Recognising an identifier is the
+              plugin's job; routing you to whoever claims it is the shell's.{' '}
               <button type="button" className={styles.tourLink} onClick={onFocusPrompt}>
                 Put the cursor there
               </button>
@@ -139,12 +140,12 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
             2
           </span>
           <div className={styles.stepBody}>
-            <h3 className={styles.stepTitle}>Open Function Junction</h3>
+            <h3 className={styles.stepTitle}>Take the offer</h3>
             <p className={styles.stepText}>
-              Until you press it, the workbench holds only a manifest: a name, an icon, a route, and
-              an address to fetch the code from. Opening it loads that code at runtime and gives it
-              a tab. Nothing about it was compiled in, so it ships on its own and the shell needs no
-              release to carry a new one.
+              Until you press it, the workbench holds only that plugin's manifest: a name, an icon,
+              a route, and an address to fetch the code from. Pressing it loads the code at runtime
+              and gives it a tab on the protein you typed. Nothing of it was compiled in, so it
+              ships on its own and the shell needs no release to carry a new one.
             </p>
           </div>
         </li>
@@ -156,10 +157,10 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
           <div className={styles.stepBody}>
             <h3 className={styles.stepTitle}>Add what matters to the cart</h3>
             <p className={styles.stepText}>
-              The cart belongs to the shell, so anything can fill it and anything can read it. An
-              item carries the data itself rather than a handle to it, which is what lets it outlive
-              the panel it came from and be read by a plugin that knows nothing about the one that
-              added it. Press a tile to see everything an item holds.
+              On that page, press Add — on the report or on any single line. The cart belongs to the
+              shell, so anything can fill it and anything can read it, and an item carries the data
+              itself rather than a handle to it. That is what lets it outlive the panel it came from
+              and be read by a plugin that knows nothing of the one that added it.
             </p>
           </div>
         </li>
