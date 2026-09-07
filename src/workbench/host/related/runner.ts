@@ -1,6 +1,6 @@
 import type { HostIndex } from '../installed';
 import type { CartStore, RelatedItem, RelatedSection, RelatedStore } from '../../core';
-import { capped, keyOf, split } from '../../core';
+import { keyOf, split } from '../../core';
 
 // Asking every plugin what it has about the terms on screen and in the cart.
 //
@@ -22,6 +22,9 @@ export interface RelatedInput {
   cart: { count: number; terms: string[] };
   // Cart item ids, so something already carried is not proposed again.
   held: string[];
+  // `plugin params` for every document open in the main area, so a page
+  // already on screen is not proposed either.
+  open: string[];
 }
 
 export interface RelatedRunner {
@@ -108,39 +111,27 @@ export function createRelatedRunner(
 
     for (const item of [...viewItems, ...cartItems]) answers.set(item.key, item);
 
-    const titleOf = (id: string) => source.manifest(id)?.title ?? id;
-    // What the cart already holds is not a proposal. Compared on the id the
-    // item would be added under — the plugin's own, stamped the same way
-    // `accept` will stamp it.
+    // A proposal is a thing to go and get. Something already in the cart, or
+    // already open in a tab, is neither: the reader has it. Both are dropped
+    // outright rather than shown as a link with the `+` removed — a pane of
+    // rows for things you already have is a pane you learn to skip.
+    //
+    // The cart is compared on the id the item would be added under — the
+    // plugin's own, stamped the same way `accept` will stamp it. Tabs are
+    // compared on plugin and params, which is what a panel's identity is.
     const held = new Set(input.held);
-    // The page already open is not a suggestion. Excluding the front panel's
-    // own plugin covers the view context, but the cart reaches the same page
-    // by another road: a protein in the cart carries the taxon whose dossier
-    // is the tab you are reading, and genKnown would offer it back to you.
-    const onScreen = input.view
-      ? `${input.view.plugin} ${JSON.stringify(input.view.params ?? {})}`
-      : null;
-    // Already holding a thing is a reason not to offer to add it again — not
-    // a reason to hide the page it lives on. Dropping the whole row meant the
-    // cart section could say nothing at all about what you had collected,
-    // which is the one thing it exists to do. The row stays as a link; only
-    // the `+` goes.
+    const open = new Set(input.open);
     const fresh = (items: RelatedItem[]) =>
-      items
-        .filter(
-          (i) =>
-            !store.dismissed(i.key) &&
-            `${i.plugin} ${JSON.stringify(i.proposal.params)}` !== onScreen,
-        )
-        .map((i) =>
-          i.proposal.item && held.has(itemIdOf(i))
-            ? { ...i, proposal: { ...i.proposal, item: undefined } }
-            : i,
-        );
+      items.filter(
+        (i) =>
+          !store.dismissed(i.key) &&
+          !open.has(`${i.plugin} ${JSON.stringify(i.proposal.params)}`) &&
+          !held.has(itemIdOf(i)),
+      );
 
     const sections: RelatedSection[] = [];
     if (input.view) {
-      const { items, overflow } = capped(fresh(viewItems), titleOf);
+      const items = fresh(viewItems);
       if (items.length)
         sections.push({
           context: 'view',
@@ -151,13 +142,11 @@ export function createRelatedRunner(
           // something appears to do nothing at all.
           alsoCart: input.cart.count > 0 && cartTerms.length === 0,
           items,
-          overflow,
         });
     }
     {
-      const { items, overflow } = capped(fresh(cartItems), titleOf);
-      if (items.length)
-        sections.push({ context: 'cart', count: input.cart.count, items, overflow });
+      const items = fresh(cartItems);
+      if (items.length) sections.push({ context: 'cart', count: input.cart.count, items });
     }
     // Forget only what is no longer on screen: `accept` reads this map from a
     // click handler, and a round finishing between the render and the press

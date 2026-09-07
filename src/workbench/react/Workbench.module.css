@@ -1427,9 +1427,3 @@
 }
 
 /* What the per-plugin cap is holding back, counted rather than dropped. */
-.relatedMore {
-  margin: 0;
-  padding: var(--s-1) var(--s-4) 0;
-  font-size: var(--fs-3);
-  color: var(--c-ink4);
-}

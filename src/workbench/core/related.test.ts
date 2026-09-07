@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { capped, createRelatedStore, keyOf, PER_PLUGIN, split } from './related';
+import { createRelatedStore, keyOf, split } from './related';
 import type { RelatedItem } from './related';
 
 const item = (plugin: string, id: string): RelatedItem => ({
@@ -27,30 +27,12 @@ describe('terms across the two contexts', () => {
   });
 });
 
-describe('the per-plugin cap', () => {
-  it('keeps three from each plugin and counts the rest by title', () => {
-    const many = [
-      ...Array.from({ length: 5 }, (_, i) => item('diaspora', `d${i}`)),
-      ...Array.from({ length: 2 }, (_, i) => item('genknown', `g${i}`)),
-    ];
-    const { items, overflow } = capped(many, (id) => (id === 'diaspora' ? 'Diaspora' : 'genKnown'));
-    expect(items).toHaveLength(PER_PLUGIN + 2);
-    expect(overflow).toEqual({ Diaspora: 2 });
-  });
-
-  it('leaves the order plugins answered in', () => {
-    const { items } = capped([item('a', '1'), item('b', '1'), item('a', '2')], (id) => id);
-    expect(items.map((i) => i.key)).toEqual(['a:1', 'b:1', 'a:2']);
-  });
-});
-
 describe('the store', () => {
   const section = (items: RelatedItem[]) => ({
     context: 'view' as const,
     subject: 'P0AEX9',
     alsoCart: false,
     items,
-    overflow: {},
   });
 
   it('drops a dismissed proposal from the answers that follow', () => {

@@ -13,7 +13,15 @@ export const relatedPlugin: InstalledPlugin = {
     contractVersion: CONTRACT_VERSION,
     icon: 'LinkSimple',
     color: 'blue',
-    navigator: { fit: 'content' },
+    // Declared with no `fit`, which is not the same as declaring nothing:
+    // the manifest key is what says this plugin has a navigator at all.
+    //
+    // Deliberately not `fit: 'content'`. Shortcuts is a fixed row of buttons
+    // and can take its natural height; this list is as long as the answers
+    // are, and a block at natural height takes that length out of the blocks
+    // under it — Data and Jobs became clipped strips. It takes a share of the
+    // stack and scrolls inside it.
+    navigator: {},
   },
   load: () => import('./RelatedNavigator').then((m) => ({ navigator: m.RelatedNavigator })),
 };

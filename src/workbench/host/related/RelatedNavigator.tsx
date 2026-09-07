@@ -42,6 +42,7 @@ export function RelatedNavigator() {
   const cartTerms = [...items].reverse().flatMap((i) => i.terms ?? []);
 
   const viewKey = viewTerms.join(',');
+  const openKey = openTargets(layout).join('|');
   // The cart's identity, not its size: swapping one item for another leaves
   // the count alone, and a count is what this used to watch.
   const cartKey = items.map((i) => `${i.id}#${(i.terms ?? []).join('+')}`).join('|');
@@ -58,10 +59,11 @@ export function RelatedNavigator() {
           : null,
       cart: { count: items.length, terms: cartTerms },
       held: items.map((i) => i.id),
+      open: openTargets(layout),
     });
     // Values, not the arrays holding them.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [front?.plugin, front?.id, viewKey, cartKey]);
+  }, [front?.plugin, front?.id, viewKey, cartKey, openKey]);
 
   useEffect(() => () => relatedRunner.stop(), [relatedRunner]);
 
@@ -127,9 +129,6 @@ function Section({ section }: { section: RelatedSection }) {
           />
         ))}
       </ul>
-      {Object.entries(section.overflow).map(([title, n]) => (
-        <p key={title} className={styles.relatedMore}>{`${n} more from ${title}`}</p>
-      ))}
     </div>
   );
 }
@@ -195,6 +194,17 @@ function Row({ item, title }: { item: RelatedItem; title: string }) {
       </button>
     </li>
   );
+}
+
+// Every document open in the main area, as `plugin params` — a panel's
+// identity, which is what a proposal has to be compared against. Not only the
+// front tab: a page open in the tab behind is still a page the reader has.
+function openTargets(layout: ReturnType<typeof useLayout>): string[] {
+  return groups(layout.main)
+    .flatMap((g) => g.tabs)
+    .map((id) => layout.panels[id])
+    .filter(Boolean)
+    .map((p) => `${p.plugin} ${JSON.stringify(p.params ?? {})}`);
 }
 
 // The panel at the front of the main area.

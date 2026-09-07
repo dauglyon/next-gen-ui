@@ -28,8 +28,6 @@ export interface RelatedItem {
 // so neither carries a field that means nothing to it.
 interface SectionBase {
   items: RelatedItem[];
-  // Beyond the per-plugin cap, by plugin title: `{ diaspora: 2 }`.
-  overflow: Record<string, number>;
 }
 
 export type RelatedSection =
@@ -45,30 +43,7 @@ export interface RelatedState {
   loading: boolean;
 }
 
-// Three per plugin per section. Enough that a plugin with a real answer is not
-// truncated into uselessness, few enough that one chatty plugin cannot own the
-// pane. The rest are counted, not dropped, so the pane can say what it is not
-// showing.
-export const PER_PLUGIN = 3;
-
 export const keyOf = (plugin: string, id: string) => `${plugin}:${id}`;
-
-// Cap by plugin, preserving the order plugins answered in.
-export function capped(
-  items: RelatedItem[],
-  titleOf: (plugin: string) => string,
-): { items: RelatedItem[]; overflow: Record<string, number> } {
-  const seen = new Map<string, number>();
-  const kept: RelatedItem[] = [];
-  const overflow: Record<string, number> = {};
-  for (const item of items) {
-    const n = (seen.get(item.plugin) ?? 0) + 1;
-    seen.set(item.plugin, n);
-    if (n <= PER_PLUGIN) kept.push(item);
-    else overflow[titleOf(item.plugin)] = (overflow[titleOf(item.plugin)] ?? 0) + 1;
-  }
-  return { items: kept, overflow };
-}
 
 export interface RelatedStore {
   get: () => RelatedState;
