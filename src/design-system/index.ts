@@ -81,6 +81,7 @@ export type { PaginationProps } from './components/Pagination';
 // Overlays
 export * as Dialog from './components/Dialog';
 export * as AlertDialog from './components/AlertDialog';
+export { KBaseSymbol } from './components/KBaseSymbol';
 export * as Tooltip from './components/Tooltip';
 export * as Popover from './components/Popover';
 export * as Menu from './components/Menu';

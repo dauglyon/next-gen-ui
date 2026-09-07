@@ -1,4 +1,4 @@
-import { Loader, Menu, Menubar } from '@kbase/design-system';
+import { KBaseSymbol, Menu, Menubar } from '@kbase/design-system';
 import type { Side } from '../core';
 import { groupOf } from '../core';
 import { useDispatch, useLayout, useRun, useServices } from './context';
@@ -17,14 +17,13 @@ export function WorkbenchMenubar() {
 
   return (
     <div className={styles.menubar}>
-      <span className={styles.brand} aria-hidden="true">
-        {/* Dots at the wordmark's size (14px): the Loader's 48-unit
-            viewBox renders dots at 18/48 of `size`, so 37. Static until
-            something wires `active` to a loading state. */}
-        <span className={styles.brandMark}>
-          <Loader size={37} active={false} />
-        </span>
-        KBase
+      <span className={styles.brand}>
+        {/* The KBase symbol, as the style guide draws it. It replaces a stand-in
+            built from the Loader's three dots, which read as a spinner at rest
+            and had nothing to do with the mark. */}
+        <KBaseSymbol className={styles.brandMark} aria-hidden="true" />
+        <span aria-hidden="true">KBase</span>
+        <span className={styles.srOnly}>KBase Workbench</span>
       </span>
       <Menubar.Root aria-label="Workbench menu">
         <Menu.Root>
@@ -59,6 +58,10 @@ export function WorkbenchMenubar() {
             >
               Status bar
             </Menu.CheckboxItem>
+            <Menu.Separator />
+            {/* The host's own page, reached from the menu that governs the
+                workbench rather than from the list of things installed in it. */}
+            <Menu.Item onClick={() => run('catalog')}>Settings</Menu.Item>
           </Menu.Popup>
         </Menu.Root>
         <Menu.Root>
