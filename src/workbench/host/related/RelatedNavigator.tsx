@@ -35,7 +35,11 @@ export function RelatedNavigator() {
   const front = frontPanel(layout);
   const viewTerms = front ? termStore.get(front.id) : [];
   const items = cart.items();
-  const cartTerms = items.flatMap((i) => i.terms ?? []);
+  // Newest first. Each plugin answers in the order it is asked and the pane
+  // shows three rows per plugin, so this is what makes an add visible: the
+  // thing just put in the cart leads, and what it displaces is counted in the
+  // "N more" line rather than silently keeping its seat.
+  const cartTerms = [...items].reverse().flatMap((i) => i.terms ?? []);
 
   const viewKey = viewTerms.join(',');
   // The cart's identity, not its size: swapping one item for another leaves
