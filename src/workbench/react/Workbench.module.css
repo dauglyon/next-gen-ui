@@ -40,12 +40,13 @@
   padding: 0 var(--s-2);
 }
 
-/* Bounds the line box: the Loader's square SVG is taller than its dots,
-   and overflow stays visible for the animated form. */
+/* Sized by height; the symbol is 2.4:1 and keeps its own ratio. Blocked so it
+   sits on the wordmark's centre rather than on its baseline. */
 .brandMark {
-  display: flex;
-  align-items: center;
+  display: block;
   height: 18px;
+  width: auto;
+  flex: none;
 }
 
 .body {
@@ -588,8 +589,27 @@
   color: var(--c-ink4);
 }
 
+/* The trail's separator, at the same size and ink as a panel's breadcrumbs. */
+.promptThread {
+  flex: none;
+  color: var(--c-ink4);
+}
+
+/* The assistant's own mark, ahead of its name, as the first crumb carries it. */
+.promptMark {
+  flex: none;
+}
+
 .promptDestination {
   color: var(--c-ink2);
+}
+
+/* Four spacings stacked between the switcher's caret and this arrow — the
+   switcher's own padding, the row's gap, this button's padding, and a margin
+   on top. Two are enough. */
+.promptJump {
+  margin-inline-start: calc(-1 * var(--s-1));
+  padding-inline: var(--s-1);
 }
 
 /* The destination switcher and the jump-to-it button. The pill's padding
@@ -864,8 +884,11 @@
   flex-wrap: nowrap;
   gap: var(--s-1);
   padding: var(--s-2) var(--s-4);
-  background: var(--c-surface);
-  border-bottom: 1px solid var(--c-border);
+  /* A plugin's manifest colour, where it names one; the neutral bar otherwise.
+     Set as custom properties on the element by Breadcrumbs, so the host's
+     table stays the only place a colour name becomes a token. */
+  background: var(--crumb-tint, var(--c-surface));
+  border-bottom: 1px solid var(--crumb-edge, var(--c-border));
   font-size: var(--fs-4);
   overflow: hidden;
 }
@@ -892,6 +915,21 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* The plugin's own name, in the plugin's own colour. The crumbs after it are
+   places inside the plugin and stay in ink. */
+.crumbFirst {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  min-width: 0;
+  color: var(--crumb-ink, inherit);
+}
+
+.crumbFirst .crumbLink,
+.crumbFirst .crumbHere {
+  color: inherit;
 }
 
 /* A crumb's own mark, where it names one. Sits with the label rather than
@@ -923,4 +961,297 @@
 .crumbHere {
   color: var(--c-ink);
   font-weight: var(--fw-bold);
+}
+
+/* Attachments on the next message, above the input the way a chat client puts
+   them: they travel with what is being said, so they sit where it is said.
+
+   Tiles rather than pills, which is what Slack, assistant-ui and Claude all
+   settle on for a composer — but with the figure in the preview slot where
+   those have a thumbnail. See CartTray.tsx. */
+/* The cart sits in the composer's own surface (PromptInput's `attachments`
+   slot), so the composer holds it — no second container, no second border. */
+/* Sideways, never taller. A row that wraps grows the composer downward and
+   pushes the message being written off the screen, worst when the most has
+   been collected. A photo strip scrolls; so does this. */
+.cartRow {
+  display: flex;
+  gap: var(--s-2);
+  margin: 0;
+  /* Room for the tiles' overhanging remove controls, which sit outside the
+     tile box and would otherwise be clipped by the scroller. */
+  padding: var(--s-2) var(--s-2) var(--s-1);
+  /* One height for the row, set by its tallest tile: a ragged strip reads as
+     debris rather than as a set of like things. */
+  align-items: stretch;
+  list-style: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  min-inline-size: 0;
+}
+
+.cartItem {
+  position: relative;
+  /* Fixed against the scroller: flexible widths would shrink every tile as
+     the row filled, which is the height problem turned on its side. */
+  flex: 0 0 auto;
+  inline-size: 10.5rem;
+}
+
+/* The tile is the control that opens the item: a square mark and two lines
+   beside it, the shape a file attachment takes in a composer. */
+.cartOpen {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  inline-size: 100%;
+  block-size: 100%;
+  padding: var(--s-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  /* Raised against the composer surface: a thing set down in it. */
+  background: var(--c-raised);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.cartOpen:hover {
+  border-color: var(--c-ink4);
+}
+
+.cartOpen:focus-visible {
+  outline: 2px solid var(--c-focus);
+  outline-offset: 1px;
+}
+
+/* The thumbnail slot. Square, because every item has one and a row of equal
+   squares is what makes the strip scannable. */
+.cartMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  inline-size: 28px;
+  block-size: 28px;
+  border-radius: var(--r-sm);
+  background: var(--c-bg);
+}
+
+/* What the item is *about* — the protein, the dataset, the run. Without it a
+   tray of figures says `2 small molecules` and never says of what. */
+.cartSubject {
+  font-size: var(--fs-3);
+  font-weight: 500;
+  color: var(--c-ink2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The figure it was added for. One line, clipped: the tile is a glance and the
+   whole of it is a press away. */
+.cartSummary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-2);
+  color: var(--c-ink3);
+}
+
+/* Colour only; the weight comes off with Button's own `quiet`. */
+.cartClear.cartClear {
+  color: var(--c-ink3);
+}
+
+.cartClear.cartClear:hover {
+  color: var(--c-ink);
+}
+
+/* An inline SVG sits on the text baseline, which leaves it riding high against
+   a line of capitals. Blocked and centred by the button's own flex row. */
+.cartClear svg,
+.cartMeasure svg {
+  display: block;
+}
+
+.cartMeasure {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+}
+
+/* Two lines of text beside the mark, and the reason the tile has a fixed
+   height: the pair is always a subject and a figure. */
+.cartText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-inline-size: 0;
+}
+
+/* The cart's own line, above its tiles: what this row is on the left, and the
+   one control that acts on all of it at the far right, where a section's
+   controls go. Caption weight for the label — the tiles are the content. */
+.cartCaption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  margin: 0;
+  padding-inline: var(--s-2);
+  font-size: var(--fs-3);
+  color: var(--c-ink4);
+}
+
+/* Doubled to outrank Dialog's own popup class, whose 520px assumes a dialog
+   whose body is a sentence and two buttons. This one holds JSON. */
+.cartPreview.cartPreview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  inline-size: min(46rem, 92vw);
+  max-inline-size: none;
+  max-block-size: 80vh;
+  overflow-y: auto;
+}
+
+/* Dialog's title and description carry their own bottom margins, sized for a
+   dialog that ends at the description (var(--s-8) under it). Here the body
+   continues, and the flex gap is what spaces it — both margins would stack on
+   top of that and blow the thing apart. Doubled to outrank them. */
+.cartPreviewTitle.cartPreviewTitle,
+.cartPreviewMeta.cartPreviewMeta {
+  margin-bottom: 0;
+}
+
+.cartPreviewSummary {
+  margin: 0;
+  font-size: var(--fs-4);
+  color: var(--c-ink2);
+}
+
+.cartPreviewPart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  min-inline-size: 0;
+}
+
+.cartPreviewHeading {
+  margin: 0;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--c-ink4);
+}
+
+/* The pointer half, as one line. It is two keys and a value; a JSON block
+   around it was more chrome than content. */
+/* Wrapped rather than scrolled sideways. A context value is prose as often as
+   it is a number — the builder's caveats run to a sentence — and a horizontal
+   scrollbar hides the end of exactly the field a reader opened this to read. */
+/* Doubled to outrank Prism's `pre[class*="language-"]`, which sets the
+   sideways scroll a page of code wants and a five-key object does not. */
+.cartPreviewJson.cartPreviewJson {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow-x: hidden;
+}
+
+/* Prism sets `white-space: pre` on the inner code element too, so wrapping the
+   pre alone left the long line clipped rather than wrapped. */
+.cartPreviewJson.cartPreviewJson code {
+  white-space: inherit;
+  overflow-wrap: inherit;
+}
+
+.cartPreviewSource {
+  margin: 0;
+  font-size: var(--fs-3);
+  color: var(--c-ink4);
+}
+
+.cartPreviewParam {
+  margin-inline-start: var(--s-1);
+  padding: 1px var(--s-1);
+  border-radius: var(--r-sm);
+  background: var(--c-bg);
+  color: var(--c-ink2);
+}
+
+.cartPreviewActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-2);
+}
+
+/* Dismiss at one end, destroy at the other. Side by side they were a pair a
+   hand could slip between, and they are not a pair: one closes a look at an
+   item, the other throws the item away. */
+/* Close is where nearly every visit ends, so it is the filled button on the
+   right where a hand goes. Removing is rare and cannot be undone, so it is
+   quiet, at the other end, and out of that path — two buttons of equal weight
+   an inch apart still trade places under a quick hand. */
+.cartPreviewFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-6);
+  margin-block-start: var(--s-2);
+}
+
+.cartPreviewRemove.cartPreviewRemove {
+  color: var(--ct-red);
+}
+
+/* Dismiss and destroy pushed to opposite ends. Side by side they were a pair
+   of buttons a hand could slip between; they are not a pair — one closes a
+   reader's look at an item, the other throws the item away. */
+/* Close is where nearly every visit ends, so it is the filled button on the
+   right where a hand goes. Removing is rare and cannot be undone, so it is
+   quiet, at the other end, and out of that path — two buttons of equal weight
+   an inch apart still trade places under a quick hand. */
+.cartPreviewFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-6);
+  margin-block-start: var(--s-2);
+}
+
+.cartPreviewRemove.cartPreviewRemove {
+  color: var(--ct-red);
+}
+
+/* In the corner, over the tile, the way a composer puts it. */
+.cartRemove {
+  position: absolute;
+  inset-block-start: -6px;
+  inset-inline-end: -6px;
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-full);
+  background: var(--c-raised);
+  color: var(--c-ink3);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.cartItem:hover .cartRemove,
+.cartRemove:focus-visible {
+  opacity: 1;
+}
+
+.cartRemove:hover {
+  color: var(--c-ink);
+}
+
+.cartRemove:focus-visible {
+  outline: 2px solid var(--c-focus);
+  outline-offset: 1px;
 }

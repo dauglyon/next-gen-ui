@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
+import type { CSSProperties } from 'react';
 import { CaretRight } from '@phosphor-icons/react';
-import { iconFor } from '../host/icons';
+import { hueFor, iconFor } from '../host/icons';
 import type { PanelId } from '../core';
 import { makePanel } from '../core';
 import { useDispatch, useLayout, useServices } from './context';
@@ -23,9 +24,27 @@ export function Breadcrumbs({ panel }: { panel: PanelId }) {
   // tints it (Home.tsx:162). Without it `iconFor` leaves the glyph untinted and
   // a plugin naming itself in its trail draws in plain ink.
   const tint = source.manifests().find((m) => m.id === plugin)?.color;
+  // The bar wears the plugin's colour too, not just the mark. A trail is the
+  // one row that is always on screen while a plugin's panel is, so it is where
+  // whose-panel-this-is belongs. The hue reaches the bar and the first crumb —
+  // the plugin's own name — and stops: the crumbs after it are places inside
+  // the plugin, and colouring those would say the hue meant something else.
+  const hue = hueFor(tint);
 
   return (
-    <nav className={styles.crumbs} aria-label="Breadcrumbs">
+    <nav
+      className={styles.crumbs}
+      aria-label="Breadcrumbs"
+      style={
+        hue
+          ? ({
+              '--crumb-tint': hue.tint,
+              '--crumb-edge': hue.edge,
+              '--crumb-ink': hue.ink,
+            } as CSSProperties)
+          : undefined
+      }
+    >
       {crumbs.map((crumb, i) => {
         const last = i === crumbs.length - 1;
         const Mark = crumb.icon ? iconFor(crumb.icon, tint) : null;
@@ -36,7 +55,7 @@ export function Breadcrumbs({ panel }: { panel: PanelId }) {
           </>
         );
         return (
-          <span key={`${crumb.label}-${i}`} className={styles.crumb}>
+          <span key={`${crumb.label}-${i}`} className={i === 0 ? styles.crumbFirst : styles.crumb}>
             {i > 0 && <CaretRight size={11} className={styles.crumbSep} aria-hidden="true" />}
             {crumb.action && plugin && !last ? (
               <button

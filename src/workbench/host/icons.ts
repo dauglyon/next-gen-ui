@@ -56,6 +56,29 @@ export const ICON_COLORS: Readonly<Record<string, string>> = {
   red: 'var(--ct-red)',
 };
 
+// The same six names, as the tiers meant for surfaces rather than glyphs:
+// `bg-*` is the page tint a hue is allowed to fill with, `bo-*` the border
+// that goes with it, `ct-*` the only tier that may carry text. A plugin names
+// one colour in its manifest; this is how far that one name reaches.
+export interface Hue {
+  ink: string;
+  tint: string;
+  edge: string;
+}
+
+const HUES: Readonly<Record<string, Hue>> = {
+  blue: { ink: 'var(--ct-primary)', tint: 'var(--bg-primary)', edge: 'var(--bo-primary)' },
+  green: { ink: 'var(--ct-green)', tint: 'var(--bg-green)', edge: 'var(--bo-green)' },
+  teal: { ink: 'var(--ct-teal)', tint: 'var(--bg-teal)', edge: 'var(--bo-teal)' },
+  purple: { ink: 'var(--ct-purple)', tint: 'var(--bg-purple)', edge: 'var(--bo-purple)' },
+  orange: { ink: 'var(--ct-orange)', tint: 'var(--bg-orange)', edge: 'var(--bo-orange)' },
+  red: { ink: 'var(--ct-red)', tint: 'var(--bg-red)', edge: 'var(--bo-red)' },
+};
+
+export function hueFor(color: string | undefined): Hue | undefined {
+  return color ? HUES[color] : undefined;
+}
+
 // Duotone draws the glyph over a wash of itself, so one colour gives both
 // tones and the icon keeps working against either background.
 const WEIGHT = 'duotone' as const;
