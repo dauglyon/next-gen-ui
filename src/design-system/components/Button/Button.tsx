@@ -9,6 +9,13 @@ export type ButtonSize = 'xs' | 'sm' | 'md';
 export interface ButtonProps extends Omit<BaseButton.Props, 'className'> {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  /**
+   * Drops the bold face every button otherwise carries, for a control that has
+   * to sit in a line of body or caption text without outweighing it — a small
+   * action on a section's own caption row. Everything else about the variant is
+   * unchanged, so it still reads and behaves as a button.
+   */
+  quiet?: boolean;
   className?: string;
 }
 
@@ -20,13 +27,13 @@ export interface ButtonProps extends Omit<BaseButton.Props, 'className'> {
  * warns, production is silent. The same applies to every wrapper here with a `render =` default.
  */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = 'primary', size = 'md', className, children, ...props },
+  { variant = 'primary', size = 'md', quiet, className, children, ...props },
   ref,
 ) {
   return (
     <BaseButton
       ref={ref}
-      className={cx(styles.btn, styles[variant], styles[size], className)}
+      className={cx(styles.btn, styles[variant], styles[size], quiet && styles.quiet, className)}
       {...props}
     >
       {children}

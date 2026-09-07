@@ -206,7 +206,7 @@ function Tab({
           </span>
         )}
         <span className={styles.tabTitle}>{title}</span>
-        <span className={styles.tabClose} aria-hidden="true" onClick={close} title="Close">
+        <span className={styles.tabClose} aria-hidden="true" onClick={close}>
           <X size={12} weight="bold" />
         </span>
       </ContextMenu.Trigger>

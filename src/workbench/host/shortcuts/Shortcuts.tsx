@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { Button, Toolbar } from '@kbase/design-system';
+import { Tooltip, Button, Toolbar } from '@kbase/design-system';
 import { usePanelTitle } from '../../../plugins/sdk';
 import { useRun, useServices } from '../../react/context';
 import { iconFor } from '../icons';
@@ -32,21 +32,28 @@ export function ShortcutsNavigator() {
     return <p className={`caption ${styles.empty}`}>No plugin offers shortcuts.</p>;
   }
   return (
-    <Toolbar.Root className={styles.list} aria-label="Shortcuts">
-      {shortcuts.map((s) => {
-        const Icon = iconFor(s.icon, s.color);
-        return (
-          <Toolbar.Button
-            key={s.key}
-            render={<Button size="xs" variant="outline" />}
-            title={s.title}
-            onClick={() => void run(s.name)}
-          >
-            <Icon size={14} aria-hidden="true" />
-            {s.label}
-          </Toolbar.Button>
-        );
-      })}
-    </Toolbar.Root>
+    <Tooltip.Provider delay={300}>
+      <Toolbar.Root className={styles.list} aria-label="Shortcuts">
+        {shortcuts.map((s) => {
+          const Icon = iconFor(s.icon, s.color);
+          return (
+            <Tooltip.Root key={s.key}>
+              <Tooltip.Trigger
+                render={
+                  <Toolbar.Button
+                    render={<Button size="xs" variant="outline" />}
+                    onClick={() => void run(s.name)}
+                  />
+                }
+              >
+                <Icon size={14} aria-hidden="true" />
+                {s.label}
+              </Tooltip.Trigger>
+              <Tooltip.Popup>{s.title}</Tooltip.Popup>
+            </Tooltip.Root>
+          );
+        })}
+      </Toolbar.Root>
+    </Tooltip.Provider>
   );
 }
