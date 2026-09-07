@@ -18,6 +18,7 @@ import {
   PushPin,
   SquaresFour,
   Table,
+  TreeStructure,
 } from '@phosphor-icons/react';
 
 // Manifests name an icon; the host owns the table so a plugin cannot pull
@@ -38,6 +39,7 @@ export const ICONS: Readonly<Record<string, ComponentType<IconProps>>> = {
   Nut,
   SquaresFour,
   Table,
+  TreeStructure,
 };
 
 // A manifest names a colour the same way it names an icon: from a table

@@ -54,7 +54,10 @@ const bundled = localPlugins.filter((p) => !standDown.has(p.manifest.id));
 const workbench = createWorkbench({
   installed: await loadInstalled(bundled),
   storage: window.localStorage,
-  defaultPinned: ['shortcuts', 'related', 'koros', 'data', 'jobs'],
+  // Related is last on purpose: it appears and disappears with what is on
+  // screen, and anywhere above the navigators it would shove them down the
+  // column every time it did.
+  defaultPinned: ['shortcuts', 'koros', 'data', 'jobs', 'related'],
   defaultAssistant: 'koros',
 });
 
