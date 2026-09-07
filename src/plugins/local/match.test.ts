@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { match as data } from './data/match';
 import { match as jobs } from './jobs/match';
-import { match as genknown } from './genknown/match';
 
-const matchers = { data, jobs, genknown };
+const matchers = { data, jobs };
 
 describe('local matchers', () => {
   it('say nothing about empty or unrelated text', () => {
@@ -21,11 +20,6 @@ describe('local matchers', () => {
         expect(Object.keys(offer.action).length, name).toBeGreaterThan(0);
       }
     }
-  });
-
-  it('recognises identifiers by shape', () => {
-    expect(genknown('GCF_000005845.2')[0].action.assembly).toBe('GCF_000005845.2');
-    expect(genknown('E. coli')[0].action).toEqual({ view: 'organism', organism: 'E. coli' });
   });
 
   it('answers from an inventory where the plugin has one', () => {

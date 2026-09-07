@@ -9,7 +9,7 @@ import styles from './Catalog.module.css';
 // answers the prompt bar. Reaches host services directly, which no plugin
 // over the SDK can.
 export function CatalogDocument() {
-  usePanelTitle('Catalog');
+  usePanelTitle('Settings');
   const { source, settings } = useServices();
   const layout = useLayout();
   const dispatch = useDispatch();

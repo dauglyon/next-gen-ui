@@ -144,11 +144,12 @@ describe('Workbench', () => {
     await user.keyboard('{Tab}');
     expect(box).toHaveValue('/open ');
     // Not pinned, so nothing of it has loaded yet.
-    expect(services.source.loaded('genknown')).toBeUndefined();
-    await user.type(box, 'genknown{Enter}');
-    expect(await screen.findByRole('tab', { name: /genknown/i })).toBeInTheDocument();
-    expect(await screen.findByRole('group', { name: 'GenKnown' })).toBeInTheDocument();
-    expect(services.source.loaded('genknown')).toBeDefined();
+    expect(services.source.loaded('catalog')).toBeUndefined();
+    await user.type(box, 'catalog{Enter}');
+    expect(await screen.findByRole('tab', { name: /settings/i })).toBeInTheDocument();
+    // Its own content, not just a tab: the panel loaded and rendered.
+    expect(await screen.findByRole('heading', { name: 'Installed' })).toBeInTheDocument();
+    expect(services.source.loaded('catalog')).toBeDefined();
   });
 
   it('sends free text to the assistant and lands it in an arc', async () => {

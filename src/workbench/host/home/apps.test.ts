@@ -24,7 +24,7 @@ const manifest = (id: string, document?: Manifest['document']): Manifest => ({
 
 describe('apps on the launcher', () => {
   it('offers a document that takes no params', () => {
-    expect(isApp(manifest('genknown', { route: '/' }))).toBe(true);
+    expect(isApp(manifest('settings', { route: '/' }))).toBe(true);
   });
 
   it('withholds a document whose route names a value it has no way to supply', () => {

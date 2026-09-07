@@ -26,8 +26,8 @@ describe('resolveDeepLink', () => {
 
   it('treats an app page as the empty route', () => {
     const s = services();
-    expect(resolveDeepLink(s, 'genknown', '')).toEqual({ ok: true });
-    expect(s.store.get().focus).toBe('genknown/document');
+    expect(resolveDeepLink(s, 'catalog', '')).toEqual({ ok: true });
+    expect(s.store.get().focus).toBe('catalog/document');
   });
 
   // pathForPanel writes params the route cannot spell into the query;
@@ -35,11 +35,11 @@ describe('resolveDeepLink', () => {
   // second one on every round trip.
   it('takes params from the query as well as the path', () => {
     const s = services();
-    expect(resolveDeepLink(s, 'genknown', '', '?q=P0A7B8')).toEqual({ ok: true });
-    expect(Object.keys(s.store.get().panels)).toContain('genknown/document?q=P0A7B8');
-    resolveDeepLink(s, 'genknown', '', '?q=P0A7B8');
+    expect(resolveDeepLink(s, 'catalog', '', '?q=P0A7B8')).toEqual({ ok: true });
+    expect(Object.keys(s.store.get().panels)).toContain('catalog/document?q=P0A7B8');
+    resolveDeepLink(s, 'catalog', '', '?q=P0A7B8');
     expect(
-      Object.keys(s.store.get().panels).filter((k) => k.startsWith('genknown/document')),
+      Object.keys(s.store.get().panels).filter((k) => k.startsWith('catalog/document')),
     ).toHaveLength(1);
   });
 
