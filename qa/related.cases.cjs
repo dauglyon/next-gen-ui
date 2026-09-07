@@ -29,8 +29,8 @@ const check = (id, expected, actual, pass) => {
   const headers = await page.locator('[class*="blockHeader"]').allInnerTexts();
   check('A2 no terms → no rows', '0 rows', `${homeRows} rows`, homeRows === 0);
   const emptyBody = await page.locator('[class*="relatedEmpty"]').innerText().catch(() => '(none)');
-  check('A15 empty block says so', 'a line explaining the empty block', emptyBody,
-        /Nothing else here/.test(emptyBody));
+  check('A15 empty block says so', "the house empty state: a title and what would fill it", emptyBody.replace(/\n/g, ' | '),
+        /Nothing related/.test(emptyBody) && /add to the cart/.test(emptyBody));
 
   // A1 — the view section
   await page.goto(`${BASE}/p/function-junction/protein/P0AEX9`);
@@ -98,9 +98,13 @@ const check = (id, expected, actual, pass) => {
         requests.filter((u) => u.includes('/services/')).length === 0);
   check('A6b add lands in the cart', 'one item', JSON.stringify(cart), cart.length === 1);
 
+  // Holding a thing is a reason not to offer to add it again, not a reason to
+  // hide the page it lives on: the row stays as a link, the + goes.
   const rowsAfterAdd = (await rows().allInnerTexts()).join(' ; ');
-  check('A6c accepted row leaves the list', 'the added proposal is gone', rowsAfterAdd || '(none)',
-        !/Taxon dossier for taxon 83333/.test(rowsAfterAdd));
+  const addsAfter = await page.locator('[class*="relatedAdd"]').count();
+  check('A6c accepted row keeps its link, loses its plus', 'row present, no add button',
+        `${rowsAfterAdd || '(none)'} / adds: ${addsAfter}`,
+        /Taxon dossier for taxon 83333/.test(rowsAfterAdd) && addsAfter === 0);
 
   // remove it again from the cart tray
   const remove = page.locator('[class*="cartRemove"]').first();

@@ -87,7 +87,17 @@ export function createRelatedRunner(
           }
         }),
       );
-      return answered.flat();
+      // Two terms can lead a plugin to the same page — a protein's accession
+      // and its taxon both reach the same dossier here — and two rows opening
+      // the same thing is noise. First answer wins, since a plugin orders its
+      // own proposals.
+      const seen = new Set<string>();
+      return answered.flat().filter((item) => {
+        const target = `${item.plugin} ${JSON.stringify(item.proposal.params)}`;
+        if (seen.has(target)) return false;
+        seen.add(target);
+        return true;
+      });
     };
 
     const [viewItems, cartItems] = await Promise.all([
@@ -110,13 +120,23 @@ export function createRelatedRunner(
     const onScreen = input.view
       ? `${input.view.plugin} ${JSON.stringify(input.view.params ?? {})}`
       : null;
+    // Already holding a thing is a reason not to offer to add it again — not
+    // a reason to hide the page it lives on. Dropping the whole row meant the
+    // cart section could say nothing at all about what you had collected,
+    // which is the one thing it exists to do. The row stays as a link; only
+    // the `+` goes.
     const fresh = (items: RelatedItem[]) =>
-      items.filter(
-        (i) =>
-          !store.dismissed(i.key) &&
-          !(i.proposal.item && held.has(itemIdOf(i))) &&
-          `${i.plugin} ${JSON.stringify(i.proposal.params)}` !== onScreen,
-      );
+      items
+        .filter(
+          (i) =>
+            !store.dismissed(i.key) &&
+            `${i.plugin} ${JSON.stringify(i.proposal.params)}` !== onScreen,
+        )
+        .map((i) =>
+          i.proposal.item && held.has(itemIdOf(i))
+            ? { ...i, proposal: { ...i.proposal, item: undefined } }
+            : i,
+        );
 
     const sections: RelatedSection[] = [];
     if (input.view) {
