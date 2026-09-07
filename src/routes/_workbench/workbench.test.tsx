@@ -73,9 +73,9 @@ describe('workbench deep links', () => {
   });
 
   it('links to an app page with an empty route', async () => {
-    const { router } = mountAt('/p/genknown');
-    expect(await screen.findByRole('tab', { name: /genknown/i })).toBeInTheDocument();
-    expect(pathname(router)).toBe('/p/genknown');
+    const { router } = mountAt('/p/catalog');
+    expect(await screen.findByRole('tab', { name: /settings/i })).toBeInTheDocument();
+    expect(pathname(router)).toBe('/p/catalog');
   });
 
   it('a link to nothing announces why and lands on the workbench', async () => {
