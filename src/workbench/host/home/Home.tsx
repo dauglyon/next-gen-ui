@@ -100,9 +100,12 @@ export function HomeDocument() {
 // steps four to seven were not part of that path; they are things the
 // workbench can do, and they sit after it as such.
 //
-// The subject is the workbench, not any tool in it. Function Junction appears
-// once, named as the example that happens to be installed, because a journey
-// written around it would teach a reader this page is that tool's front door.
+// The subject is the shell's architecture, not the platform it serves and not
+// the plugins it hosts. Four mechanisms, one per step: text offered to every
+// plugin rather than routed by the host, code fetched at runtime from a
+// manifest, a cart the host owns so plugins need not know each other, and an
+// assistant that is itself a plugin the prompt is routed to. Function Junction
+// is the thing to press, never the thing being described.
 function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
   return (
     <section className={styles.tour} aria-labelledby="home-tour">
@@ -121,9 +124,9 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
           <div className={styles.stepBody}>
             <h3 className={styles.stepTitle}>Type what you are after</h3>
             <p className={styles.stepText}>
-              Put <Key>nifH</Key> in the box at the bottom. Every tool installed sees it and the
-              ones that recognise the kind of thing you typed offer to take it. None of them
-              searched.{' '}
+              Put <Key>nifH</Key> in the box at the bottom. The workbench does not know what nifH
+              is. It hands the text to every installed plugin and shows you the ones that answered,
+              so recognising an identifier is the plugin's job and routing you to it is the shell's.{' '}
               <button type="button" className={styles.tourLink} onClick={onFocusPrompt}>
                 Put the cursor there
               </button>
@@ -136,12 +139,12 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
             2
           </span>
           <div className={styles.stepBody}>
-            <h3 className={styles.stepTitle}>Open a tool</h3>
+            <h3 className={styles.stepTitle}>Open Function Junction</h3>
             <p className={styles.stepText}>
-              Tools come from anywhere and are listed below. Some are full pages like this one,
-              others are the small panels down the left; either way they are add-ons rather than
-              parts of the site. The one installed here, Function Junction, takes a protein —
-              <Key>P0AEX9</Key> — and reports what every source it knows says about it.
+              Until you press it, the workbench holds only a manifest: a name, an icon, a route, and
+              an address to fetch the code from. Opening it loads that code at runtime and gives it
+              a tab. Nothing about it was compiled in, so it ships on its own and the shell needs no
+              release to carry a new one.
             </p>
           </div>
         </li>
@@ -153,8 +156,10 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
           <div className={styles.stepBody}>
             <h3 className={styles.stepTitle}>Add what matters to the cart</h3>
             <p className={styles.stepText}>
-              Any tool can offer things to the cart — a result, a row, a whole report. Whatever you
-              add appears above the box at the bottom; press a tile to see everything it carries.
+              The cart belongs to the shell, so anything can fill it and anything can read it. An
+              item carries the data itself rather than a handle to it, which is what lets it outlive
+              the panel it came from and be read by a plugin that knows nothing about the one that
+              added it. Press a tile to see everything an item holds.
             </p>
           </div>
         </li>
@@ -166,8 +171,9 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
           <div className={styles.stepBody}>
             <h3 className={styles.stepTitle}>Send it with a question</h3>
             <p className={styles.stepText}>
-              Type a question and press Enter. The cart goes with the message, so the assistant
-              answers holding what you collected rather than a link to it.
+              Press Enter and the shell routes the text, and the cart with it, to whichever plugin
+              is set as the assistant. It is a plugin like the rest — it declares that it handles
+              prompts, and the workbench hands it what you typed and what you collected.
             </p>
           </div>
         </li>
