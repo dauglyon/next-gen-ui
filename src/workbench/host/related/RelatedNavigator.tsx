@@ -1,7 +1,7 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { ArrowUpRight, Plus, X } from '@phosphor-icons/react';
 import { Tooltip } from '@kbase/design-system';
-import { groupOf, makePanel } from '../../core';
+import { groupOf, groups, makePanel } from '../../core';
 import type { RelatedItem, RelatedSection } from '../../core';
 import { PluginMark } from '../PluginMark';
 import { useDispatch, useLayout, useServices } from '../../react/context';
@@ -38,20 +38,34 @@ export function RelatedNavigator() {
   const cartTerms = items.flatMap((i) => i.terms ?? []);
 
   const viewKey = viewTerms.join(',');
-  const cartKey = cartTerms.join(',');
+  // The cart's identity, not its size: swapping one item for another leaves
+  // the count alone, and a count is what this used to watch.
+  const cartKey = items.map((i) => `${i.id}#${(i.terms ?? []).join('+')}`).join('|');
   useEffect(() => {
     relatedRunner.run({
-      view: front && viewKey ? { plugin: front.plugin, subject: subjectOf(front), terms: viewTerms } : null,
+      view:
+        front && viewKey
+          ? { plugin: front.plugin, subject: subjectOf(front), terms: viewTerms }
+          : null,
       cart: { count: items.length, terms: cartTerms },
       held: items.map((i) => i.id),
     });
     // Values, not the arrays holding them.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [front?.plugin, front?.id, viewKey, cartKey, items.length]);
+  }, [front?.plugin, front?.id, viewKey, cartKey]);
+
+  useEffect(() => () => relatedRunner.stop(), [relatedRunner]);
 
   const { sections, loading } = related.get();
+  // The block's header is drawn by the sidebar whether or not this has
+  // anything in it, so an empty body is furniture with nothing under it. It
+  // says which of the two it is instead.
   if (sections.length === 0) {
-    return loading ? <p className={`caption ${styles.relatedEmpty}`}>Asking…</p> : null;
+    return (
+      <p className={`caption ${styles.relatedEmpty}`}>
+        {loading ? 'Asking…' : 'Nothing else here is about this page.'}
+      </p>
+    );
   }
 
   return (
@@ -79,7 +93,11 @@ function Section({ section }: { section: RelatedSection }) {
       </p>
       <ul className={styles.relatedList}>
         {section.items.map((item) => (
-          <Row key={item.key} item={item} title={source.manifest(item.plugin)?.title ?? item.plugin} />
+          <Row
+            key={item.key}
+            item={item}
+            title={source.manifest(item.plugin)?.title ?? item.plugin}
+          />
         ))}
       </ul>
       {Object.entries(section.overflow).map(([title, n]) => (
@@ -152,10 +170,16 @@ function Row({ item, title }: { item: RelatedItem; title: string }) {
   );
 }
 
-// The panel at the front of the main area, if any.
+// The panel at the front of the main area.
+//
+// Never `layout.focus` on its own: focus follows the pointer into the sidebar,
+// and clicking a row in this very pane would then make the pane about the
+// pane. The main area's focused group if focus is in it, otherwise the first
+// group's active tab — what a reader would call "the page I am on".
 function frontPanel(layout: ReturnType<typeof useLayout>) {
-  const group = layout.focus ? groupOf(layout.main, layout.focus) : undefined;
-  const id = group?.active ?? layout.focus;
+  const focused = layout.focus ? groupOf(layout.main, layout.focus) : undefined;
+  const group = focused ?? groups(layout.main).find((g) => g.tabs.length > 0);
+  const id = group?.active ?? group?.tabs[0];
   const panel = id ? layout.panels[id] : undefined;
   return panel && id ? { ...panel, id } : null;
 }

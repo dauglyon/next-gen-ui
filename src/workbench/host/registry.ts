@@ -26,8 +26,15 @@ export async function fetchRegistry(
 }
 
 // A registry manifest becomes an installed plugin whose code arrives over
-// Module Federation on first use. Registration is idempotent per id.
-const registered = new Set<string>();
+// Module Federation on first use.
+//
+// Registered once per id, and re-registered only if the entry URL actually
+// changes. Calling `registerRemotes` again for a remote already registered
+// warns — "overriding it may cause unexpected errors" — and every plugin
+// printed that on load, because each of `load`, `loadMatch` and `loadRelated`
+// registered before fetching and the guard passed `force` instead of
+// returning.
+const registered = new Map<string, string>();
 
 export function remotePlugin(manifest: Manifest, base: string = REGISTRY_BASE): InstalledPlugin {
   const entry = manifest.entry;
@@ -36,8 +43,10 @@ export function remotePlugin(manifest: Manifest, base: string = REGISTRY_BASE): 
     entry.url.startsWith('/') || /^https?:/.test(entry.url) ? entry.url : `${base}/${entry.url}`;
 
   const register = () => {
-    registerRemotes([{ name: manifest.id, entry: url }], { force: registered.has(manifest.id) });
-    registered.add(manifest.id);
+    const already = registered.get(manifest.id);
+    if (already === url) return;
+    registerRemotes([{ name: manifest.id, entry: url }], { force: already !== undefined });
+    registered.set(manifest.id, url);
   };
   const exposed = (name: string) => `${manifest.id}/${name.replace(/^\.\//, '')}`;
 

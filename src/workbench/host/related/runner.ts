@@ -59,6 +59,11 @@ export function createRelatedRunner(
 
     const gather = async (terms: string[], context: 'view' | 'cart'): Promise<RelatedItem[]> => {
       if (terms.length === 0) return [];
+      // Part of every key below. A plugin may reuse a proposal id across
+      // subjects — Function Junction's demo pair answers `dossier:P0AEX9` for
+      // any taxon — so without this, turning a suggestion down on one page
+      // would silently turn it down on every other page it appears for.
+      const about = [...terms].sort().join(',');
       const answered = await Promise.all(
         modules.map(async ({ plugin, module }) => {
           // A plugin is never handed its own view back: Function Junction has
@@ -67,10 +72,10 @@ export function createRelatedRunner(
           try {
             const proposals = await module.related({ terms, context, signal: controller.signal });
             return proposals.map((proposal) => ({
-              // The context is part of the key: the same suggestion can arrive
-              // from both directions, and dismissing it in one place should
-              // not silently remove it from the other.
-              key: keyOf(plugin, `${context}:${proposal.id}`),
+              // The context and the terms are part of the key: the same
+              // suggestion arriving from both directions is two rows, and a
+              // dismissal belongs to the question it answered.
+              key: keyOf(plugin, `${context}:${about}:${proposal.id}`),
               plugin,
               context,
               proposal,
@@ -91,7 +96,6 @@ export function createRelatedRunner(
     ]);
     if (controller.signal.aborted) return;
 
-    answers.clear();
     for (const item of [...viewItems, ...cartItems]) answers.set(item.key, item);
 
     const titleOf = (id: string) => source.manifest(id)?.title ?? id;
@@ -108,13 +112,19 @@ export function createRelatedRunner(
     if (input.view) {
       const { items, overflow } = capped(fresh(viewItems), titleOf);
       if (items.length)
-        sections.push({ context: 'view', subject: input.view.subject, count: 1, items, overflow });
+        sections.push({ context: 'view', subject: input.view.subject, items, overflow });
     }
     {
       const { items, overflow } = capped(fresh(cartItems), titleOf);
       if (items.length)
-        sections.push({ context: 'cart', subject: '', count: input.cart.count, items, overflow });
+        sections.push({ context: 'cart', count: input.cart.count, items, overflow });
     }
+    // Forget only what is no longer on screen: `accept` reads this map from a
+    // click handler, and a round finishing between the render and the press
+    // would otherwise make the press do nothing.
+    const shown = new Set(sections.flatMap((sec) => sec.items.map((i) => i.key)));
+    for (const key of answers.keys()) if (!shown.has(key)) answers.delete(key);
+
     store.set({ sections, loading: false });
   };
 

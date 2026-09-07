@@ -23,16 +23,18 @@ export interface RelatedItem {
   proposal: Proposal;
 }
 
-export interface RelatedSection {
-  context: RelatedContext;
-  // What the section was computed from, for its heading: the view's subject,
-  // or — for the cart — how many items it holds.
-  subject: string;
-  count: number;
+// A section says what it was computed from, and the two are computed from
+// different things: a view has a subject, a cart has a size. Kept as a union
+// so neither carries a field that means nothing to it.
+interface SectionBase {
   items: RelatedItem[];
   // Beyond the per-plugin cap, by plugin title: `{ diaspora: 2 }`.
   overflow: Record<string, number>;
 }
+
+export type RelatedSection =
+  | (SectionBase & { context: 'view'; subject: string })
+  | (SectionBase & { context: 'cart'; count: number });
 
 export interface RelatedState {
   sections: RelatedSection[];
