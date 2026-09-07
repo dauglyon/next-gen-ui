@@ -52,7 +52,7 @@ export function createRelatedRunner(
 
     const { view, cart: cartTerms } = split(input.view?.terms ?? [], input.cart.terms);
     if (view.length === 0 && cartTerms.length === 0) {
-      store.set({ sections: [], loading: false });
+      store.set({ sections: [], loading: false, covered: 0 });
       return;
     }
     store.set({ ...store.get(), loading: true });
@@ -121,13 +121,15 @@ export function createRelatedRunner(
     // compared on plugin and params, which is what a panel's identity is.
     const held = new Set(input.held);
     const open = new Set(input.open);
+    let covered = 0;
     const fresh = (items: RelatedItem[]) =>
-      items.filter(
-        (i) =>
-          !store.dismissed(i.key) &&
-          !open.has(`${i.plugin} ${JSON.stringify(i.proposal.params)}`) &&
-          !held.has(itemIdOf(i)),
-      );
+      items.filter((i) => {
+        if (store.dismissed(i.key)) return false;
+        const has =
+          open.has(`${i.plugin} ${JSON.stringify(i.proposal.params)}`) || held.has(itemIdOf(i));
+        if (has) covered += 1;
+        return !has;
+      });
 
     const sections: RelatedSection[] = [];
     if (input.view) {
@@ -154,7 +156,7 @@ export function createRelatedRunner(
     const shown = new Set(sections.flatMap((sec) => sec.items.map((i) => i.key)));
     for (const key of answers.keys()) if (!shown.has(key)) answers.delete(key);
 
-    store.set({ sections, loading: false });
+    store.set({ sections, loading: false, covered });
   };
 
   return {

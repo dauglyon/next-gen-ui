@@ -1322,6 +1322,13 @@
   color: var(--c-ink4);
 }
 
+.relatedCovered {
+  margin: 0;
+  padding: var(--s-2) var(--s-4) 0;
+  font-size: var(--fs-2);
+  color: var(--c-ink4);
+}
+
 .relatedList {
   margin: 0;
   padding: 0;
