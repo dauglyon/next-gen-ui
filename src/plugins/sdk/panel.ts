@@ -32,6 +32,9 @@ export interface PanelHandle {
   // The trail shown above this panel. Declaring none means no row. The
   // host also borrows from it to tell two same-titled tabs apart.
   setCrumbs: (crumbs: Crumb[]) => void;
+  // What this panel is about, as namespaced terms — `uniprot:P0AEX9`,
+  // `taxon:562`. The host asks other plugins what they have about them.
+  setTerms: (terms: string[]) => void;
 }
 
 export const PanelContext = createContext<PanelHandle | null>(null);
@@ -45,6 +48,15 @@ export function usePanel(): PanelHandle {
 export function usePanelTitle(title: string): void {
   const { setTitle } = usePanel();
   useEffect(() => setTitle(title), [setTitle, title]);
+}
+
+// Declared from inside the panel, which already holds whatever it took to
+// know them. The host does not pull: a hook it ran itself would run outside
+// the panel, and a plugin would have to fetch its own page again to answer.
+export function usePanelTerms(terms: string[]): void {
+  const { setTerms } = usePanel();
+  const key = terms.join(',');
+  useEffect(() => setTerms(key ? key.split(',') : []), [setTerms, key]);
 }
 
 export function usePanelBreadcrumbs(crumbs: Crumb[]): void {

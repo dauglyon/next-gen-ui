@@ -1,4 +1,4 @@
-export { PanelContext, usePanel, usePanelTitle, usePanelBreadcrumbs } from './panel';
+export { PanelContext, usePanel, usePanelTitle, usePanelBreadcrumbs, usePanelTerms } from './panel';
 export type { Crumb, PanelHandle, PanelKind, PanelParams } from './panel';
 export { HostContext, useHost } from './host';
 export type { PluginHost } from './host';

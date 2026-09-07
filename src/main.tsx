@@ -54,7 +54,7 @@ const bundled = localPlugins.filter((p) => !standDown.has(p.manifest.id));
 const workbench = createWorkbench({
   installed: await loadInstalled(bundled),
   storage: window.localStorage,
-  defaultPinned: ['shortcuts', 'koros', 'data', 'jobs'],
+  defaultPinned: ['shortcuts', 'related', 'koros', 'data', 'jobs'],
   defaultAssistant: 'koros',
 });
 

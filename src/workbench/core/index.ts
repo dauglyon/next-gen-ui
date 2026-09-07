@@ -12,3 +12,4 @@ export type { CartItem, CartAddition, CartStore } from './cart';
 export { createWorkbenchStore } from './store';
 export type { WorkbenchStore, StoreOptions, DispatchResult } from './store';
 export * from './related';
+export * from './terms';

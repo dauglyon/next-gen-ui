@@ -4,6 +4,7 @@ import {
   CART_STORAGE_KEY,
   createCartStore,
   createRelatedStore,
+  createTermStore,
   createWorkbenchStore,
   defaultLayout,
   deserialize,
@@ -22,10 +23,11 @@ import { createHostIndex } from './installed';
 import { catalog } from './catalog';
 import { home } from './home';
 import { shortcutsPlugin } from './shortcuts';
+import { relatedPlugin } from './related';
 import { routeParams } from './routes';
 import { createSettingsStore } from './settings';
-import { createRelatedRunner } from './related';
-import type { RelatedRunner } from './related';
+import { createRelatedRunner } from './related/runner';
+import type { RelatedRunner } from './related/runner';
 
 export const LAYOUT_STORAGE_KEY = 'workbench.layout.v1';
 
@@ -53,7 +55,7 @@ export function createWorkbench({
   const prompt = createPromptHandle();
   const preview = createPreviewHandle();
   const focusIntentRef: WorkbenchServices['focusIntentRef'] = { current: 'command' };
-  const source = createHostIndex([...installed, catalog, shortcutsPlugin, home]);
+  const source = createHostIndex([...installed, catalog, shortcutsPlugin, relatedPlugin, home]);
   const settings = createSettingsStore(storage, { assistant: defaultAssistant });
   // The cart is host state, not layout: it survives a layout reset, and it is
   // the thing most likely to move to the account later.
@@ -72,10 +74,12 @@ export function createWorkbench({
     return result.changed;
   };
   const related = createRelatedStore();
+  const terms = createTermStore();
   const services: WorkbenchServices = {
     store,
     cart,
     related,
+    terms,
     // Set below: the runner needs `source`, which the services object holds.
     relatedRunner: undefined as unknown as RelatedRunner,
     registry,

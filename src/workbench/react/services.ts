@@ -1,5 +1,5 @@
-import type { RelatedStore } from '../core';
-import type { RelatedRunner } from '../host/related';
+import type { RelatedStore, TermStore } from '../core';
+import type { RelatedRunner } from '../host/related/runner';
 import type { CartStore, PluginId, WorkbenchStore } from '../core';
 import type { CommandRegistry } from '../commands';
 import type { Operation } from '../core';
@@ -63,6 +63,8 @@ export interface WorkbenchServices {
   cart: CartStore;
   // What other plugins have to say about the front tab and the cart.
   related: RelatedStore;
+  // What each open panel says it is about.
+  terms: TermStore;
   relatedRunner: RelatedRunner;
   registry: CommandRegistry;
   source: HostIndex;

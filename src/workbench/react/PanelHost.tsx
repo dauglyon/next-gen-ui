@@ -1,4 +1,4 @@
-import { Component, Suspense, useCallback, useMemo } from 'react';
+import { Component, Suspense, useCallback, useEffect, useMemo } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { Button, EmptyState, Loader } from '@kbase/design-system';
 import { HostContext, PanelContext } from '../../plugins/sdk';
@@ -24,6 +24,12 @@ export function PanelHost({ panel, focused }: { panel: Panel; focused: boolean }
     (crumbs: Crumb[]) => services.crumbs.set(panel.id, crumbs),
     [services.crumbs, panel.id],
   );
+  const setTerms = useCallback(
+    (terms: string[]) => services.terms.set(panel.id, terms),
+    [services.terms, panel.id],
+  );
+  // A closed panel's terms are not the workbench's business any more.
+  useEffect(() => () => services.terms.forget(panel.id), [services.terms, panel.id]);
   const handle = useMemo<PanelHandle>(
     () => ({
       id: panel.id,
@@ -33,8 +39,9 @@ export function PanelHost({ panel, focused }: { panel: Panel; focused: boolean }
       focused,
       setTitle,
       setCrumbs,
+      setTerms,
     }),
-    [panel, focused, setTitle, setCrumbs],
+    [panel, focused, setTitle, setCrumbs, setTerms],
   );
   const host = useMemo<PluginHost>(
     () => pluginHostFor(services, panel.plugin),

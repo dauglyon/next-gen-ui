@@ -74,12 +74,10 @@ export function remotePlugin(manifest: Manifest, base: string = REGISTRY_BASE): 
       ? async () => {
           register();
           const mod = await loadRemote<Partial<RelatedModule>>(exposed(entry.related!));
-          if (typeof mod?.related !== 'function' || typeof mod.resolve !== 'function') {
-            throw new Error(
-              `plugin ${manifest.id} exposed no related/resolve pair at ${entry.related}`,
-            );
+          if (typeof mod?.related !== 'function') {
+            throw new Error(`plugin ${manifest.id} exposed no related() at ${entry.related}`);
           }
-          return { related: mod.related, resolve: mod.resolve };
+          return { related: mod.related };
         }
       : undefined,
   };

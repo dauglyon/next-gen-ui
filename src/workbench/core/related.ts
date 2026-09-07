@@ -25,9 +25,10 @@ export interface RelatedItem {
 
 export interface RelatedSection {
   context: RelatedContext;
-  // What the section was computed from, for its heading: an accession for a
-  // view, a count for the cart.
+  // What the section was computed from, for its heading: the view's subject,
+  // or — for the cart — how many items it holds.
   subject: string;
+  count: number;
   items: RelatedItem[];
   // Beyond the per-plugin cap, by plugin title: `{ diaspora: 2 }`.
   overflow: Record<string, number>;

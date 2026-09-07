@@ -1285,45 +1285,22 @@
 }
 
 
-/* The Related pane: a host-owned sidebar block, like Shortcuts. Hidden
-   entirely when no plugin has anything to say — a pane reading "Related · 0"
-   is furniture. */
-.relatedBlock {
+/* The Related navigator's own contents. The block around it — header, fold,
+   resize, rail glyph — is the sidebar's, like any other navigator's. */
+.related {
   display: flex;
   flex-direction: column;
-  border-bottom: 1px solid var(--c-border);
-  background: var(--c-surface);
-}
-
-.relatedHead {
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  padding: var(--s-2) var(--s-4) var(--s-2) var(--s-3);
-  background: var(--c-raised);
-  border-bottom: 1px solid var(--c-border);
-}
-
-.relatedTitle {
-  margin: 0;
-  font-size: var(--fs-5);
-  font-weight: var(--fw-bold);
-  color: var(--c-ink);
-}
-
-.relatedCount {
-  margin-inline-start: auto;
-  font-size: var(--fs-3);
-  color: var(--c-ink4);
-}
-
-.relatedSection {
   padding-block-end: var(--s-2);
 }
 
-/* What the list was computed from, and nothing else: the block says what the
-   relation is. Both sections take the same weight — the difference between
-   them is order, not rank. */
+.relatedEmpty {
+  margin: 0;
+  padding: var(--s-3) var(--s-4);
+}
+
+/* What the list was computed from, and nothing else: the block's own header
+   says what the relation is. Both sections take the same weight — the
+   difference between them is order, not rank. */
 .relatedFrom {
   display: flex;
   align-items: center;
@@ -1345,14 +1322,38 @@
 .relatedRow {
   display: flex;
   align-items: center;
-  gap: var(--s-2);
-  padding: var(--s-2) var(--s-3) var(--s-2) var(--s-4);
-  font-size: var(--fs-4);
-  color: var(--c-ink2);
+  gap: var(--s-1);
+  padding-inline-end: var(--s-2);
 }
 
 .relatedRow:hover {
   background: var(--c-raised);
+}
+
+/* The row is a link: pressing it opens the page the plugin named. */
+.relatedOpen {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-inline-size: 0;
+  padding: var(--s-2) var(--s-2) var(--s-2) var(--s-4);
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: var(--fs-4);
+  color: var(--c-ink2);
+  text-align: start;
+  cursor: pointer;
+}
+
+.relatedOpen:hover {
+  color: var(--c-ink);
+}
+
+.relatedOpen:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--c-focus);
 }
 
 .relatedMark {
@@ -1371,8 +1372,14 @@
   margin-inline-start: var(--s-2);
 }
 
-.relatedAdd {
+/* Where the row goes, shown on the row rather than only in the tooltip. */
+.relatedGo {
+  flex: none;
   margin-inline-start: auto;
+  color: var(--c-ink4);
+}
+
+.relatedAdd {
   display: inline-flex;
   flex: none;
   padding: 2px;
