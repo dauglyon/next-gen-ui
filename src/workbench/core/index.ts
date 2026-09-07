@@ -7,5 +7,7 @@ export type { ReduceContext } from './reduce';
 export { describe } from './describe';
 export type { TitleOf } from './describe';
 export { serialize, deserialize, validate } from './serialize';
+export { createCartStore, readCart, CartItemSchema, CART_STORAGE_KEY } from './cart';
+export type { CartItem, CartAddition, CartStore } from './cart';
 export { createWorkbenchStore } from './store';
 export type { WorkbenchStore, StoreOptions, DispatchResult } from './store';

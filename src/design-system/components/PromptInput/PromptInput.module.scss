@@ -35,6 +35,27 @@
   }
 }
 
+/* Above the field and spanning it, so the composer reads as one surface with
+   things set in it. Separated by a rule rather than a box: the surface is
+   already the container, and a second border inside it would make two. */
+.attachments {
+  grid-column: 1 / -1;
+  align-self: stretch;
+  min-width: 0;
+  padding-block-end: var(--s-3);
+  border-block-end: 1px solid var(--c-border);
+}
+
+/* Attachments need the same air two rows do. Doubled to outrank Frame. */
+.withAttachments.withAttachments {
+  row-gap: var(--s-3);
+  padding: var(--s-3) var(--s-5);
+
+  .field {
+    grid-column: 1 / -1;
+  }
+}
+
 .footerStart {
   display: flex;
   align-items: center;

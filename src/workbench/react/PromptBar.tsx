@@ -1,14 +1,15 @@
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import type { ComponentType, KeyboardEvent } from 'react';
-import { ArrowUpRight, CaretUpDown, Check } from '@phosphor-icons/react';
+import { ArrowUpRight, CaretRight, CaretUpDown, Check } from '@phosphor-icons/react';
 import type { IconProps } from '@phosphor-icons/react';
-import { Menu, PromptInput } from '@kbase/design-system';
+import { Menu, PromptInput, cx } from '@kbase/design-system';
 import type { Manifest, PromptContext } from '../../plugins/sdk';
 import { makePanel } from '../core';
 import type { Suggestion } from '../commands';
 import { complete, parse, resolve, usage } from '../commands';
 import { iconFor } from '../host/icons';
 import { routeParams } from '../host/routes';
+import { CartTray } from './CartTray';
 import { useDispatch, useLayout, useRun, useServices } from './context';
 import { focusPanelElement } from './useFocusSync';
 import styles from './Workbench.module.css';
@@ -32,13 +33,18 @@ export function PromptBar() {
   const [highlight, setHighlight] = useState(-1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { registry, announcer, prompt, settings, source, dispatch, preview } = useServices();
+  const { registry, announcer, prompt, settings, source, dispatch, preview, cart } = useServices();
   const layout = useLayout();
   const run = useRun();
   const wrapper = useRef<HTMLDivElement>(null);
   const abort = useRef<AbortController | null>(null);
   const listId = useId();
   const assistant = useSyncExternalStore(settings.subscribe, settings.get, settings.get).assistant;
+  // Read here rather than inside the tray: a component that renders null is
+  // still a non-null element, so passing it unconditionally would open the
+  // composer's attachments row — border, padding and all — around nothing.
+  useSyncExternalStore(cart.subscribe, cart.version, cart.version);
+  const inCart = cart.items().length;
   const assistantTitle = assistant ? source.manifest(assistant)?.title : undefined;
 
   useEffect(
@@ -83,12 +89,24 @@ export function PromptBar() {
     abort.current = controller;
     setBusy(true);
     try {
+      // The cart as it stands at send time, and then emptied: the attachments
+      // belong to the message, the way a photo does. Leaving them would attach
+      // them again to the next one.
+      const attachments = cart.items();
+      cart.clear();
       await handler(
-        { text, signal: controller.signal },
+        { text, signal: controller.signal, attachments },
         {
           openDocument: (params) =>
             void dispatch({ type: 'open', panel: makePanel(assistant, 'document', params) }),
           runCommand: (name, values) => run(name, values ?? {}),
+          cart: {
+            add: (item) => cart.add({ ...item, plugin: assistant, addedAt: Date.now() }),
+            remove: (id) => cart.remove(id),
+            has: (id) => cart.has(id),
+            count: () => cart.items().length,
+            subscribe: (listener) => cart.subscribe(listener),
+          },
         },
       );
     } catch (err) {
@@ -366,6 +384,8 @@ export function PromptBar() {
         busy={busy}
         onStop={() => abort.current?.abort()}
         footer={<PromptDestination />}
+        // Inside the composer, because the cart is part of what Send sends.
+        attachments={inCart > 0 ? <CartTray /> : undefined}
         maxRows={4}
         fieldProps={{
           role: 'combobox',
@@ -380,9 +400,10 @@ export function PromptBar() {
   );
 }
 
-// Where free text will land: the assistant, and — once its module has
-// loaded — the conversation it reports via usePromptContext. Lives inside
-// the composer's footer row, like an email's To line.
+// Where free text will land, written as a trail: the assistant, then the
+// conversation inside it that the message joins. The same shape as a panel's
+// breadcrumbs, because it is the same kind of fact — a place inside a plugin —
+// and the destination is a place the reader can also navigate to.
 function PromptDestination() {
   const { source, settings } = useServices();
   const assistant = useSyncExternalStore(settings.subscribe, settings.get, settings.get).assistant;
@@ -394,11 +415,13 @@ function PromptDestination() {
       </p>
     );
   }
-  const title = source.manifest(assistant)?.title ?? assistant;
+  const manifest = source.manifest(assistant);
+  const title = manifest?.title ?? assistant;
+  const Mark = iconFor(manifest?.icon, manifest?.color);
   const usePromptContext = source.loaded(assistant)?.usePromptContext;
   return (
     <p className={styles.promptContext}>
-      <span>To</span>
+      <Mark size={13} className={styles.promptMark} aria-hidden="true" />
       <span className={styles.promptDestination}>{title}</span>
       {usePromptContext && (
         <AssistantContext assistant={assistant} usePromptContext={usePromptContext} />
@@ -423,7 +446,7 @@ function AssistantContext({
   const switchable = !!options?.length && !!select;
   return (
     <>
-      <span aria-hidden="true">·</span>
+      <CaretRight size={11} className={styles.promptThread} aria-hidden="true" />
       {switchable ? (
         <Menu.Root>
           <Menu.Trigger
@@ -453,7 +476,7 @@ function AssistantContext({
       {documentParams && (
         <button
           type="button"
-          className={styles.promptTarget}
+          className={cx(styles.promptTarget, styles.promptJump)}
           aria-label={`Go to ${label}`}
           onClick={() =>
             dispatch({ type: 'open', panel: makePanel(assistant, 'document', documentParams) })

@@ -47,6 +47,13 @@ export interface PromptInputProps {
    * To line.
    */
   footer?: ReactNode;
+  /**
+   * A row inside the surface, above the field — what is travelling with the
+   * message, as a mail client puts its attachments in the draft rather than
+   * beside it. Inside, because a bordered strip stacked above the composer
+   * reads as a second control; these are part of what Send sends.
+   */
+  attachments?: ReactNode;
   disabled?: boolean;
   maxRows?: number;
   autoFocus?: boolean;
@@ -73,6 +80,7 @@ export function PromptInput({
   onStop,
   action,
   footer,
+  attachments,
   disabled,
   maxRows = 6,
   autoFocus,
@@ -97,8 +105,14 @@ export function PromptInput({
       <Frame
         paddingY={2}
         paddingX={4}
-        className={cx(styles.surface, footer != null && styles.withFooter, flush && styles.flush)}
+        className={cx(
+          styles.surface,
+          footer != null && styles.withFooter,
+          attachments != null && styles.withAttachments,
+          flush && styles.flush,
+        )}
       >
+        {attachments && <div className={styles.attachments}>{attachments}</div>}
         <Textarea
           {...fieldProps}
           rows={1}

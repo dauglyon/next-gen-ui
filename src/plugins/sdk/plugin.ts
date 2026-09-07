@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react';
+import type { CartItem } from './cart';
 import type { PluginHost } from './host';
 
 // The module a plugin's entry exports: the code side of the manifest. The
@@ -16,6 +17,18 @@ export type CommandValues = Record<string, string | number>;
 export interface PromptRequest {
   text: string;
   signal: AbortSignal;
+  // What the user attached to this message: everything in the cart when they
+  // sent it, from every plugin.
+  //
+  // Passed with the request rather than reachable through the host, for the
+  // reason a photo travels with a chat message and not as a link to a folder:
+  // the attachments are part of what was said. It also means an assistant sees
+  // the cart as it was at send time, not as it is when the promise resolves.
+  //
+  // Each item carries both a payload and a pointer, so a handler can read the
+  // content without calling back into the plugin that added it, and can still
+  // send the user back to where it came from.
+  attachments: readonly CartItem[];
 }
 
 // The assistant. Free text from the prompt bar arrives here; the handler

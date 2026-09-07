@@ -27,3 +27,5 @@ export { AppFrame } from './AppFrame';
 export type { AppFrameProps } from './AppFrame';
 export { FrameLayerContext, useFrameLayer } from './frames';
 export type { FrameLayer, FrameSpec } from './frames';
+export { useCart } from './cart';
+export type { CartAddition, CartHandle, CartItem } from './cart';

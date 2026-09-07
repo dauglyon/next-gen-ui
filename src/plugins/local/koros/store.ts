@@ -2,9 +2,22 @@
 // an arc holds the questions asked in it. Sessions are ephemeral and not
 // modelled here.
 
+// What the user attached to the question when they asked it, kept as it was at
+// send time. Enough of each item to show it and to reopen it — the payload
+// itself stays in the cart item the handler was given.
+export interface Attached {
+  id: string;
+  plugin: string;
+  kind: string;
+  name: string;
+  subject?: string;
+  params?: Record<string, string>;
+}
+
 export interface Question {
   id: string;
   text: string;
+  attached: Attached[];
   answer: string | null;
 }
 
@@ -43,6 +56,7 @@ function arc(slug: string, title: string, project: string, asked: string[]): Arc
     title,
     project,
     questions: asked.map((text, i) => ({
+      attached: [],
       id: `${slug}-${i}`,
       text,
       answer: 'Answered earlier (mock).',
@@ -83,14 +97,26 @@ export const koros = {
     notify();
     return created;
   },
-  ask(slug: string, text: string) {
+  ask(slug: string, text: string, attached: Attached[] = []) {
     const target = arcs.get(slug);
     if (!target) return;
-    const question: Question = { id: `${slug}-${target.questions.length}`, text, answer: null };
+    const question: Question = {
+      id: `${slug}-${target.questions.length}`,
+      text,
+      attached,
+      answer: null,
+    };
     target.questions = [...target.questions, question];
     notify();
     setTimeout(() => {
-      question.answer = `Mock answer to “${text}”. A real assistant would reason over the arc's data here.`;
+      // The mock answer names what it was given, so the cart's round trip is
+      // visible end to end rather than only in the composer.
+      const named = attached.map((a) => a.subject ?? a.name).join(', ');
+      question.answer = attached.length
+        ? `Mock answer to “${text}”, reasoning over ${attached.length} attached ${
+            attached.length === 1 ? 'item' : 'items'
+          }: ${named}.`
+        : `Mock answer to “${text}”. A real assistant would reason over the arc's data here.`;
       target.questions = [...target.questions];
       notify();
     }, 1500);

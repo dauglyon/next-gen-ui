@@ -1,4 +1,4 @@
-import type { PluginId, WorkbenchStore } from '../core';
+import type { CartStore, PluginId, WorkbenchStore } from '../core';
 import type { CommandRegistry } from '../commands';
 import type { Operation } from '../core';
 import type { HostIndex } from '../host/installed';
@@ -56,6 +56,9 @@ export function createPreviewHandle(): PreviewHandle {
 // loaders can reach the same store the components render.
 export interface WorkbenchServices {
   store: WorkbenchStore;
+  // Things the user has set aside. Host-owned: items come from plugins and are
+  // consumed by assistants, and neither can hold state the other reaches.
+  cart: CartStore;
   registry: CommandRegistry;
   source: HostIndex;
   settings: SettingsStore;

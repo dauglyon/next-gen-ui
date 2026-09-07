@@ -1,6 +1,15 @@
 import type { PluginHost } from '../../plugins/sdk';
 import type { PluginId } from '../core';
-import { createWorkbenchStore, defaultLayout, deserialize, makePanel, serialize } from '../core';
+import {
+  CART_STORAGE_KEY,
+  createCartStore,
+  createWorkbenchStore,
+  defaultLayout,
+  deserialize,
+  makePanel,
+  readCart,
+  serialize,
+} from '../core';
 import type { Command } from '../commands';
 import { createCommandRegistry, workbenchCommands } from '../commands';
 import { createAnnouncer, createCrumbStore, createTitleStore } from '../react';
@@ -43,6 +52,9 @@ export function createWorkbench({
   const focusIntentRef: WorkbenchServices['focusIntentRef'] = { current: 'command' };
   const source = createHostIndex([...installed, catalog, shortcutsPlugin, home]);
   const settings = createSettingsStore(storage, { assistant: defaultAssistant });
+  // The cart is host state, not layout: it survives a layout reset, and it is
+  // the thing most likely to move to the account later.
+  const cart = createCartStore(readCart(storage?.getItem(CART_STORAGE_KEY) ?? null));
 
   const fallback = () => defaultLayout({ pinned: defaultPinned });
   const store = createWorkbenchStore({
@@ -58,6 +70,7 @@ export function createWorkbench({
   };
   const services: WorkbenchServices = {
     store,
+    cart,
     registry,
     source,
     settings,
@@ -95,6 +108,16 @@ export function createWorkbench({
         storage.setItem(LAYOUT_STORAGE_KEY, serialize(store.get()));
       } catch {
         // Quota or privacy mode: the session still works, it just won't persist.
+      }
+    });
+    // Written separately from the layout: a cart outlives an arrangement, and
+    // a corrupt layout should not take the user's collected work with it.
+    cart.subscribe(() => {
+      try {
+        storage.setItem(CART_STORAGE_KEY, JSON.stringify(cart.items()));
+      } catch {
+        // A payload can be large. Losing persistence is better than losing the
+        // session, so a full quota is not an error the user has to handle.
       }
     });
   }
@@ -152,6 +175,20 @@ export function pluginHostFor(services: WorkbenchServices, plugin: PluginId): Pl
       void services.dispatch({ type: 'open', panel: makePanel(plugin, 'document', params) }),
     runCommand: async (name, values = {}) => {
       await services.registry.run(name, values);
+    },
+    // Scoped to the adding plugin: it stamps its own id on what it adds, and
+    // `has` and `count` answer about its own items only. What else is in the
+    // cart is the user's business and the assistant's.
+    cart: {
+      add: (item) =>
+        services.cart.add({ ...item, plugin, addedAt: Date.now() }),
+      remove: (id) => {
+        const own = services.cart.items().find((i) => i.id === id && i.plugin === plugin);
+        if (own) services.cart.remove(id);
+      },
+      has: (id) => services.cart.items().some((i) => i.id === id && i.plugin === plugin),
+      count: () => services.cart.items().filter((i) => i.plugin === plugin).length,
+      subscribe: (listener) => services.cart.subscribe(listener),
     },
   };
 }

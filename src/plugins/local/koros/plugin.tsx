@@ -70,6 +70,29 @@ function ArcDocument() {
             <p className="body" style={{ fontWeight: 'var(--fw-bold)' }}>
               {q.text}
             </p>
+            {/* What was in the cart when this was asked, on the question it
+                was asked with. Labels rather than links: an item's pointer
+                names another plugin's document, and the SDK's `openDocument`
+                opens only the calling plugin's own. Reopening the source needs
+                a cross-plugin open the host does not offer yet. */}
+            {q.attached.length > 0 && (
+              <ul
+                style={{
+                  margin: 0,
+                  padding: 0,
+                  listStyle: 'none',
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 'var(--s-2)',
+                }}
+              >
+                {q.attached.map((a) => (
+                  <li key={a.id}>
+                    <Chip color="neutral" label={`${a.subject ?? a.name} · ${a.kind}`} />
+                  </li>
+                ))}
+              </ul>
+            )}
             <p className="body" aria-busy={!q.answer}>
               {q.answer ?? 'Answering…'}
             </p>
@@ -93,12 +116,12 @@ function usePromptContext(): PromptContext | null {
   const slug = koros.current();
   const arc = slug ? koros.arc(slug) : undefined;
   return {
-    label: arc ? `Arc: ${arc.title}` : 'A new arc',
+    label: arc ? arc.title : 'A new arc',
     documentParams: arc ? { slug: arc.slug } : undefined,
     options: koros
       .projects()
       .flatMap((p) => koros.arcsOf(p.id))
-      .map((a) => ({ key: a.slug, label: `Arc: ${a.title}` })),
+      .map((a) => ({ key: a.slug, label: a.title })),
     select: (key) => koros.setCurrent(key),
   };
 }
@@ -114,10 +137,24 @@ export default definePlugin({
       host.openDocument({ slug: arc.slug });
     },
   },
-  // Free text lands in the current arc; with none, a new arc is started.
-  prompt: async ({ text }, host) => {
+  // Free text lands in the current arc; with none, a new arc is started. The
+  // cart travels with it: an attachment is part of what was asked, so it is
+  // recorded on the question rather than read from the cart later, which by
+  // then may hold something else.
+  prompt: async ({ text, attachments }, host) => {
     const slug = koros.current() ?? koros.newArc().slug;
-    koros.ask(slug, text);
+    koros.ask(
+      slug,
+      text,
+      attachments.map((item) => ({
+        id: item.id,
+        plugin: item.plugin,
+        kind: item.kind,
+        name: item.name,
+        subject: item.subject,
+        params: item.source?.params,
+      })),
+    );
     host.openDocument({ slug });
   },
 });
