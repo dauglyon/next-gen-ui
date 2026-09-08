@@ -32,17 +32,19 @@ export function DocsDocument() {
           <File name="" language="text">{`a service you run                        the workbench
 ──────────────────                       ─────────────
 manifest.json  ──────── registry ──────▶  tabs, panes, slash commands, launcher
-plugin/remoteEntry.js ─── fetched on ──▶  ./plugin    surfaces and commands
-                          first use       ./answers   terms, commands, cart items`}</File>
+plugin/remoteEntry.js                     ./terms      at startup, every keystroke
+                       ─── fetched ────▶  ./recommend  when a query settles
+                                          ./status     at startup
+                                          ./plugin     on first render or command
+                                          ./prompt     when named the assistant`}</File>
 
           <p className={styles.para}>
-            Four files, three of which default-export a <Code>define</Code> call.{' '}
-            <Code>plugin.config.ts</Code> is everything the workbench must know before it has any
-            code, and the build turns it into the manifest. <Code>vite.config.ts</Code> names the
-            sources and emits the bundle. <Code>src/plugin.tsx</Code> holds the surfaces and the
-            command handlers. <Code>src/answers.ts</Code> holds what the plugin volunteers when
-            someone types or opens something, kept apart because the workbench fetches it at startup
-            and calls it on every keystroke.
+            One capability, one file, one default export of one <Code>define</Code> call, one moment
+            it is fetched. <Code>plugin.config.ts</Code> is everything the workbench must know
+            before it has any code, and the build turns it into the manifest;{' '}
+            <Code>vite.config.ts</Code> names every other file. Nothing but{' '}
+            <Code>plugin.config.ts</Code> and <Code>vite.config.ts</Code> is required — a plugin
+            that only recognises identifiers ships <Code>terms.ts</Code> and no surfaces at all.
           </p>
 
           <File
@@ -68,9 +70,12 @@ import { pluginFederation } from '@kbase/plugin-sdk/vite';
 export default defineConfig({
   plugins: [
     pluginFederation({
-      config: './plugin.config.ts',
-      plugin: './src/plugin.tsx',
-      answers: './src/answers.ts',
+      config: './plugin.config.ts',      // → manifest.json
+      plugin: './src/plugin.tsx',        // pages, panes, command handlers
+      terms: './src/terms.ts',           // what text and terms mean here
+      recommend: './src/recommend.ts',   // commands and cart items worth offering
+      status: './src/status.ts',         // a line in the strip at the bottom
+      prompt: './src/prompt.ts',         // free text, when Settings names this plugin
     }),
     react(),
   ],
@@ -83,7 +88,7 @@ export default defineConfig({
               <code>npm create vite@latest hello -- --template react-ts</code> and{' '}
               <code>npm i @kbase/plugin-sdk</code>.
             </li>
-            <li>Write the two config files above and the two source files below.</li>
+            <li>Write the two config files above and the two sources below.</li>
             <li>
               <code>npm run dev -- --port 8770</code>.
             </li>
@@ -112,20 +117,28 @@ function Hello() {
 }
 
 export default definePlugin({
-  route: fromReact(Hello),
+  route: { ...fromReact(Hello), normalize: (path) => path.toLowerCase() },
   commands: { hello: ({ who }, { host }) => host.openRoute(\`/\${who ?? ''}\`) },
 });`}</File>
 
           <File
-            name="src/answers.ts"
+            name="src/terms.ts"
             language="typescript"
-          >{`import { defineAnswers } from '@kbase/plugin-sdk';
+          >{`import { defineTerms } from '@kbase/plugin-sdk';
 
 const NAME = /^[A-Z][a-z]+$/;
 
-export default defineAnswers({
-  terms: ({ text }) => (NAME.test(text?.trim() ?? '') ? [\`name:\${text!.trim()}\`] : []),
+export default defineTerms(({ text }) => {
+  const q = text?.trim() ?? '';
+  return NAME.test(q) ? [\`name:\${q}\`] : [];
+});`}</File>
 
+          <File
+            name="src/recommend.ts"
+            language="typescript"
+          >{`import { defineRecommend } from '@kbase/plugin-sdk';
+
+export default defineRecommend({
   commands: ({ terms }) =>
     (terms ?? [])
       .flatMap((t) => t.match(/^name:(.+)$/)?.[1] ?? [])
@@ -151,12 +164,20 @@ export default defineAnswers({
   return <Report id={id} />;
 }
 
-export default definePlugin({ route: fromReact(Dossier) });`}</File>
+export default definePlugin({
+  route: {
+    ...fromReact(Dossier),
+    // Two spellings of one page. Required beside a route, because without it
+    // the workbench compares raw strings and opens both.
+    normalize: (path) => path.split('?')[0].split('#')[0].toUpperCase(),
+  },
+});`}</File>
             <Rules
               items={[
                 'One surface serves the empty path and the identified one. navigate() moves this panel rather than opening another, so a search and its result are one tab with a working Back.',
                 'A panel keeps its identity while it navigates: the path is what it shows, not which panel it is.',
-                'openRoute focuses a panel already showing that path, so a link followed ten times leaves one tab. Two paths that mean one page — /P0AEX9 and /P0AEX9?from=related — are two tabs unless answers exports normalize().',
+                'openRoute focuses a panel already showing that path, so a link followed ten times leaves one tab. What "already showing" means is normalize’s answer, not the raw string: /P0AEX9 and /P0AEX9?from=related are one page if the plugin says so.',
+                'normalize is required with a route and the type enforces it. It runs whenever a panel of this plugin is open, which is the only time deduplication has anything to compare against, so the module is loaded by then.',
                 'The focused panel’s path is the browser URL. The rest of the layout is not addressable.',
               ]}
             />
@@ -206,52 +227,57 @@ export default definePlugin({ route: fromReact(Dossier) });`}</File>
             />
           </Point>
 
-          <Point id="p-suggestions" name="Suggestions">
+          <Point id="p-terms" name="Recognising text">
             <p className={styles.para}>
               The workbench does not read what a user types. It puts the text to every plugin's{' '}
-              <Code>terms</Code>, pools what comes back, and asks every plugin's{' '}
-              <Code>commands</Code> about the result — so recognising something and knowing what to
-              do with it need not be the same plugin.
+              <Code>terms</Code>, pools what comes back with the terms already in play, and hands
+              the result to every plugin's <Code>recommend</Code> — so recognising something and
+              knowing what to do with it need not be the same plugin.
             </p>
             <File
-              name="src/answers.ts"
+              name="src/terms.ts"
               language="typescript"
-            >{`const ACCESSION = /^[A-NR-Z][0-9][A-Z0-9]{3}[0-9]$/i;
+            >{`import { defineTerms } from '@kbase/plugin-sdk';
 
-export default defineAnswers({
-  terms: ({ text }) => {
-    const q = text?.trim().toUpperCase() ?? '';
-    return ACCESSION.test(q) ? [\`uniprot:\${q}\`] : [];
-  },
+const ACCESSION = /^[A-NR-Z][0-9][A-Z0-9]{3}[0-9]$/i;
 
-  commands: ({ terms }) =>
-    (terms ?? [])
-      .flatMap((t) => t.match(/^uniprot:(.+)$/)?.[1] ?? [])
-      .map((id) => ({ label: \`Evidence dossier for \${id}\`, command: 'open', args: { id } })),
+export default defineTerms(({ text, terms }) => {
+  const q = text?.trim().toUpperCase() ?? '';
+  return ACCESSION.test(q) ? [\`uniprot:\${q}\`] : [];
 });`}</File>
             <Rules
               items={[
-                'The same functions answer the prompt bar, the open page and the cart: a query carries text, or terms, or both.',
-                'terms runs on every keystroke. Recognising a shape is all it may do — a lookup belongs in the page it opens.',
+                'Fetched at startup and called on every keystroke, so it is synchronous and does no I/O. Recognising a shape is all it may do; a lookup belongs in the page it opens.',
+                'It answers about terms as well as text, which is how a taxon expands into its genomes without anything being typed.',
                 'An empty array is the normal answer, and an expression narrow enough to be wrong rarely is the whole trick: a plugin that answers for any text appears for every keystroke in the workbench.',
-                'A plugin is not asked about the page it is already showing.',
-                'If a suggestion never appears: answers is not named in the build config, the plugin answered about its own open page, or the terms are spelled differently from the plugin that publishes them — ncbi:562 against taxon:562 is silence and no error, which is the price of terms having no registry.',
+                'If nothing ever comes of a term, it is probably spelled differently from the plugin that reads it — ncbi:562 against taxon:562 is silence and no error, which is the price of terms having no registry.',
               ]}
             />
           </Point>
 
-          <Point id="p-cart" name="Cart items">
+          <Point id="p-recommend" name="Recommendations">
             <p className={styles.para}>
-              The cart is the workbench's, which is what lets an item from one plugin be read by
-              another and by an assistant. A plugin adds items directly through{' '}
-              <Code>host.cart</Code>, and offers them through <Code>cartItems</Code> for things the
-              reader has not opened.
+              Given terms, what is worth doing and what is worth keeping. This is where the prompt
+              bar's suggestions and the Related pane's rows come from, and unlike <Code>terms</Code>{' '}
+              it runs once a query settles, so it may fetch.
             </p>
-            <File name="src/answers.ts" language="typescript">{`export default defineAnswers({
-  cartItems: async ({ terms, signal }) => {
-    const ids = (terms ?? []).flatMap((t) => t.match(/^uniprot:(.+)$/)?.[1] ?? []);
-    const rows = await Promise.all(ids.map((id) => fetchSummary(id, signal)));
+            <File
+              name="src/recommend.ts"
+              language="typescript"
+            >{`import { defineRecommend } from '@kbase/plugin-sdk';
 
+const idsIn = (terms) => (terms ?? []).flatMap((t) => t.match(/^uniprot:(.+)$/)?.[1] ?? []);
+
+export default defineRecommend({
+  commands: ({ terms }) =>
+    idsIn(terms).map((id) => ({
+      label: \`Evidence dossier for \${id}\`,
+      command: 'open',
+      args: { id },
+    })),
+
+  cartItems: async ({ terms, signal }) => {
+    const rows = await Promise.all(idsIn(terms).map((id) => fetchSummary(id, signal)));
     return rows.map((row) => ({
       id: \`function-junction:protein:\${row.id}\`,
       kind: 'protein',
@@ -267,11 +293,35 @@ export default defineAnswers({
 });`}</File>
             <Rules
               items={[
-                'cartItems may fetch — it runs when a pane has terms, not on a keystroke — and the signal is aborted as soon as the reader moves on.',
+                'Both may be asynchronous, and the signal is aborted as soon as the reader moves on.',
+                'A recommended command is a call to a slash command, so a suggestion names something the user could have typed and a toolbar button is the same object.',
                 'An item carrying only source makes every consumer re-fetch and is worthless while that service is down; one carrying only content leaves no route back to where it came from.',
-                'context is what a reader of content cannot infer from it: units, the population a number was measured over, the caveats printed beside it. An assistant without it can quote a number and cannot qualify it.',
-                'The terms on an item are what make it worth collecting. An item without them is inert, and nothing in the workbench will ever have anything to say about it.',
+                'context is what a reader of content cannot infer: units, the population a number was measured over, the caveats printed beside it. An assistant without it can quote a number and cannot qualify it.',
+                'The terms on an item are what make it worth collecting; an item without them is inert.',
+                'A plugin is not asked about the page it is already showing, and the host drops a recommendation whose path is open or whose item is already in the cart.',
+                'If a recommendation never appears: the module is not named in the build config, or nobody produced the term it reads.',
+              ]}
+            />
+          </Point>
+
+          <Point id="p-cart" name="Putting things in the cart">
+            <p className={styles.para}>
+              The cart is the workbench's, which is what lets an item from one plugin be read by
+              another and by an assistant. A page adds to it directly; a recommendation offers an
+              item for something the reader has not opened.
+            </p>
+            <File name="src/plugin.tsx" language="tsx">{`const { cart } = useHost();
+
+<CartButton item={{ id, kind: 'protein', name, subject: id, terms, source: { path } }} />;
+
+// or, without React
+host.cart.add(item);
+host.cart.has(id);
+host.cart.subscribe(redraw);`}</File>
+            <Rules
+              items={[
                 'A plugin can test its own ids with has(); other plugins’ items are unreadable, except in the assistant’s attachments.',
+                'Adding the same id twice replaces rather than duplicates, so re-adding refreshes a payload.',
                 'The host persists the cart, so content must survive JSON.',
               ]}
             />
@@ -279,8 +329,10 @@ export default defineAnswers({
 
           <Point id="p-assistant" name="The assistant">
             <p className={styles.para}>
-              <Code>promptHandler: true</Code> offers the plugin in Settings as the receiver of free
-              text — what was neither a slash command nor a suggestion taken.
+              A <Code>prompt</Code> module offers the plugin in Settings as the receiver of free
+              text — what was neither a slash command nor a suggestion taken. The workbench reads
+              the bundle's own manifest to see the module exists, so nothing declares the capability
+              twice.
             </p>
             <File
               name="src/plugin.tsx"
@@ -330,7 +382,6 @@ interface Manifest {
   commands?: SlashCommand[];
   shortcuts?: CommandCall[];        // buttons in the sidebar toolbar
   launcher?: CommandCall;           // listed on the Browse page
-  promptHandler?: boolean;
 }
 
 interface SlashCommand {
@@ -349,37 +400,42 @@ interface CommandCall {
 
           <Sig>{`// src/plugin.tsx
 interface PluginModule {
-  route?: { mount: Mount };
+  route?: { mount: Mount; normalize: (path: string) => string };
   pane?: { mount: Mount };
   commands?: Record<string, (values: CommandValues, ctx: CommandContext) => void | Promise<void>>;
-  prompt?: (q: Query, ctx: PromptContext) => Promise<void>;
-  status?: () => StatusItem[];
 }
 
 type Cleanup = () => void;
 type Mount = (el: HTMLElement, ctx: { panel: PanelHandle; host: PluginHost }) => Cleanup | void;
 
 interface CommandContext { host: PluginHost; caller: string }   // a plugin id, or 'user'
-interface PromptContext { host: PluginHost; attachments: readonly CartItem[] }
 
 function definePlugin(module: PluginModule): PluginModule;
 function fromReact(Component: ComponentType): { mount: Mount };`}</Sig>
 
-          <Sig>{`// src/answers.ts — any of the four
-interface PluginAnswers {
-  terms?: (q: Query) => string[] | Promise<string[]>;
-  commands?: (q: Query) => CommandCall[] | Promise<CommandCall[]>;
-  cartItems?: (q: Query) => CartItem[] | Promise<CartItem[]>;
-  normalize?: (path: string) => string;
-}
-
+          <Sig>{`// one query, asked of the two modules that answer it
 interface Query {
   text?: string;
   terms?: string[];
   signal: AbortSignal;
 }
 
-function defineAnswers(answers: PluginAnswers): PluginAnswers;`}</Sig>
+// src/terms.ts — synchronous, every keystroke
+function defineTerms(fn: (q: Query) => string[]): Terms;
+
+// src/recommend.ts — on settle, may fetch
+function defineRecommend(r: {
+  commands?: (q: Query) => CommandCall[] | Promise<CommandCall[]>;
+  cartItems?: (q: Query) => CartItem[] | Promise<CartItem[]>;
+}): Recommend;
+
+// src/status.ts — at startup
+function defineStatus(fn: () => StatusItem[]): Status;
+
+// src/prompt.ts — when Settings names this plugin
+function definePrompt(
+  fn: (q: Query, ctx: { host: PluginHost; attachments: readonly CartItem[] }) => Promise<void>,
+): Prompt;`}</Sig>
 
           <Sig>{`// handed to a surface, a command and the assistant
 interface PluginHost {
@@ -522,8 +578,9 @@ const SECTIONS: { id: string; label: string; children?: { id: string; label: str
       { id: 'p-page', label: 'A page' },
       { id: 'p-pane', label: 'A sidebar pane' },
       { id: 'p-commands', label: 'Slash commands' },
-      { id: 'p-suggestions', label: 'Suggestions' },
-      { id: 'p-cart', label: 'Cart items' },
+      { id: 'p-terms', label: 'Recognising text' },
+      { id: 'p-recommend', label: 'Recommendations' },
+      { id: 'p-cart', label: 'The cart' },
       { id: 'p-assistant', label: 'The assistant' },
       { id: 'p-status', label: 'The status strip' },
     ],
