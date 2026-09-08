@@ -11,7 +11,9 @@ import styles from './Docs.module.css';
 // outright; `navigator` and `document` are `pane` and `route`; the manifest
 // says nothing about where the code is, because the service prefix locates it;
 // `match` and `related` are one `./answers` module of three independent
-// functions over one query; a panel shows a plugin at a path and
+// functions over one query; commands live in one registry under
+// `plugin:name` and any plugin may run any of them; the build writes the
+// manifest from a typed config; a panel shows a plugin at a path and
 // the host never parses that path, so params leave the contract entirely;
 // panel identity is an opaque id rather than the params, which is what lets a
 // plugin navigate inside its own panel; a plugin's federation config names no
@@ -46,29 +48,29 @@ export function DocsDocument() {
             showing, and an offer whenever the prompt bar holds a word starting with a capital H.
           </p>
 
-          <File name="manifest.json" language="json">{`{
-  "id": "hello",
-  "title": "Hello",
-  "description": "The smallest plugin that draws something.",
-  "contractVersion": 2,
-  "icon": "HandWaving",
-  "color": "teal",
-  "route": { "opensEmpty": true },
-  "commands": [
-    {
-      "name": "hello",
-      "title": "Say hello to someone",
-      "args": [{ "name": "who", "required": true }]
-    }
-  ]
-}`}</File>
+          <File
+            name="plugin.config.ts"
+            language="typescript"
+          >{`import { definePluginManifest } from '@kbase/plugin-sdk';
+
+export default definePluginManifest({
+  id: 'hello',
+  title: 'Hello',
+  description: 'The smallest plugin that draws something.',
+  icon: 'HandWaving',
+  color: 'teal',
+  route: { opensEmpty: true },
+  commands: [
+    { name: 'hello', title: 'Say hello to someone', args: [{ name: 'who', required: true }] },
+  ],
+});`}</File>
 
           <File name="vite.config.ts" language="typescript">{`import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { pluginFederation } from '@kbase/plugin-sdk/vite';
 
 export default defineConfig({
-  plugins: [pluginFederation({ name: 'hello' }), react()],
+  plugins: [pluginFederation({ config: './plugin.config.ts' }), react()],
 });`}</File>
 
           <File
@@ -85,7 +87,7 @@ function Hello() {
 
 export default definePlugin({
   route: react(Hello),
-  commands: { hello: ({ who }, host) => host.openRoute(\`/\${who}\`) },
+  commands: { hello: ({ who }, { host }) => host.openRoute(\`/\${who}\`) },
 });`}</File>
 
           <File
@@ -105,10 +107,13 @@ export function terms({ text }: Query): string[] {
 }`}</File>
 
           <p className={styles.para}>
-            The registry holds one thing per plugin: the prefix its service is served under. The
-            manifest sits at <Code>manifest.json</Code> beneath it and the code at{' '}
-            <Code>plugin/</Code>, so nothing in the manifest says where anything is. The host draws
-            the launcher entry, the tab and the icon from it before fetching a line of code.
+            The build writes <Code>manifest.json</Code> from that config, stamping the contract
+            version and validating against the schema the host parses with — a bad manifest fails
+            the build instead of vanishing from a registry with a console warning. The registry
+            holds one thing per plugin: the prefix its service is served under. The manifest sits at
+            the root of it and the code under <Code>plugin/</Code>, so nothing has to say where
+            anything is, and the host draws the launcher entry, the tab and the icon before fetching
+            a line of code.
           </p>
         </Part>
 
@@ -146,7 +151,7 @@ export function terms({ text }: Query): string[] {
                   'contractVersion',
                   'number',
                   'yes',
-                  'The version this plugin was built against. The host reads every version it has published and upgrades an older manifest as it loads it.',
+                  'Written by the build from the installed SDK, not by hand. The host reads every version it has published and upgrades an older manifest as it loads it.',
                 ],
                 [
                   'icon',
@@ -210,7 +215,7 @@ interface SlashCommand {
 // what the manifest's shortcuts are.
 interface CommandCall {
   label: string;
-  command: string;            // a SlashCommand name
+  command: string;            // "plugin:name"; bare name means this plugin's own
   args?: Record<string, string | number>;
 }`}</Sig>
             <Fields
@@ -235,7 +240,12 @@ interface CommandCall {
                   'Whether the command can run without this value. The prompt bar uses it to tell "press enter" from "still needs an id".',
                 ],
                 ['label', 'string', 'yes', 'What the row or the button reads.'],
-                ['command', 'string', 'yes', 'The SlashCommand this call runs.'],
+                [
+                  'command',
+                  'string',
+                  'yes',
+                  'The command to run, as plugin:name. A bare name is this plugin’s own; the host qualifies it before storing the call anywhere.',
+                ],
                 [
                   'args',
                   'object',
@@ -248,6 +258,8 @@ interface CommandCall {
               items={[
                 'A recommendation and a shortcut are the same thing — a call — so a suggested action and a toolbar button run by one path, and both show the user a command they could have typed.',
                 'Arguments carry no type and no list of choices. One string each, validated by the command that receives them, which is loaded by the time it runs.',
+                'Every command lives in one host-wide registry under plugin:name, and any plugin may run any of them. A command name is therefore public: renaming one breaks whoever calls it, exactly as renaming a plugin id would.',
+                'There is no catalogue to browse. A caller knows the id it wants and asks hasCommand() first, so a plugin whose neighbour is not installed degrades instead of failing.',
               ]}
             />
           </Entry>
@@ -290,9 +302,14 @@ function react(Component: ComponentType): { mount: Mount };`}</Sig>
             <Sig>{`interface PluginModule {
   route?: { mount: Mount };
   pane?: { mount: Mount };
-  commands?: Record<string, (values: CommandValues, host: PluginHost) => void | Promise<void>>;
+  commands?: Record<string, (values: CommandValues, ctx: CommandContext) => void | Promise<void>>;
   prompt?: PromptHandler;
   status?: (host: PluginHost) => StatusItem[];
+}
+
+interface CommandContext {
+  host: PluginHost;
+  caller: string;             // the plugin id that ran it, or 'user'
 }
 
 function definePlugin(module: PluginModule): PluginModule;`}</Sig>
@@ -301,6 +318,7 @@ function definePlugin(module: PluginModule): PluginModule;`}</Sig>
                 'definePlugin() types the export and returns it unchanged.',
                 'The host compares the module against the manifest and logs a mismatch rather than throwing: one wrong declaration costs that surface, not the session.',
                 'prompt receives the cart as it stood when the message was sent, not as it is when the promise resolves.',
+                'A command handler is given caller so it can tell a user’s keystroke from another plugin acting for them — a distinction it will need before any permission model exists.',
               ]}
             />
           </Entry>
@@ -526,7 +544,8 @@ function CartButton(props: { item: CartItem; tooltip?: string }): JSX.Element;`}
           <Entry id="host" name="PluginHost" source="plugins/sdk/host.ts">
             <Sig>{`interface PluginHost {
   openRoute: (path: string, options?: { duplicate?: boolean }) => void;
-  runCommand: (name: string, values?: Record<string, string | number>) => Promise<void>;
+  execute: (command: string, args?: Record<string, string | number>) => Promise<void>;
+  hasCommand: (command: string) => boolean;
   cart: Cart;
 }
 
@@ -541,26 +560,37 @@ function useHost(): PluginHost;`}</Sig>
                   'Opens one of this plugin’s pages. A tab already showing that path is focused; duplicate: true opens a second view of it.',
                 ],
                 [
-                  'runCommand',
-                  '(name, values?) => Promise',
+                  'execute',
+                  '(command, args?) => Promise',
                   'yes',
-                  'Runs one of this plugin’s own commands.',
+                  'Runs a command by plugin:name — this plugin’s or another’s. Resolves when the handler does; commands return nothing.',
+                ],
+                [
+                  'hasCommand',
+                  '(command) => boolean',
+                  'yes',
+                  'Whether that command is installed, so a caller can offer the action only when its neighbour is present.',
                 ],
                 ['cart', 'Cart', 'yes', 'The host’s cart.'],
               ]}
             />
             <Behaviour
               items={[
-                'A plugin cannot open another plugin’s pages, read the layout, or read another plugin’s cart items. Plugins meet through terms and answers, so neither imports the other and either can be uninstalled.',
+                'A plugin cannot open another plugin’s pages, read the layout, or read another plugin’s cart items.',
+                'It can run another plugin’s commands, which is how one app acts on another on the user’s behalf. Data does not travel this way: a command returns nothing, and what one plugin knows reaches another through terms and answers.',
               ]}
             />
           </Entry>
 
           <Entry id="build" name="pluginFederation()" source="plugins/sdk/pluginFederation.ts">
-            <Sig>{`function pluginFederation(options: { name: string }): Plugin;  // name = the manifest id`}</Sig>
+            <Sig>{`function pluginFederation(options: { config: string }): Plugin;
+
+// plugin.config.ts
+function definePluginManifest(manifest: Omit<Manifest, 'contractVersion'>): Manifest;`}</Sig>
             <Behaviour
               items={[
                 'Exposes ./plugin from src/plugin.tsx and ./answers from src/answers.ts, by convention: the host reads the emitted Module Federation manifest to see which of them exist.',
+                'Writes manifest.json from the config: the id becomes the federation name, contractVersion comes from the installed SDK, and the whole thing is parsed with the host’s own schema, so a mistake stops the build.',
                 'Declares react, react-dom, zod, @kbase/design-system and @kbase/plugin-sdk as singletons. A plugin writes no versions: Module Federation reads them from the plugin’s own dependencies, and singleton is what makes the host’s copy win.',
                 'A second React breaks hooks; a second SDK creates a second panel context, so every usePanel() in the plugin throws.',
                 'A plugin using neither React nor the design system still shares the SDK, and drops the react() wrapper and the React build plugin.',
@@ -654,7 +684,7 @@ usePanelTerms(data ? [\`taxon:\${data.taxid}\`] : []);`}</File>
             <File name="src/plugin.tsx" language="tsx">{`export default definePlugin({
   route: react(Dossier),
   commands: {
-    'save-current': (_values, host) => {
+    'save-current': (_values, { host }) => {
       host.cart.add({ id: 'hello:current', kind: 'greeting', name: 'The current greeting' });
     },
   },
@@ -668,6 +698,19 @@ usePanelTerms(data ? [\`taxon:\${data.taxid}\`] : []);`}</File>
             rather than a choice of the plugin. A mount function is the smallest thing every UI
             framework can produce, and <Code>react()</Code> is a few dozen lines on top of it. The
             cost is one wrapper call in every React plugin, which is the common case.
+          </Note>
+          <Note title="Why commands are namespaced and there is no catalogue">
+            One registry, ids of the form <Code>plugin:name</Code>, and any plugin may run any
+            command — the arrangement JupyterLab and VS Code both settled on. A caller names the id
+            it wants and checks <Code>hasCommand</Code>, rather than browsing a list, because a
+            browsable catalogue invites coupling to whatever happens to be installed. What travels
+            this way is an action taken for the user, never data: a command answers nothing.
+          </Note>
+          <Note title="Why the build writes the manifest">
+            Written by hand it is a third copy of the plugin id, a number someone bumps, and a list
+            of module names the bundler already knows. Generated from a typed config it is checked
+            at build time by the same schema the host parses with, and the failure lands on the
+            person who can fix it.
           </Note>
           <Note title="Why a recommendation calls a command instead of doing the work">
             A call is something a user could have typed, so a suggested action teaches the command
@@ -725,7 +768,7 @@ const SECTIONS: { id: string; label: string; children?: { id: string; label: str
     label: 'Reference',
     children: [
       { id: 'manifest', label: 'Manifest' },
-      { id: 'commands', label: 'CommandDecl' },
+      { id: 'commands', label: 'SlashCommand, CommandCall' },
       { id: 'surfaces', label: 'mount, react()' },
       { id: 'module', label: 'PluginModule' },
       { id: 'panel', label: 'PanelHandle' },
