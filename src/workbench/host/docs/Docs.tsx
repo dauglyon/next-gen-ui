@@ -63,7 +63,14 @@ import react from '@vitejs/plugin-react';
 import { pluginFederation } from '@kbase/plugin-sdk/vite';
 
 export default defineConfig({
-  plugins: [pluginFederation({ config: './plugin.config.ts' }), react()],
+  plugins: [
+    pluginFederation({
+      config: './plugin.config.ts',
+      plugin: './src/plugin.tsx',
+      answers: './src/answers.ts',
+    }),
+    react(),
+  ],
 });`}</File>
 
           <File
@@ -118,9 +125,10 @@ export function commands({ text, terms }: Query): CommandCall[] {
         <Part id="ship" title="Ship it">
           <p className={styles.para}>
             The build emits <Code>manifest.json</Code> from the config, <Code>remoteEntry.js</Code>,
-            a Module Federation manifest listing what the bundle exposes, and the assets. The
-            plugin's own service serves them at two paths, and those two paths are the whole
-            deployment contract.
+            a Module Federation manifest listing what the bundle exposes, and the assets. Each
+            source file is named in the config rather than found at a fixed location; the exposed
+            names are the host's to know. The plugin's own service serves the output at two paths,
+            and those two paths are the whole deployment contract.
           </p>
 
           <File
