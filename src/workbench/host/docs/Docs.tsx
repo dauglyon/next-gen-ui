@@ -88,7 +88,7 @@ export default defineConfig({
               <code>npm create vite@latest hello -- --template react-ts</code> and{' '}
               <code>npm i @kbase/plugin-sdk</code>.
             </li>
-            <li>Write the two config files above and the two sources below.</li>
+            <li>Write the two config files above and the three sources below.</li>
             <li>
               <code>npm run dev -- --port 8770</code>.
             </li>
@@ -335,13 +335,15 @@ host.cart.subscribe(redraw);`}</File>
               twice.
             </p>
             <File
-              name="src/plugin.tsx"
-              language="tsx"
-            >{`prompt: async ({ text, terms }, { host, attachments }) => {
+              name="src/prompt.ts"
+              language="typescript"
+            >{`import { definePrompt } from '@kbase/plugin-sdk';
+
+export default definePrompt(async ({ text, terms }, { host, attachments }) => {
   const slug = current() ?? newArc().slug;
   host.openRoute(\`/\${slug}\`);          // before awaiting: the page shows the work
   await ask(slug, text, attachments);
-},`}</File>
+});`}</File>
             <Rules
               items={[
                 'It takes the same Query as the answer functions, so an assistant sees the terms in play as well as the words.',
@@ -353,15 +355,18 @@ host.cart.subscribe(redraw);`}</File>
 
           <Point id="p-status" name="The status strip">
             <p className={styles.para}>
-              The strip along the bottom of the window. Every loaded plugin may contribute a line.
+              The strip along the bottom of the window. Every installed plugin may contribute a
+              line.
             </p>
             <File
-              name="src/plugin.tsx"
-              language="tsx"
-            >{`status: () => (running() > 0 ? [{ text: \`\${running()} running\` }] : []),`}</File>
+              name="src/status.ts"
+              language="typescript"
+            >{`import { defineStatus } from '@kbase/plugin-sdk';
+
+export default defineStatus(() => (running() > 0 ? [{ text: \`\${running()} running\` }] : []));`}</File>
             <Rules
               items={[
-                'Called on the loaded module only: a plugin nobody has opened contributes nothing.',
+                'Fetched at startup like terms, so a plugin reports before anyone has opened it — a job count is worth showing to someone who has not opened the jobs page.',
                 'An item may carry a CommandCall, which the strip runs when the line is pressed.',
               ]}
             />
