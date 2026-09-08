@@ -136,17 +136,6 @@
   color: var(--c-ink3);
 }
 
-.table {
-  /* Fixed layout, because the last column holds sentences: left to size
-     itself the table grew past the panel and the ends were clipped. */
-  inline-size: 100%;
-  table-layout: fixed;
-}
-
-.table td:last-child {
-  overflow-wrap: anywhere;
-}
-
 .behaviour {
   margin: 0;
   padding-inline-start: var(--s-5);
@@ -154,6 +143,12 @@
   display: grid;
   gap: var(--s-2);
   color: var(--c-ink2);
+}
+
+/* A step inside a part: "In development" under Ship it. */
+.subhead {
+  margin: var(--s-3) 0 0;
+  font-size: var(--fs-5);
 }
 
 .noteBlock {
@@ -166,18 +161,8 @@
   font-size: var(--fs-4);
 }
 
-.name,
-.type,
 .inline {
   font-family: var(--font-mono);
   font-size: var(--fs-3);
   overflow-wrap: anywhere;
-}
-
-.type {
-  color: var(--c-ink3);
-}
-
-.req {
-  color: var(--c-ink3);
 }
