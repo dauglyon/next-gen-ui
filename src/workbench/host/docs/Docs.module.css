@@ -95,9 +95,9 @@
   align-content: start;
 }
 
-/* One documented item: name and source, signature, fields, behaviour. The
-   rule under the name is what separates two entries in a long page; sections
-   inside an entry are separated by space alone. */
+/* One module of the contract: name, when the host reaches it, types, example,
+   constraints. The rule under the name is what separates two entries in a
+   long page; sections inside an entry are separated by space alone. */
 .entry {
   display: grid;
   gap: var(--s-4);
@@ -107,10 +107,8 @@
 }
 
 .entryHead {
-  display: flex;
-  align-items: baseline;
-  gap: var(--s-3);
-  flex-wrap: wrap;
+  display: grid;
+  gap: var(--s-1);
 }
 
 .entryName {
@@ -119,9 +117,26 @@
   font-size: var(--fs-6);
 }
 
-.source {
-  font-size: var(--fs-2);
-  color: var(--c-ink4);
+.when {
+  margin: 0;
+  max-inline-size: 46rem;
+  font-size: var(--fs-3);
+  color: var(--c-ink3);
+}
+
+/* A named export inside an entry: same head as the entry, one step smaller,
+   indented so the entry's example file reads as belonging to all of them. */
+.export {
+  display: grid;
+  gap: var(--s-3);
+  padding-inline-start: var(--s-4);
+  border-inline-start: 2px solid var(--c-border);
+}
+
+.exportName {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-5);
 }
 
 .file {
@@ -136,29 +151,10 @@
   color: var(--c-ink3);
 }
 
-.behaviour {
-  margin: 0;
-  padding-inline-start: var(--s-5);
-  max-inline-size: 46rem;
-  display: grid;
-  gap: var(--s-2);
-  color: var(--c-ink2);
-}
-
-/* A step inside a part: "In development" under Ship it. */
+/* "The smallest plugin" under A plugin. */
 .subhead {
   margin: var(--s-3) 0 0;
   font-size: var(--fs-5);
-}
-
-.noteBlock {
-  display: grid;
-  gap: var(--s-2);
-}
-
-.noteTitle {
-  margin: 0;
-  font-size: var(--fs-4);
 }
 
 .inline {
@@ -187,20 +183,6 @@
 }
 
 .symptomName code {
-  font-family: var(--font-mono);
-  font-size: var(--fs-3);
-}
-
-/* The numbered path from nothing to a running plugin. */
-.steps {
-  margin: 0;
-  padding-inline-start: var(--s-6);
-  max-inline-size: 46rem;
-  display: grid;
-  gap: var(--s-3);
-}
-
-.steps code {
   font-family: var(--font-mono);
   font-size: var(--fs-3);
 }

@@ -6,12 +6,10 @@ import styles from './Docs.module.css';
 // The plugin contract as it is meant to be: the page is the specification and
 // the implementation is measured against it.
 //
-// Organised by what a plugin can add, the way JupyterLab's common extension
-// points and VS Code's capabilities are, because that is the first question a
-// plugin author has. Each of those sections stands alone — a paragraph, one
-// complete file, the rules the host applies, and the failure that belongs to
-// it — so nothing has to be assembled out of three places. The types are
-// collected once at the end, without prose, for lookup.
+// Shaped like Vite's and Rollup's plugin pages: the smallest complete plugin
+// first, then every module in the order the host reaches it, each with its
+// signature, when it is called, and one example. A type appears once, in the
+// entry that consumes it.
 
 export function DocsDocument() {
   usePanelTitle('Plugin developer documentation');
@@ -22,31 +20,28 @@ export function DocsDocument() {
         <header className={styles.head} id="top">
           <h1 className="h2">Plugin developer documentation</h1>
           <p className={styles.lede}>
-            A plugin is a description the workbench reads at startup and a bundle it fetches when
-            something needs to render or answer. Everything under <Code>/p/&lt;id&gt;</Code> belongs
-            to the plugin, including its query string, and nothing in the contract requires React.
+            A plugin is a service that serves a manifest and a bundle. The workbench reads the
+            manifest at startup and loads the bundle's modules as it needs them.
           </p>
         </header>
 
-        <Part id="anatomy" title="Anatomy">
-          <File name="" language="text">{`a service you run                        the workbench
-──────────────────                       ─────────────
-manifest.json  ──────── registry ──────▶  tabs, panes, slash commands, launcher
-plugin/remoteEntry.js                     ./terms      at startup, every keystroke
-                       ─── fetched ────▶  ./recommend  when a query settles
-                                          ./status     at startup
-                                          ./plugin     on first render or command
-                                          ./prompt     when named the assistant`}</File>
+        <Part id="plugin" title="A plugin">
+          <File
+            name=""
+            language="text"
+          >{`GET /plugin-registry/plugins               the workbench, once, at startup
+  → [ { "id": "hello", "title": "Hello", … }, … ]
 
+GET /services/hello/manifest.json          the entry above, as the plugin's service serves it
+GET /services/hello/plugin/remoteEntry.js  the bundle; modules load from here as needed`}</File>
           <p className={styles.para}>
-            One capability, one file, one default export of one <Code>define</Code> call, one moment
-            it is fetched. <Code>plugin.config.ts</Code> is everything the workbench must know
-            before it has any code, and the build turns it into the manifest;{' '}
-            <Code>vite.config.ts</Code> names every other file. Nothing but{' '}
-            <Code>plugin.config.ts</Code> and <Code>vite.config.ts</Code> is required — a plugin
-            that only recognises identifiers ships <Code>terms.ts</Code> and no surfaces at all.
+            The manifest is what the workbench knows before it has any of the plugin's code: the
+            title and icon, the slash commands and launcher, and which modules the bundle holds. The
+            bundle is what the build emits from the files <Code>vite.config.ts</Code> names. In
+            development a Vite server stands in for the service at the same prefix.
           </p>
 
+          <h3 className={styles.subhead}>The smallest plugin</h3>
           <File
             name="plugin.config.ts"
             language="typescript"
@@ -55,14 +50,10 @@ plugin/remoteEntry.js                     ./terms      at startup, every keystro
 export default definePluginManifest({
   id: 'hello',
   title: 'Hello',
-  description: 'The smallest plugin that draws something.',
   icon: 'HandWaving',
-  color: 'teal',
-  route: true,
-  commands: [{ name: 'hello', title: 'Say hello to someone', args: [{ name: 'who' }] }],
+  commands: [{ name: 'hello', title: 'Say hello', args: [{ name: 'who' }] }],
   launcher: { label: 'Hello', command: 'hello' },
 });`}</File>
-
           <File name="vite.config.ts" language="typescript">{`import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { pluginFederation } from '@kbase/plugin-sdk/vite';
@@ -70,44 +61,17 @@ import { pluginFederation } from '@kbase/plugin-sdk/vite';
 export default defineConfig({
   plugins: [
     pluginFederation({
-      config: './plugin.config.ts',      // → manifest.json
-      plugin: './src/plugin.tsx',        // pages, panes, command handlers
-      terms: './src/terms.ts',           // what text and terms mean here
-      recommend: './src/recommend.ts',   // commands and cart items worth offering
-      status: './src/status.ts',         // a line in the strip at the bottom
-      prompt: './src/prompt.ts',         // free text, when Settings names this plugin
+      config: './plugin.config.ts',
+      route: './src/route.tsx',
+      commands: './src/commands.ts',
     }),
     react(),
   ],
 });`}</File>
-        </Part>
-
-        <Part id="running" title="Get it running">
-          <ol className={styles.steps}>
-            <li>
-              <code>npm create vite@latest hello -- --template react-ts</code> and{' '}
-              <code>npm i @kbase/plugin-sdk</code>.
-            </li>
-            <li>Write the two config files above and the three sources below.</li>
-            <li>
-              <code>npm run dev -- --port 8770</code>.
-            </li>
-            <li>
-              Add <code>VITE_DEV_SERVICE_PROXY=/services/hello=http://127.0.0.1:8770</code> to the
-              workbench's <code>.env.local</code> and restart its dev server. That is the only
-              restart: from then on the plugin appears when its own server is up and disappears when
-              it stops.
-            </li>
-            <li>
-              Open the workbench. <em>Hello</em> is on the Browse page, <code>/hello</code> is in
-              the prompt bar, and a capitalised word offers to greet it.
-            </li>
-          </ol>
-
           <File
-            name="src/plugin.tsx"
+            name="src/route.tsx"
             language="tsx"
-          >{`import { definePlugin, fromReact, usePanel, usePanelTitle } from '@kbase/plugin-sdk';
+          >{`import { defineRoute, fromReact, usePanel, usePanelTitle } from '@kbase/plugin-sdk';
 
 function Hello() {
   const { path } = usePanel();
@@ -116,165 +80,217 @@ function Hello() {
   return <p>Hello, {who}.</p>;
 }
 
-export default definePlugin({
-  route: { ...fromReact(Hello), normalize: (path) => path.toLowerCase() },
-  commands: { hello: ({ who }, { host }) => host.openRoute(\`/\${who ?? ''}\`) },
-});`}</File>
-
+export default defineRoute({ ...fromReact(Hello), normalize: (path) => path.toLowerCase() });`}</File>
           <File
-            name="src/terms.ts"
+            name="src/commands.ts"
             language="typescript"
-          >{`import { defineTerms } from '@kbase/plugin-sdk';
+          >{`import { defineCommands } from '@kbase/plugin-sdk';
 
-const NAME = /^[A-Z][a-z]+$/;
-
-export default defineTerms(({ text }) => {
-  const q = text?.trim() ?? '';
-  return NAME.test(q) ? [\`name:\${q}\`] : [];
-});`}</File>
-
-          <File
-            name="src/recommend.ts"
-            language="typescript"
-          >{`import { defineRecommend } from '@kbase/plugin-sdk';
-
-export default defineRecommend({
-  commands: ({ terms }) =>
-    (terms ?? [])
-      .flatMap((t) => t.match(/^name:(.+)$/)?.[1] ?? [])
-      .map((who) => ({ label: \`Say hello to \${who}\`, command: 'hello', args: { who } })),
-});`}</File>
+export default defineCommands({ hello: ({ who }, { host }) => host.openRoute(\`/\${who ?? ''}\`) });`}</File>
+          <File name="" language="bash">{`npm create vite@latest hello -- --template react-ts
+cd hello && npm i @kbase/plugin-sdk
+npm run dev -- --port 8770`}</File>
+          <p className={styles.para}>
+            Add <Code>VITE_DEV_SERVICE_PROXY=/services/hello=http://127.0.0.1:8770</Code> to the
+            workbench's <Code>.env.local</Code> and restart its dev server. That is the only
+            restart: the plugin is present while its own server is up and absent when it stops.
+            Browse now lists <em>Hello</em> with a launcher, <Code>/hello</Code> completes in the
+            prompt bar, and <Code>/hello Alice</Code> opens a tab titled <em>Alice</em> at{' '}
+            <Code>/p/hello/Alice</Code>.
+          </p>
         </Part>
 
-        <Part id="points" title="What a plugin can add">
-          <Point id="p-page" name="A page">
-            <p className={styles.para}>
-              <Code>route: true</Code> claims everything under <Code>/p/&lt;id&gt;</Code>. The
-              workbench stores the path and never reads it, so its shape, its query string and any
-              router inside the panel are the plugin's.
-            </p>
-            <File name="src/plugin.tsx" language="tsx">{`function Dossier() {
-  const { path, navigate } = usePanel();
-  const id = path.slice(1);
+        <Part id="runs" title="How it runs">
+          <File
+            name=""
+            language="text"
+          >{`startup    GET /plugin-registry/plugins     →  Browse, tabs, panes, slash commands, launchers
+           fetch ./background from every plugin that has one
 
-  usePanelTitle(id || 'Function Junction');
-  usePanelTerms(id ? [\`uniprot:\${id}\`] : []);
+keystroke  text        → every terms()      →  terms
+settle     terms       → every recommend()  →  suggestions in the prompt bar, rows in Related
+open       a tab of one plugin              → fetch ./route
+pin        a pane                           → fetch ./pane
+run        a command                        → fetch ./commands
+enter      free text → the plugin Settings names   → fetch ./prompt`}</File>
+          <p className={styles.para}>
+            The workbench does not read what a user types. It puts the text to every plugin's{' '}
+            <Code>terms</Code>, pools what comes back with the terms open panels declare, and hands
+            the pool to every plugin's <Code>recommend</Code>. One plugin can recognise an
+            identifier and another can know what to do with it.
+          </p>
+          <p className={styles.para}>
+            <Code>background</Code> is asked of every plugin on the workbench's own schedule, so it
+            is fetched at startup. The other four are reached when the user addresses the plugin —
+            opens its tab, pins its pane, runs its command, or has named it in Settings — and each
+            is fetched at that moment. The manifest lists which of them exist, so the host knows
+            what there is to fetch before it fetches.
+          </p>
+          <p className={styles.para}>
+            The cart belongs to the workbench. A page adds items to it; <Code>recommend</Code>{' '}
+            offers items for it; the assistant receives it as attachments. A plugin can test for its
+            own items and cannot read another plugin's.
+          </p>
+        </Part>
 
-  if (!id) return <SearchBox onPick={(picked) => navigate(\`/\${picked}\`)} />;
-  return <Report id={id} />;
+        <Part id="reference" title="Reference">
+          <Entry
+            id="r-config"
+            name="plugin.config.ts"
+            when="Read by the build; becomes manifest.json."
+          >
+            <Sig>{`interface Manifest {
+  id: string;                    // /^[a-z][a-z0-9-]{1,40}$/; permanent: in every URL and saved layout
+  title: string;
+  description?: string;          // under the title on Browse
+  icon?: string;                 // a name from the host's icon table
+  color?: string;                // blue | green | teal | purple | orange | red
+  commands?: SlashCommand[];     // commands.ts must handle each
+  shortcuts?: CommandCall[];     // buttons in the sidebar toolbar
+  launcher?: CommandCall;        // the button on Browse; without one the plugin is not listed there
+
+  // written by the build, not the author
+  contractVersion: number;
+  modules: ('background' | 'route' | 'pane' | 'commands' | 'prompt')[];   // what vite.config.ts named
 }
 
-export default definePlugin({
-  route: {
-    ...fromReact(Dossier),
-    // Two spellings of one page. Required beside a route, because without it
-    // the workbench compares raw strings and opens both.
-    normalize: (path) => path.split('?')[0].split('#')[0].toUpperCase(),
-  },
-});`}</File>
-            <Rules
-              items={[
-                'One surface serves the empty path and the identified one. navigate() moves this panel rather than opening another, so a search and its result are one tab with a working Back.',
-                'A panel keeps its identity while it navigates: the path is what it shows, not which panel it is.',
-                'openRoute focuses a panel already showing that path, so a link followed ten times leaves one tab. What "already showing" means is normalize’s answer, not the raw string: /P0AEX9 and /P0AEX9?from=related are one page if the plugin says so.',
-                'normalize is required with a route and the type enforces it. It runs whenever a panel of this plugin is open, which is the only time deduplication has anything to compare against, so the module is loaded by then.',
-                'The focused panel’s path is the browser URL. The rest of the layout is not addressable.',
-              ]}
-            />
-          </Point>
+interface SlashCommand {
+  name: string;                  // /^[a-z][a-z0-9-]*$/; registered as "<id>:<name>"
+  title: string;
+  description?: string;
+  args?: { name: string; description?: string; required?: boolean }[];   // typed in this order
+  icon?: string;
+}
 
-          <Point id="p-pane" name="A sidebar pane">
+interface CommandCall {
+  label: string;
+  command: string;               // "plugin:name"; bare "name" is this plugin's own
+  args?: Record<string, string | number>;
+}
+
+function definePluginManifest(m: Manifest): Manifest;`}</Sig>
             <p className={styles.para}>
-              <Code>pane</Code> in the config declares one. It takes a share of the sidebar's
-              height; <Code>fit: 'content'</Code> holds it at its natural height instead, which
-              suits a row of buttons and starves whatever sits under a long list.
+              A command is a user action. The four places a <Code>CommandCall</Code> appears —
+              launcher, shortcuts, <Code>recommend</Code>, <Code>status</Code> — are four ways of
+              typing it, and a plugin that calls another plugin's command is opening that plugin's
+              UI for the user. It is not a way to request data: a command returns nothing, and data
+              crosses plugins as terms and cart items. Because any plugin may call{' '}
+              <Code>hello:hello</Code>, renaming a command breaks its callers. A command declared
+              here with no handler in <Code>commands.ts</Code> fails when that module loads; a
+              handler with no declaration cannot be reached, since <Code>hasCommand</Code> and the
+              prompt bar read the manifest. The host accepts every <Code>contractVersion</Code> it
+              has shipped.
             </p>
-            <File name="src/plugin.tsx" language="tsx">{`export default definePlugin({
-  route: fromReact(Dossier),
-  pane: fromReact(RecentProteins),
-});`}</File>
-            <Rules
-              items={[
-                'A pane has no path and no address; it is the same PanelHandle otherwise, and setTitle names its block.',
-                'Panes render for as long as they are pinned, so anything expensive belongs behind an interaction.',
-              ]}
-            />
-          </Point>
+          </Entry>
 
-          <Point id="p-commands" name="Slash commands">
+          <Entry id="r-vite" name="vite.config.ts" when="Read by the build.">
+            <Sig>{`function pluginFederation(paths: {
+  config: string;                // plugin.config.ts
+  background?: string;           // terms, recommend, status
+  route?: string;                // the page under /p/<id>/
+  pane?: string;                 // the sidebar block
+  commands?: string;             // handlers for the manifest's commands
+  prompt?: string;               // offers the plugin in Settings as the assistant
+}): VitePlugin;`}</Sig>
             <p className={styles.para}>
-              A command declared in the config is what a user can type, what a toolbar button runs,
-              and what any other plugin can call. The handlers live in the module and receive the
-              parsed values.
+              A module the paths do not name is not part of the plugin, whatever the source tree
+              holds; the named ones become <Code>modules</Code> in the manifest. The output is{' '}
+              <Code>manifest.json</Code>, <Code>remoteEntry.js</Code>, <Code>mf-manifest.json</Code>{' '}
+              and the assets. <Code>react</Code>, <Code>react-dom</Code>,{' '}
+              <Code>@kbase/plugin-sdk</Code>, <Code>@kbase/design-system</Code>, <Code>zod</Code>,{' '}
+              <Code>@phosphor-icons/react</Code> and <Code>@tanstack/react-router</Code> come from
+              the host at runtime: keep them in <Code>dependencies</Code>, where the build reads the
+              versions it declares, and none of them ends up in the bundle.
             </p>
-            <File name="src/plugin.tsx" language="tsx">{`commands: {
-  open: ({ id }, { host }) => host.openRoute(\`/\${id}\`),
+          </Entry>
 
-  compare: async ({ taxid }, { host }) => {
-    if (!host.hasCommand('genknown:taxon')) return host.notify('genKnown is not installed.');
-    await host.execute('genknown:taxon', { q: taxid });
-  },
-}`}</File>
-            <Rules
-              items={[
-                'Commands live in one registry under plugin:name and any plugin may run any of them, so a name is public: renaming one breaks whoever calls it.',
-                'hasCommand is the compatibility story — a plugin whose neighbour is absent degrades to a sentence rather than an exception.',
-                'Running a command changes no focus. A handler that should land the reader somewhere calls openRoute, and calls it before awaiting, so the page shows its own loading state while the work runs.',
-                'A handler is given no panel, so a command that acts on a page takes the path as an argument. That is what lets any caller run it without it meaning something different depending on what they were looking at.',
-                'A command either changes what is on screen or says something. The host shows the invoking control busy until the handler settles and raises a toast if it rejects; anything else is host.notify.',
-                'Commands answer nothing. What one plugin knows reaches another as terms and answers.',
-              ]}
-            />
-          </Point>
+          <Entry
+            id="r-background"
+            name="background.ts"
+            when="Fetched at startup from every plugin that names it. Three named exports, each optional."
+          >
+            <Export
+              id="r-terms"
+              name="terms"
+              when="Called on every keystroke and whenever a panel declares terms. Synchronous; no I/O."
+            >
+              <Sig>{`interface Query {
+  text?: string;                 // what was typed, when the query came from the prompt bar
+  terms?: string[];              // the pool, when it came from panels or an earlier answer
+  signal: AbortSignal;
+}
 
-          <Point id="p-terms" name="Recognising text">
-            <p className={styles.para}>
-              The workbench does not read what a user types. It puts the text to every plugin's{' '}
-              <Code>terms</Code>, pools what comes back with the terms already in play, and hands
-              the result to every plugin's <Code>recommend</Code> — so recognising something and
-              knowing what to do with it need not be the same plugin.
-            </p>
+export const terms: (q: Query) => string[];`}</Sig>
+              <p className={styles.para}>
+                A term is <Code>prefix:value</Code>. Nothing registers prefixes: a term means
+                whatever the <Code>recommend</Code> functions that match it take it to mean, so
+                before choosing one, read the plugin expected to react. Return only what the text's
+                shape establishes — the function runs for every plugin on every keystroke, and a
+                lookup belongs in the page a term opens. Called with <Code>terms</Code> rather than{' '}
+                <Code>text</Code>, it may expand one term into others.
+              </p>
+            </Export>
+
+            <Export
+              id="r-recommend"
+              name="recommend"
+              when="Called when a query settles; may fetch; the signal aborts when the query changes."
+            >
+              <Sig>{`interface CartItem {
+  id: string;                    // unique across plugins; prefix with the plugin id
+  kind: string;                  // protein | taxon | job | …
+  name: string;
+  subject?: string;              // the identifier the item is about
+  summary?: string;              // one line, shown in Related and the cart
+  terms?: string[];              // what other plugins' recommend() can do with it
+  source?: { path?: string; href?: string };   // where to open it: this plugin's route, or a URL
+  content?: unknown;             // the payload; must survive JSON
+  context?: Record<string, unknown>;           // what content cannot say: units, population, caveats
+}
+
+export const recommend: {
+  commands?: (q: Query) => CommandCall[] | Promise<CommandCall[]>;
+  cartItems?: (q: Query) => CartItem[] | Promise<CartItem[]>;
+};`}</Sig>
+              <p className={styles.para}>
+                The host filters what comes back: a command whose page is already open and an item
+                already in the cart are dropped, and a plugin is not asked about a page it has open.
+                An item is read by three consumers with different needs — the Related pane opens{' '}
+                <Code>source</Code>, another plugin's <Code>recommend</Code> reads{' '}
+                <Code>terms</Code>, and the assistant reads <Code>content</Code> and{' '}
+                <Code>context</Code> — so an item missing one of them is invisible to that consumer.
+              </p>
+            </Export>
+
+            <Export
+              id="r-status"
+              name="status"
+              when="Called at startup and after every command the workbench runs; the result shows until the next call."
+            >
+              <Sig>{`interface StatusItem {
+  text: string;
+  action?: CommandCall;          // run when the line is pressed
+}
+
+export const status: () => StatusItem[];`}</Sig>
+            </Export>
+
             <File
-              name="src/terms.ts"
+              name="src/background.ts"
               language="typescript"
-            >{`import { defineTerms } from '@kbase/plugin-sdk';
+            >{`import { defineTerms, defineRecommend, defineStatus } from '@kbase/plugin-sdk';
 
 const ACCESSION = /^[A-NR-Z][0-9][A-Z0-9]{3}[0-9]$/i;
-
-export default defineTerms(({ text, terms }) => {
-  const q = text?.trim().toUpperCase() ?? '';
-  return ACCESSION.test(q) ? [\`uniprot:\${q}\`] : [];
-});`}</File>
-            <Rules
-              items={[
-                'Fetched at startup and called on every keystroke, so it is synchronous and does no I/O. Recognising a shape is all it may do; a lookup belongs in the page it opens.',
-                'It answers about terms as well as text, which is how a taxon expands into its genomes without anything being typed.',
-                'An empty array is the normal answer, and an expression narrow enough to be wrong rarely is the whole trick: a plugin that answers for any text appears for every keystroke in the workbench.',
-                'If nothing ever comes of a term, it is probably spelled differently from the plugin that reads it — ncbi:562 against taxon:562 is silence and no error, which is the price of terms having no registry.',
-              ]}
-            />
-          </Point>
-
-          <Point id="p-recommend" name="Recommendations">
-            <p className={styles.para}>
-              Given terms, what is worth doing and what is worth keeping. This is where the prompt
-              bar's suggestions and the Related pane's rows come from, and unlike <Code>terms</Code>{' '}
-              it runs once a query settles, so it may fetch.
-            </p>
-            <File
-              name="src/recommend.ts"
-              language="typescript"
-            >{`import { defineRecommend } from '@kbase/plugin-sdk';
-
 const idsIn = (terms) => (terms ?? []).flatMap((t) => t.match(/^uniprot:(.+)$/)?.[1] ?? []);
 
-export default defineRecommend({
+export const terms = defineTerms(({ text }) => {
+  const q = text?.trim().toUpperCase() ?? '';
+  return ACCESSION.test(q) ? [\`uniprot:\${q}\`] : [];
+});
+
+export const recommend = defineRecommend({
   commands: ({ terms }) =>
-    idsIn(terms).map((id) => ({
-      label: \`Evidence dossier for \${id}\`,
-      command: 'open',
-      args: { id },
-    })),
+    idsIn(terms).map((id) => ({ label: \`Evidence dossier for \${id}\`, command: 'open', args: { id } })),
 
   cartItems: async ({ terms, signal }) => {
     const rows = await Promise.all(idsIn(terms).map((id) => fetchSummary(id, signal)));
@@ -287,53 +303,112 @@ export default defineRecommend({
       terms: [\`uniprot:\${row.id}\`, \`taxon:\${row.taxon}\`],
       source: { path: \`/\${row.id}\` },
       content: row,
-      context: { measuredOver: row.population, crosswalk: row.reach },
+      context: { measuredOver: row.population },
     }));
   },
+});
+
+export const status = defineStatus(() =>
+  pending() > 0 ? [{ text: \`\${pending()} lookups running\`, action: { label: 'Show', command: 'open' } }] : [],
+);`}</File>
+          </Entry>
+
+          <Entry
+            id="r-route"
+            name="route.tsx"
+            when="Fetched when the user first opens this plugin's tab."
+          >
+            <Sig>{`type Mount = (el: HTMLElement, ctx: { panel: PanelHandle; host: PluginHost }) => Cleanup | void;
+type Cleanup = () => void;
+
+function defineRoute(r: { mount: Mount; normalize: (path: string) => string }): Route;
+function fromReact(Component: ComponentType): { mount: Mount };   // the hooks under Handles read ctx`}</Sig>
+            <File name="src/route.tsx" language="tsx">{`function Dossier() {
+  const { path, navigate } = usePanel();
+  const id = path.slice(1);
+  usePanelTitle(id || 'Function Junction');
+  usePanelTerms(id ? [\`uniprot:\${id}\`] : []);
+  if (!id) return <SearchBox onPick={(picked) => navigate(\`/\${picked}\`)} />;
+  return <Report id={id} />;
+}
+
+export default defineRoute({
+  ...fromReact(Dossier),
+  normalize: (path) => path.split('?')[0].split('#')[0].toUpperCase(),
 });`}</File>
-            <Rules
-              items={[
-                'Both may be asynchronous, and the signal is aborted as soon as the reader moves on.',
-                'A recommended command is a call to a slash command, so a suggestion names something the user could have typed and a toolbar button is the same object.',
-                'An item carrying only source makes every consumer re-fetch and is worthless while that service is down; one carrying only content leaves no route back to where it came from.',
-                'context is what a reader of content cannot infer: units, the population a number was measured over, the caveats printed beside it. An assistant without it can quote a number and cannot qualify it.',
-                'The terms on an item are what make it worth collecting; an item without them is inert.',
-                'A plugin is not asked about the page it is already showing, and the host drops a recommendation whose path is open or whose item is already in the cart.',
-                'If a recommendation never appears: the module is not named in the build config, or nobody produced the term it reads.',
-              ]}
-            />
-          </Point>
-
-          <Point id="p-cart" name="Putting things in the cart">
             <p className={styles.para}>
-              The cart is the workbench's, which is what lets an item from one plugin be read by
-              another and by an assistant. A page adds to it directly; a recommendation offers an
-              item for something the reader has not opened.
+              The route receives every path under <Code>/p/&lt;id&gt;</Code>, query string included,
+              and the workbench never parses it. Two paths are the same page when{' '}
+              <Code>normalize</Code> maps them to one string; <Code>openRoute</Code> focuses a panel
+              already showing that page instead of opening a second, and the tab strip is only as
+              tidy as this function. Inside the panel, <Code>navigate</Code> changes its path and
+              pushes history; a route that serves both the empty path and the identified one gives a
+              search and its result one tab and a working Back. The focused panel's path is the
+              browser URL.
             </p>
-            <File name="src/plugin.tsx" language="tsx">{`const { cart } = useHost();
+          </Entry>
 
-<CartButton item={{ id, kind: 'protein', name, subject: id, terms, source: { path } }} />;
+          <Entry
+            id="r-pane"
+            name="pane.tsx"
+            when="Fetched when the user first pins this plugin's pane."
+          >
+            <Sig>{`function definePane(p: {
+  mount: Mount;
+  fit?: 'content';               // the block hugs its content instead of sharing the sidebar's height
+}): Pane;`}</Sig>
+            <File
+              name="src/pane.tsx"
+              language="tsx"
+            >{`import { definePane, fromReact } from '@kbase/plugin-sdk';
 
-// or, without React
-host.cart.add(item);
-host.cart.has(id);
-host.cart.subscribe(redraw);`}</File>
-            <Rules
-              items={[
-                'A plugin can test its own ids with has(); other plugins’ items are unreadable, except in the assistant’s attachments.',
-                'Adding the same id twice replaces rather than duplicates, so re-adding refreshes a payload.',
-                'The host persists the cart, so content must survive JSON.',
-              ]}
-            />
-          </Point>
-
-          <Point id="p-assistant" name="The assistant">
+export default definePane({ ...fromReact(RecentProteins), fit: 'content' });`}</File>
             <p className={styles.para}>
-              A <Code>prompt</Code> module offers the plugin in Settings as the receiver of free
-              text — what was neither a slash command nor a suggestion taken. The workbench reads
-              the bundle's own manifest to see the module exists, so nothing declares the capability
-              twice.
+              The pane mounts once, when pinned, and stays mounted while it is pinned. It has no
+              path; <Code>usePanel().path</Code> is <Code>''</Code> there.
             </p>
+          </Entry>
+
+          <Entry
+            id="r-commands"
+            name="commands.ts"
+            when="Fetched when the user first runs one of this plugin's commands, from the prompt bar or from any CommandCall."
+          >
+            <Sig>{`interface CommandContext { host: PluginHost; caller: string }   // a plugin id, or 'user'
+
+function defineCommands(
+  handlers: Record<string, (args: Record<string, string | number>, ctx: CommandContext) => void | Promise<void>>,
+): Commands;`}</Sig>
+            <File
+              name="src/commands.ts"
+              language="typescript"
+            >{`import { defineCommands } from '@kbase/plugin-sdk';
+
+export default defineCommands({
+  open: ({ id }, { host }) => host.openRoute(\`/\${id}\`),
+  compare: async ({ taxid }, { host }) => {
+    if (!host.hasCommand('genknown:taxon')) return host.notify('genKnown is not installed.');
+    await host.execute('genknown:taxon', { q: taxid });
+  },
+});`}</File>
+            <p className={styles.para}>
+              Handlers receive args as strings when typed and as given when called from a{' '}
+              <Code>CommandCall</Code>, and receive no panel: a command that acts on a page takes
+              the path as an argument. To land the user somewhere, call <Code>openRoute</Code> first
+              and await the work after, so the page shows its own loading state. While the handler
+              runs the host shows the control that invoked it busy; a rejection becomes a toast; any
+              other result the handler reports with <Code>notify</Code>.
+            </p>
+          </Entry>
+
+          <Entry
+            id="r-prompt"
+            name="prompt.ts"
+            when="Fetched when Settings names this plugin as the assistant. Called with free text the prompt bar did not resolve to a command or a suggestion."
+          >
+            <Sig>{`function definePrompt(
+  fn: (q: Query, ctx: { host: PluginHost; attachments: readonly CartItem[] }) => Promise<void>,
+): Prompt;`}</Sig>
             <File
               name="src/prompt.ts"
               language="typescript"
@@ -341,110 +416,23 @@ host.cart.subscribe(redraw);`}</File>
 
 export default definePrompt(async ({ text, terms }, { host, attachments }) => {
   const slug = current() ?? newArc().slug;
-  host.openRoute(\`/\${slug}\`);          // before awaiting: the page shows the work
+  host.openRoute(\`/\${slug}\`);
   await ask(slug, text, attachments);
 });`}</File>
-            <Rules
-              items={[
-                'It takes the same Query as the answer functions, so an assistant sees the terms in play as well as the words.',
-                'attachments is the cart as it stood when enter was pressed, not as it is when the promise resolves. It is the one place a plugin sees another plugin’s items, and the user put them there deliberately.',
-                'The handler owns what happens next: opening its own page, streaming into it, or answering without a panel.',
-              ]}
-            />
-          </Point>
-
-          <Point id="p-status" name="The status strip">
             <p className={styles.para}>
-              The strip along the bottom of the window. Every installed plugin may contribute a
-              line.
+              <Code>attachments</Code> is a copy of the cart taken when enter was pressed, every
+              plugin's items included. Where the answer goes is the handler's decision: the example
+              opens the plugin's own page and streams into it.
             </p>
-            <File
-              name="src/status.ts"
-              language="typescript"
-            >{`import { defineStatus } from '@kbase/plugin-sdk';
+          </Entry>
 
-export default defineStatus(() => (running() > 0 ? [{ text: \`\${running()} running\` }] : []));`}</File>
-            <Rules
-              items={[
-                'Fetched at startup like terms, so a plugin reports before anyone has opened it — a job count is worth showing to someone who has not opened the jobs page.',
-                'An item may carry a CommandCall, which the strip runs when the line is pressed.',
-              ]}
-            />
-          </Point>
-        </Part>
-
-        <Part id="types" title="Types">
-          <Sig>{`// plugin.config.ts
-interface Manifest {
-  id: string;                       // /^[a-z][a-z0-9-]{1,40}$/ — in URLs and saved layouts
-  title: string;
-  description?: string;
-  contractVersion: number;          // written by the build
-  icon?: string;                    // a name from the host's icon table
-  color?: string;                   // blue | green | teal | purple | orange | red
-  route?: true;
-  pane?: { fit?: 'content' };
-  commands?: SlashCommand[];
-  shortcuts?: CommandCall[];        // buttons in the sidebar toolbar
-  launcher?: CommandCall;           // listed on the Browse page
-}
-
-interface SlashCommand {
-  name: string;                     // /^[a-z][a-z0-9-]*$/
-  title: string;
-  description?: string;
-  args?: { name: string; description?: string; required?: boolean }[];
-  icon?: string;
-}
-
-interface CommandCall {
-  label: string;
-  command: string;                  // "plugin:name"; bare means this plugin's own
-  args?: Record<string, string | number>;
-}`}</Sig>
-
-          <Sig>{`// src/plugin.tsx
-interface PluginModule {
-  route?: { mount: Mount; normalize: (path: string) => string };
-  pane?: { mount: Mount };
-  commands?: Record<string, (values: CommandValues, ctx: CommandContext) => void | Promise<void>>;
-}
-
-type Cleanup = () => void;
-type Mount = (el: HTMLElement, ctx: { panel: PanelHandle; host: PluginHost }) => Cleanup | void;
-
-interface CommandContext { host: PluginHost; caller: string }   // a plugin id, or 'user'
-
-function definePlugin(module: PluginModule): PluginModule;
-function fromReact(Component: ComponentType): { mount: Mount };`}</Sig>
-
-          <Sig>{`// one query, asked of the two modules that answer it
-interface Query {
-  text?: string;
-  terms?: string[];
-  signal: AbortSignal;
-}
-
-// src/terms.ts — synchronous, every keystroke
-function defineTerms(fn: (q: Query) => string[]): Terms;
-
-// src/recommend.ts — on settle, may fetch
-function defineRecommend(r: {
-  commands?: (q: Query) => CommandCall[] | Promise<CommandCall[]>;
-  cartItems?: (q: Query) => CartItem[] | Promise<CartItem[]>;
-}): Recommend;
-
-// src/status.ts — at startup
-function defineStatus(fn: () => StatusItem[]): Status;
-
-// src/prompt.ts — when Settings names this plugin
-function definePrompt(
-  fn: (q: Query, ctx: { host: PluginHost; attachments: readonly CartItem[] }) => Promise<void>,
-): Prompt;`}</Sig>
-
-          <Sig>{`// handed to a surface, a command and the assistant
-interface PluginHost {
-  openRoute: (path: string, options?: { duplicate?: boolean }) => void;
+          <Entry
+            id="r-handles"
+            name="Handles"
+            when="Given to every mount, command handler and prompt handler. In React, the hooks read them."
+          >
+            <Sig>{`interface PluginHost {
+  openRoute: (path: string, options?: { duplicate?: boolean }) => void;   // this plugin's route
   execute: (command: string, args?: Record<string, string | number>) => Promise<void>;
   hasCommand: (command: string) => boolean;
   notify: (text: string) => void;
@@ -452,121 +440,77 @@ interface PluginHost {
 }
 
 interface PanelHandle {
-  id: string;
+  id: string;                    // opaque; stable while the panel lives
   plugin: string;
-  kind: 'pane' | 'route';
-  path: string;
+  kind: 'route' | 'pane';
+  path: string;                  // '' for a pane
   focused: boolean;
   navigate: (path: string, options?: { replace?: boolean }) => void;
   setTitle: (title: string) => void;
-  setCrumbs: (crumbs: Crumb[]) => void;
-  setTerms: (terms: string[]) => void;
-  subscribe: (listener: () => void) => Cleanup;
-}
-
-interface CartItem {
-  id: string;
-  kind: string;
-  name: string;
-  subject?: string;
-  summary?: string;
-  terms?: string[];
-  source?: { path?: string; href?: string };
-  content?: unknown;
-  context?: Record<string, unknown>;
+  setCrumbs: (crumbs: { label: string; path?: string }[]) => void;
+  setTerms: (terms: string[]) => void;   // what this panel puts in the pool
+  subscribe: (listener: () => void) => Cleanup;   // path, focus
 }
 
 interface Cart {
-  add: (item: CartItem) => void;
+  add: (item: CartItem) => void; // same id replaces
   remove: (id: string) => void;
-  has: (id: string) => boolean;
+  has: (id: string) => boolean;  // this plugin's ids only
   count: () => number;
   subscribe: (listener: () => void) => Cleanup;
 }
 
-// React wrappers over the same handles: usePanel, usePanelTitle,
-// usePanelBreadcrumbs, usePanelTerms, useHost, useCart, CartButton.`}</Sig>
+// React
+function useHost(): PluginHost;
+function usePanel(): PanelHandle;         // re-renders on path and focus
+function useCart(): Cart;                 // re-renders on change
+function usePanelTitle(title: string): void;
+function usePanelBreadcrumbs(crumbs: { label: string; path?: string }[]): void;
+function usePanelTerms(terms: string[]): void;
+function CartButton(props: { item: CartItem; tooltip?: string }): JSX.Element;   // "+ Add" / "✓ Added"`}</Sig>
+          </Entry>
         </Part>
 
         <Part id="deploying" title="Deploying">
+          <File name="" language="text">{`/services/<id>/manifest.json     the description
+/services/<id>/plugin/…          everything in dist/`}</File>
           <p className={styles.para}>
-            The build emits <Code>manifest.json</Code>, <Code>remoteEntry.js</Code>, a Module
-            Federation manifest listing what the bundle exposes, and the assets. The plugin's
-            service serves them at two paths, and those two paths are the whole deployment contract.
+            The plugin's service serves those two paths; the registry answers{' '}
+            <Code>GET /plugin-registry/plugins</Code> with the manifests of every plugin it knows.
+            In a container <Code>REGISTRY_UPSTREAM</Code> is the registry's address; unset, the
+            shell runs with its own plugins only. In development{' '}
+            <Code>VITE_DEV_SERVICE_PROXY=&lt;prefix&gt;=&lt;origin&gt;</Code> maps a prefix to a
+            Vite server, and that plugin is in the list while the server answers.
           </p>
-          <File
-            name="served by the plugin"
-            language="text"
-          >{`/services/hello/manifest.json      the description, at the prefix root
-/services/hello/plugin/…           everything the build emitted`}</File>
-          <p className={styles.para}>
-            The workbench asks its registry for <Code>GET /plugin-registry/plugins</Code> and
-            expects an array of manifests, then fetches each bundle from that plugin's own prefix.
-            In a container <Code>REGISTRY_UPSTREAM</Code> points <Code>/plugin-registry/</Code> at a
-            registry service; without it the shell runs with only its own plugins.
-          </p>
-
-          <h3 className={styles.subhead}>Shared code</h3>
-          <p className={styles.para}>
-            The preset declares what the workbench already ships, so a plugin bundles none of it and
-            names no versions — Module Federation reads those from the plugin's own dependencies,
-            and <Code>singleton</Code> is what makes the host's copy win.
-          </p>
-          <File
-            name="declared by pluginFederation()"
-            language="text"
-          >{`react, react-dom            two copies break hooks
-@kbase/plugin-sdk           a second copy is a second panel context
-@kbase/design-system        its components carry React context
-zod                         schema identity
-@phosphor-icons/react       shipped by the host; every plugin draws from it
-@tanstack/react-router      shipped by the host; a plugin may run one in its panel`}</File>
-
-          <h3 className={styles.subhead}>Failures that belong to no one extension point</h3>
-          <div className={styles.trouble}>
-            <Symptom name="The plugin is missing entirely">
-              Its manifest failed to parse — the console names the field — or the registry never
-              returned it. Fetch <Code>/plugin-registry/plugins</Code> from the workbench's own
-              origin and look for the id.
-            </Symptom>
-            <Symptom name="Invalid hook call, or a context that is always null">
-              Two copies of React, or of the SDK. The Module Federation manifest in the plugin's
-              output lists what it actually shared.
-            </Symptom>
-            <Symptom name="usePanel() called outside a workbench panel">
-              Something other than a mounted surface is rendering the component — a portal, a
-              toolbar, a test. The handle comes from the surface the host mounted, so anything drawn
-              outside it has to be passed what it needs.
-            </Symptom>
-          </div>
         </Part>
 
-        <Part id="notes" title="Design notes">
-          <Note title="Why a surface is a mount function">
-            A contract typed <Code>ComponentType</Code> makes React a property of the platform
-            rather than a choice of the plugin. A mount function is the smallest thing every UI
-            framework can produce, and the React wrapper sits in a few dozen lines above it.
-          </Note>
-          <Note title="Why three answers over one query">
-            A plugin is asked three separable things, and one query answers all of them whether it
-            arrived as typed text or as terms from a panel. Splitting by answer rather than by
-            surface is what lets one plugin recognise something and another know what to do with it.
-          </Note>
-          <Note title="Why a suggestion is a call">
-            A call is something a user could have typed, so a suggestion teaches the command behind
-            it, a toolbar button is the same object as a suggestion, and either survives being
-            written into history or into a message to an assistant. A closure survives none of that.
-          </Note>
-          <Note title="Why terms have no registry">
-            A registry of prefixes would make the host the arbiter of what plugins may discuss, and
-            every new vocabulary a host release. The cost is that two plugins spelling one idea
-            differently produce an empty pane and no error.
-          </Note>
-          <Note title="Why the build writes the manifest">
-            By hand it is a third copy of the plugin id, a version number someone bumps, and a list
-            of module names the bundler already knows. Generated from a typed config it is checked
-            by the schema the host parses with, and the failure lands on the person who can fix it.
-          </Note>
+        <Part id="errors" title="Errors">
+          <div className={styles.trouble}>
+            <Symptom name="The plugin is not on Browse">
+              <Code>GET /plugin-registry/plugins</Code> from the workbench's origin either lacks it
+              — the registry or the dev proxy is not pointed at it — or has it and the console names
+              the manifest field that failed to parse.
+            </Symptom>
+            <Symptom name="Invalid hook call, or a context that is always null">
+              The bundle carries its own React or its own SDK. <Code>mf-manifest.json</Code> in the
+              build output lists what was shared; a package missing from it is missing from{' '}
+              <Code>dependencies</Code>.
+            </Symptom>
+            <Symptom name="usePanel() called outside a workbench panel">
+              The component rendered somewhere the host did not mount it — a portal, a toolbar, a
+              test. Pass it the handle instead.
+            </Symptom>
+            <Symptom name="/hello completes, then nothing happens">
+              The command is declared in <Code>plugin.config.ts</Code> but either{' '}
+              <Code>commands</Code> is not named in <Code>vite.config.ts</Code> or the module has no
+              handler under that name; the console names the missing handler when the module loads.
+            </Symptom>
+            <Symptom name="A recommendation never appears">
+              <Code>background</Code> is not named in <Code>vite.config.ts</Code>, it exports no{' '}
+              <Code>recommend</Code>, or no plugin produced the term it matches; the console prints
+              the pooled terms on each settle.
+            </Symptom>
+          </div>
         </Part>
       </article>
     </div>
@@ -574,25 +518,24 @@ zod                         schema identity
 }
 
 const SECTIONS: { id: string; label: string; children?: { id: string; label: string }[] }[] = [
-  { id: 'anatomy', label: 'Anatomy' },
-  { id: 'running', label: 'Get it running' },
+  { id: 'plugin', label: 'A plugin' },
+  { id: 'runs', label: 'How it runs' },
   {
-    id: 'points',
-    label: 'What a plugin can add',
+    id: 'reference',
+    label: 'Reference',
     children: [
-      { id: 'p-page', label: 'A page' },
-      { id: 'p-pane', label: 'A sidebar pane' },
-      { id: 'p-commands', label: 'Slash commands' },
-      { id: 'p-terms', label: 'Recognising text' },
-      { id: 'p-recommend', label: 'Recommendations' },
-      { id: 'p-cart', label: 'The cart' },
-      { id: 'p-assistant', label: 'The assistant' },
-      { id: 'p-status', label: 'The status strip' },
+      { id: 'r-config', label: 'plugin.config.ts' },
+      { id: 'r-vite', label: 'vite.config.ts' },
+      { id: 'r-background', label: 'background.ts' },
+      { id: 'r-route', label: 'route.tsx' },
+      { id: 'r-pane', label: 'pane.tsx' },
+      { id: 'r-commands', label: 'commands.ts' },
+      { id: 'r-prompt', label: 'prompt.ts' },
+      { id: 'r-handles', label: 'Handles' },
     ],
   },
-  { id: 'types', label: 'Types' },
   { id: 'deploying', label: 'Deploying' },
-  { id: 'notes', label: 'Design notes' },
+  { id: 'errors', label: 'Errors' },
 ];
 
 // The panel scrolls, not the window, so the rail moves the panel's own
@@ -637,15 +580,52 @@ function Part({ id, title, children }: { id: string; title: string; children: Re
   );
 }
 
-// One thing a plugin can add: what it is, the smallest complete example, the
-// rules the host applies, and the failure that belongs here rather than in a
-// list of every failure at the end.
-function Point({ id, name, children }: { id: string; name: string; children: ReactNode }) {
+// One module of the contract: its name, when the host reaches it, the types it
+// consumes, one example, and the constraints as prose.
+function Entry({
+  id,
+  name,
+  when,
+  children,
+}: {
+  id: string;
+  name: string;
+  when: string;
+  children: ReactNode;
+}) {
   return (
     <section className={styles.entry} id={id} aria-labelledby={`${id}-h`}>
-      <h3 id={`${id}-h`} className={styles.entryName}>
-        {name}
-      </h3>
+      <div className={styles.entryHead}>
+        <h3 id={`${id}-h`} className={styles.entryName}>
+          {name}
+        </h3>
+        <p className={styles.when}>{when}</p>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+// One named export of a module that holds several, each with its own schedule.
+function Export({
+  id,
+  name,
+  when,
+  children,
+}: {
+  id: string;
+  name: string;
+  when: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className={styles.export} id={id} aria-labelledby={`${id}-h`}>
+      <div className={styles.entryHead}>
+        <h4 id={`${id}-h`} className={styles.exportName}>
+          {name}
+        </h4>
+        <p className={styles.when}>{when}</p>
+      </div>
       {children}
     </section>
   );
@@ -664,29 +644,10 @@ function File({ name, language, children }: { name: string; language: string; ch
   );
 }
 
-function Rules({ items }: { items: string[] }) {
-  return (
-    <ul className={styles.behaviour}>
-      {items.map((item) => (
-        <li key={item}>{item}</li>
-      ))}
-    </ul>
-  );
-}
-
 function Symptom({ name, children }: { name: string; children: ReactNode }) {
   return (
     <section className={styles.symptom}>
       <h4 className={styles.symptomName}>{name}</h4>
-      <p className={styles.para}>{children}</p>
-    </section>
-  );
-}
-
-function Note({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className={styles.noteBlock}>
-      <h3 className={styles.noteTitle}>{title}</h3>
       <p className={styles.para}>{children}</p>
     </section>
   );
