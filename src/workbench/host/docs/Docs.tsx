@@ -303,7 +303,7 @@ function react(Component: ComponentType): { mount: Mount };`}</Sig>
   route?: { mount: Mount };
   pane?: { mount: Mount };
   commands?: Record<string, (values: CommandValues, ctx: CommandContext) => void | Promise<void>>;
-  prompt?: PromptHandler;
+  prompt?: (q: Query, ctx: PromptContext) => Promise<void>;
   status?: (host: PluginHost) => StatusItem[];
 }
 
@@ -312,12 +312,20 @@ interface CommandContext {
   caller: string;             // the plugin id that ran it, or 'user'
 }
 
+interface PromptContext {
+  host: PluginHost;
+  attachments: readonly CartItem[];   // the cart as it stood when enter was pressed
+}
+
 function definePlugin(module: PluginModule): PluginModule;`}</Sig>
             <Behaviour
               items={[
                 'definePlugin() types the export and returns it unchanged.',
                 'The host compares the module against the manifest and logs a mismatch rather than throwing: one wrong declaration costs that surface, not the session.',
-                'prompt receives the cart as it stood when the message was sent, not as it is when the promise resolves.',
+                'prompt is where free text goes when it is not a slash command and no suggestion was taken. Settings names the plugin that receives it, from those whose manifest sets promptHandler.',
+                'It takes the same Query the answer functions take, so an assistant sees the terms in play as well as the words, and there is one request shape in the contract rather than two.',
+                'attachments is the cart as it stood when enter was pressed, not as it is when the promise resolves. It is the only place a plugin sees another plugin’s cart items, and the user put them there deliberately.',
+                'The handler owns what happens next: opening its own page with openRoute, streaming into it, or answering without a panel at all.',
                 'A command handler is given caller so it can tell a user’s keystroke from another plugin acting for them — a distinction it will need before any permission model exists.',
               ]}
             />
