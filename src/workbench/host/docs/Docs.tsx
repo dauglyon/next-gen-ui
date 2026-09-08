@@ -1,18 +1,21 @@
 import type { ReactNode } from 'react';
 import { CodeBlock, Table, Tbody, Td, Th, Thead, Tr } from '@kbase/design-system';
-import { CONTRACT_VERSION, usePanelTitle } from '../../../plugins/sdk';
+import { usePanelTitle } from '../../../plugins/sdk';
 import styles from './Docs.module.css';
 
-// Reference for the plugin contract, shipped inside the host it describes, so
-// a reader sees the contract that is running rather than one a wiki recorded.
+// The plugin contract as it is meant to be, written before it is built: this
+// page is the specification, and the implementation is measured against it.
 //
-// Three parts in the order a reader needs them: a complete plugin to copy, the
-// types it was built from, then the tasks that come after the first one works.
-// Explanation is quarantined at the end — a rationale sentence inside a field
-// table is what makes reference material unreadable.
+// What differs from what ships today, each of them work to do: a surface is a
+// mount function with React as a wrapper, rather than a React component
+// outright; `navigator` and `document` are `pane` and `route`; `match` and
+// `related` are one `offers` function; `openDocument` is `openRoute` and can
+// be asked for a second view; a plugin's federation config names no versions.
 //
-// Every signature is asserted against its source file by Docs.test.ts, so a
-// contract change that does not reach this page fails the suite.
+// Three parts in the order a reader needs them: a plugin to copy, the types it
+// was built from, then the tasks that come after the first one works. Rationale
+// lives in design notes at the end, because a reason inside a field table is
+// what makes reference material unreadable.
 
 export function DocsDocument() {
   usePanelTitle('Plugin developer documentation');
@@ -24,9 +27,10 @@ export function DocsDocument() {
           <h1 className="h2">Plugin developer documentation</h1>
           <p className={styles.lede}>
             A plugin is a JSON manifest and a Module Federation remote. The host reads manifests at
-            startup and draws tabs, sidebar blocks, slash commands and launcher entries from them;
-            it fetches a remote when something needs to render or answer. Contract version{' '}
-            {CONTRACT_VERSION}.
+            startup and draws tabs, sidebar panes, slash commands and launcher entries from them; it
+            fetches a remote when something needs to render or answer. Nothing in the contract
+            requires React: a surface is a function that mounts into an element, and React is one
+            wrapper over that.
           </p>
         </header>
 
@@ -40,14 +44,14 @@ export function DocsDocument() {
   "id": "hello",
   "title": "Hello",
   "description": "The smallest plugin that draws something.",
-  "contractVersion": 1,
+  "contractVersion": 2,
   "icon": "HandWaving",
   "color": "teal",
-  "document": { "route": "/$q", "opensEmpty": true },
+  "route": { "path": "/$q", "opensEmpty": true },
   "entry": {
     "url": "/services/hello/plugin/mf-manifest.json",
     "module": "./plugin",
-    "matcher": "./match"
+    "offers": "./offers"
   }
 }`}</File>
 
@@ -56,14 +60,13 @@ import react from '@vitejs/plugin-react';
 import { pluginFederation } from '@kbase/plugin-sdk/vite';
 
 export default defineConfig({
-  plugins: [pluginFederation({ name: 'hello', matcher: './src/match.ts' }), react()],
-  build: { target: 'esnext' },
+  plugins: [pluginFederation({ name: 'hello', offers: './src/offers.ts' }), react()],
 });`}</File>
 
           <File
             name="src/plugin.tsx"
             language="tsx"
-          >{`import { definePlugin, usePanel, usePanelTitle } from '@kbase/plugin-sdk';
+          >{`import { definePlugin, react, usePanel, usePanelTitle } from '@kbase/plugin-sdk';
 
 function Hello() {
   const { params } = usePanel();
@@ -71,24 +74,25 @@ function Hello() {
   return <p>Hello, {params.q ?? 'nobody'}.</p>;
 }
 
-export default definePlugin({ document: Hello });`}</File>
+export default definePlugin({ route: react(Hello) });`}</File>
 
           <File
-            name="src/match.ts"
+            name="src/offers.ts"
             language="typescript"
-          >{`import type { Matcher } from '@kbase/plugin-sdk';
+          >{`import type { Offers } from '@kbase/plugin-sdk';
 
-const match: Matcher = (text) => {
-  const q = text.trim();
-  return /^H\\w+$/.test(q) ? [{ label: \`Say hello to \${q}\`, action: { q } }] : [];
+const offers: Offers = ({ text }) => {
+  const q = text?.trim();
+  if (!q || !/^H\\w+$/.test(q)) return [];
+  return [{ id: \`hello:\${q}\`, label: \`Say hello to \${q}\`, params: { q } }];
 };
 
-export default match;`}</File>
+export default offers;`}</File>
 
           <p className={styles.para}>
-            The registry serves the manifest, and <Code>entry.url</Code> resolves against the
-            registry origin. Nothing else is registered: the host learns the tab, the route, the
-            icon and the offer from those two files before fetching any code.
+            The registry serves the manifest and <Code>entry.url</Code> resolves against the
+            registry origin. Nothing else is registered: the host knows the tab, the route, the icon
+            and the offer before it fetches any code.
           </p>
         </Part>
 
@@ -98,14 +102,14 @@ export default match;`}</File>
   id: string;                 // /^[a-z][a-z0-9-]{1,40}$/
   title: string;
   description?: string;
-  contractVersion: 1;
+  contractVersion: number;
   icon?: string;
   color?: string;
-  navigator?: { fit?: 'content' };
-  document?: { route: string; opensEmpty?: boolean };
+  pane?: { fit?: 'content' };
+  route?: { path: string; opensEmpty?: boolean };
   commands?: CommandDecl[];
   promptHandler?: boolean;
-  entry?: { url: string; module: string; matcher?: string; related?: string };
+  entry?: { url: string; module: string; offers?: string };
 }`}</Sig>
             <Fields
               rows={[
@@ -119,15 +123,20 @@ export default match;`}</File>
                   'title',
                   'string',
                   'yes',
-                  'Names the plugin in tabs, block headers and the launcher.',
+                  'Names the plugin in tabs, pane headers and the launcher.',
                 ],
                 ['description', 'string', '', 'One line, shown in the launcher and in Settings.'],
-                ['contractVersion', '1', 'yes', 'Rejected unless it equals the host constant.'],
+                [
+                  'contractVersion',
+                  'number',
+                  'yes',
+                  'The version this plugin was built against. The host reads every version it has published and upgrades an older manifest as it loads it.',
+                ],
                 [
                   'icon',
                   'string',
                   '',
-                  'A name from workbench/host/icons.ts. An unlisted name draws a pin.',
+                  'A name from the host icon table. An unlisted name draws a pin.',
                 ],
                 [
                   'color',
@@ -136,16 +145,16 @@ export default match;`}</File>
                   'blue, green, teal, purple, orange or red. Reaches the icon only.',
                 ],
                 [
-                  'navigator',
+                  'pane',
                   'object',
                   '',
-                  'The key declares a sidebar panel. fit: "content" holds the block at its natural height instead of giving it a share of the stack.',
+                  'Declares a sidebar surface. fit: "content" holds it at its natural height instead of giving it a share of the stack.',
                 ],
                 [
-                  'document',
+                  'route',
                   'object',
                   '',
-                  'Declares a main-area page. route is a path under /p/<id> carrying $params.',
+                  'Declares an addressable page. path sits under /p/<id> and carries $params; opensEmpty marks a page that renders with none of them supplied.',
                 ],
                 ['commands', 'CommandDecl[]', '', 'Slash commands.'],
                 [
@@ -154,14 +163,19 @@ export default match;`}</File>
                   '',
                   'Mirrors a prompt export. Lets Settings offer this plugin as the assistant before its code loads.',
                 ],
-                ['entry', 'object', '', 'The remote. Absent for plugins bundled with the host.'],
+                [
+                  'entry',
+                  'object',
+                  '',
+                  'The remote. module holds the surfaces and commands; offers is fetched separately at startup. Absent for plugins bundled with the host.',
+                ],
               ]}
             />
             <Behaviour
               items={[
-                'A manifest that fails to parse is dropped with a console warning; the other plugins load.',
-                'A route carrying a $param, without opensEmpty, cannot appear in the launcher: there would be nothing to open.',
-                'Declaring neither navigator nor document is valid; the plugin then contributes only commands.',
+                'A manifest that fails to parse is dropped with a console error naming the field; the other plugins load.',
+                'A route path carrying a $param, without opensEmpty, cannot appear in the launcher: there would be nothing to open.',
+                'Declaring neither pane nor route is valid; the plugin then contributes commands and offers.',
               ]}
             />
           </Entry>
@@ -214,14 +228,55 @@ interface ArgDecl {
             />
           </Entry>
 
+          <Entry id="surfaces" name="Surface, Mount, react()" source="plugins/sdk/surface.ts">
+            <Sig>{`type Cleanup = () => void;
+
+type Mount = (el: HTMLElement, ctx: SurfaceContext) => Cleanup | void;
+
+interface Surface {
+  mount: Mount;
+}
+
+interface SurfaceContext {
+  panel: PanelHandle;
+  host: PluginHost;
+}
+
+function react(Component: ComponentType): Surface;`}</Sig>
+            <Fields
+              head={['Member', 'Type', 'Req.', 'Description']}
+              rows={[
+                [
+                  'mount',
+                  'Mount',
+                  'yes',
+                  'Called once with an empty element the plugin owns. The function it returns runs when the panel closes.',
+                ],
+                [
+                  'ctx.panel',
+                  'PanelHandle',
+                  'yes',
+                  'This panel’s params, focus and setters. A plain object; subscribe for changes.',
+                ],
+                ['ctx.host', 'PluginHost', 'yes', 'Opening routes, running commands, the cart.'],
+              ]}
+            />
+            <Behaviour
+              items={[
+                'react(Component) returns a Surface that renders the component with the panel and host contexts already provided, so the hooks work inside it.',
+                'A mount function is called once per panel, not once per param change: new params arrive through ctx.panel and its subscription.',
+                'A surface that throws during mount is fenced. The panel shows the error; the rest of the workbench keeps working.',
+              ]}
+            />
+          </Entry>
+
           <Entry id="module" name="PluginModule" source="plugins/sdk/plugin.ts">
             <Sig>{`interface PluginModule {
-  navigator?: ComponentType;
-  document?: ComponentType;
+  route?: Surface;
+  pane?: Surface;
   commands?: Record<string, (values: CommandValues, host: PluginHost) => void | Promise<void>>;
   prompt?: PromptHandler;
-  useStatus?: () => StatusItem[];
-  usePromptContext?: () => PromptContext | null;
+  status?: (host: PluginHost) => StatusItem[];
 }
 
 function definePlugin(module: PluginModule): PluginModule;`}</Sig>
@@ -238,84 +293,146 @@ function definePlugin(module: PluginModule): PluginModule;`}</Sig>
             <Sig>{`interface PanelHandle {
   id: string;
   plugin: string;
-  kind: 'navigator' | 'document';
+  kind: 'pane' | 'route';
   params: Record<string, string>;
   focused: boolean;
   setTitle: (title: string) => void;
   setCrumbs: (crumbs: Crumb[]) => void;
   setTerms: (terms: string[]) => void;
+  subscribe: (listener: () => void) => Cleanup;
 }
 
+// React wrappers over the same handle.
 function usePanel(): PanelHandle;
 function usePanelTitle(title: string): void;
 function usePanelBreadcrumbs(crumbs: Crumb[]): void;
 function usePanelTerms(terms: string[]): void;`}</Sig>
             <Fields
-              head={['Setter', 'Hook', '', 'What the host does with it']}
+              head={['Member', 'Type', 'Req.', 'Description']}
               rows={[
                 [
+                  'params',
+                  'Record<string, string>',
+                  'yes',
+                  'The route’s $params, plus any extra params it was opened with.',
+                ],
+                ['focused', 'boolean', 'yes', 'Whether this panel holds focus in its area.'],
+                [
                   'setTitle',
-                  'usePanelTitle',
+                  '(title) => void',
                   '',
-                  'Names the tab or block. Before the first call the host shows the plugin title and the params.',
+                  'Names the tab or pane. Until it is called the host shows the plugin title and the params.',
                 ],
                 [
                   'setCrumbs',
-                  'usePanelBreadcrumbs',
+                  '(crumbs) => void',
                   '',
                   'Draws the trail above the panel, and tells two same-titled tabs apart.',
                 ],
                 [
                   'setTerms',
-                  'usePanelTerms',
+                  '(terms) => void',
                   '',
-                  'Asks every other plugin what it has about these terms; answers appear in the Related pane.',
+                  'What this panel is about. The host asks every other plugin for offers on them.',
+                ],
+                [
+                  'subscribe',
+                  '(listener) => Cleanup',
+                  '',
+                  'Fires when params or focus change. A React surface needs it; a mount function does.',
                 ],
               ]}
             />
             <Behaviour
               items={[
-                'usePanel() throws outside a panel. Rendering a plugin component from host chrome is the usual cause.',
-                'Panel identity is the plugin id plus its params sorted into a key, so opening a document whose params match an open tab focuses that tab.',
-                'The hooks compare before calling the host, so a fresh array each render does not loop.',
+                'usePanel() throws outside a panel. The handle’s setters never throw and never no-op in silence.',
+                'Panel identity is the plugin id plus its params sorted into a key, so opening a route whose params match an open tab focuses that tab instead of adding a second.',
+                'A second view of the same page is asked for explicitly: openRoute(params, { duplicate: true }).',
               ]}
             />
           </Entry>
 
-          <Entry id="matcher" name="Matcher, Offer" source="plugins/sdk/plugin.ts">
-            <Sig>{`type Matcher = (text: string) => Offer[];
+          <Entry id="offers" name="Offers, OfferRequest, Offer" source="plugins/sdk/offers.ts">
+            <Sig>{`type Offers = (request: OfferRequest) => Offer[] | Promise<Offer[]>;
+
+interface OfferRequest {
+  context: 'prompt' | 'view' | 'cart';
+  text?: string;                    // set when context is 'prompt'
+  terms?: readonly string[];        // set when context is 'view' or 'cart'
+  signal: AbortSignal;
+}
 
 interface Offer {
+  id: string;
   label: string;
-  action: Record<string, string>;
+  detail?: string;
+  params: Record<string, string>;
+  terms?: string[];
+  item?: Omit<CartItem, 'id'> & { id?: string };
 }`}</Sig>
             <Fields
               rows={[
                 [
+                  'context',
+                  "'prompt' | 'view' | 'cart'",
+                  'yes',
+                  'What prompted the question: text being typed, the page on screen, or what is in the cart.',
+                ],
+                [
+                  'text',
+                  'string',
+                  '',
+                  'The prompt-bar text, untrimmed. Only in the prompt context.',
+                ],
+                [
+                  'terms',
+                  'readonly string[]',
+                  '',
+                  'Namespaced keys: uniprot:P0AEX9, taxon:562. Only in the view and cart contexts.',
+                ],
+                [
+                  'id',
+                  'string',
+                  'yes',
+                  'Stable per offer. The key a dismissal is remembered under.',
+                ],
+                [
                   'label',
                   'string',
                   'yes',
-                  'Where accepting the offer lands, in the plugin’s words.',
+                  'What the offer lands on, in the plugin’s words. About thirty characters are visible in a pane.',
+                ],
+                ['detail', 'string', '', 'A second line, one step down the type scale.'],
+                ['params', 'Record<string, string>', 'yes', 'Opens this plugin’s route.'],
+                [
+                  'terms',
+                  'string[]',
+                  '',
+                  'What the offer is about, so the host can relate offers to each other without opening them.',
                 ],
                 [
-                  'action',
-                  'Record<string, string>',
-                  'yes',
-                  'Becomes the document’s params. Opaque to the host.',
+                  'item',
+                  'CartItem',
+                  '',
+                  'What the offer’s Add control puts in the cart. An offer without one is a link only.',
                 ],
               ]}
             />
             <Behaviour
               items={[
-                'Called synchronously on every keystroke. No I/O, no await.',
-                'An empty array is the normal answer.',
-                'A matcher that throws is dropped for the session with a console warning.',
+                'One function answers all three contexts. Its module is fetched at startup, so it must stay small and must not import a UI bundle.',
+                'In the prompt context it runs on every keystroke and must return synchronously: no I/O, no await. In the view and cart contexts it may return a promise.',
+                'An empty array is the normal answer, in every context.',
+                'A plugin is never asked about the page it is already showing.',
+                'Cart terms arrive newest first and offers are shown in the order returned, so a plugin that truncates its own list discards the answer to what was just added.',
+                'The host drops offers whose params match an open tab, and whose item id is already in the cart.',
+                'A call that throws is logged with the plugin id and the request; that plugin is skipped for the round.',
               ]}
             />
           </Entry>
 
-          <Entry id="cart" name="CartAddition, CartHandle" source="plugins/sdk/cart.ts">
-            <Sig>{`interface CartAddition {
+          <Entry id="cart" name="CartItem, Cart" source="plugins/sdk/cart.ts">
+            <Sig>{`interface CartItem {
   id: string;
   kind: string;
   name: string;
@@ -327,14 +444,17 @@ interface Offer {
   context?: Record<string, unknown>;
 }
 
-interface CartHandle {
-  add: (item: CartAddition) => void;
+interface Cart {
+  add: (item: CartItem) => void;
   remove: (id: string) => void;
   has: (id: string) => boolean;
-  count: number;
+  count: () => number;
+  subscribe: (listener: () => void) => Cleanup;
 }
 
-function useCart(): CartHandle;`}</Sig>
+// React wrappers over host.cart.
+function useCart(): Cart;
+function CartButton(props: { item: CartItem; tooltip?: string }): JSX.Element;`}</Sig>
             <Fields
               rows={[
                 [
@@ -358,7 +478,7 @@ function useCart(): CartHandle;`}</Sig>
                 ],
                 ['summary', 'string', '', 'The line of text on the tile.'],
                 ['terms', 'string[]', '', 'Namespaced keys another plugin may recognise.'],
-                ['source', 'object', '', 'Params that reopen this plugin’s document on the thing.'],
+                ['source', 'object', '', 'Params that reopen this plugin’s route on the thing.'],
                 ['content', 'unknown', '', 'The data itself, as JSON.'],
                 [
                   'context',
@@ -370,166 +490,129 @@ function useCart(): CartHandle;`}</Sig>
             />
             <Behaviour
               items={[
+                'host.cart is a plain object, reachable from a command, a mount function or a prompt handler. useCart() and CartButton are React wrappers over it and add nothing to the contract.',
                 'A plugin can test its own ids with has(); other plugins’ items are not readable.',
                 'The host persists the cart, so content must survive JSON.',
-                'CartButton adds one and reads the cart itself, which is why the added state, the second press that removes the item, and the accessible name are settled in one place.',
-              ]}
-            />
-          </Entry>
-
-          <Entry
-            id="related"
-            name="Related, RelatedRequest, Proposal"
-            source="plugins/sdk/related.ts"
-          >
-            <Sig>{`type RelatedContext = 'view' | 'cart';
-
-interface RelatedRequest {
-  terms: readonly string[];
-  context: RelatedContext;
-  signal: AbortSignal;
-}
-
-interface Proposal {
-  id: string;
-  label: string;
-  detail?: string;
-  params: Record<string, string>;
-  item?: Omit<CartAddition, 'id'> & { id?: string };
-}
-
-type Related = (request: RelatedRequest) => Promise<Proposal[]> | Proposal[];`}</Sig>
-            <Fields
-              rows={[
-                [
-                  'id',
-                  'string',
-                  'yes',
-                  'Stable per proposal. Part of the key a dismissal is remembered under.',
-                ],
-                [
-                  'label',
-                  'string',
-                  'yes',
-                  'The row’s first line. About thirty characters are visible.',
-                ],
-                ['detail', 'string', '', 'The row’s second line, one step down the type scale.'],
-                ['params', 'Record<string, string>', 'yes', 'Opens this plugin’s document.'],
-                [
-                  'item',
-                  'CartAddition',
-                  '',
-                  'What the row’s Add button puts in the cart. A row without it is a link only.',
-                ],
-              ]}
-            />
-            <Behaviour
-              items={[
-                'Terms arrive from usePanelTerms() and from each cart item’s terms, asked as two questions, view and cart, deduplicated against each other.',
-                'A plugin is never asked about the page it is already showing.',
-                'Cart terms arrive newest first and proposals are shown in the order returned, so a plugin that truncates its own list discards the answer to what was just added.',
-                'The host drops proposals whose params match an open tab, and whose item id is already in the cart.',
-                'The module is fetched only when there are terms to ask about, and a proposal should cost no network to produce.',
               ]}
             />
           </Entry>
 
           <Entry id="host" name="PluginHost" source="plugins/sdk/host.ts">
             <Sig>{`interface PluginHost {
-  openDocument: (params: Record<string, string>) => void;
+  openRoute: (params: Record<string, string>, options?: { duplicate?: boolean }) => void;
   runCommand: (name: string, values?: Record<string, string | number>) => Promise<void>;
-  cart: PluginCart;
+  cart: Cart;
 }
 
 function useHost(): PluginHost;`}</Sig>
+            <Fields
+              head={['Member', 'Type', 'Req.', 'Description']}
+              rows={[
+                [
+                  'openRoute',
+                  '(params, options?) => void',
+                  'yes',
+                  'Opens this plugin’s route. Matching params focus the open tab; duplicate: true opens a second view of the same page.',
+                ],
+                [
+                  'runCommand',
+                  '(name, values?) => Promise',
+                  'yes',
+                  'Runs one of this plugin’s own commands.',
+                ],
+                ['cart', 'Cart', 'yes', 'The host’s cart.'],
+              ]}
+            />
             <Behaviour
               items={[
-                'openDocument opens this plugin’s document, not another’s.',
-                'The layout, the other tabs and other plugins’ cart items are unreachable. Plugins meet through terms and proposals, so neither imports the other and either can be uninstalled.',
+                'A plugin cannot open another plugin’s route, read the layout, or read another plugin’s cart items. Plugins meet through terms and offers, so neither imports the other and either can be uninstalled.',
               ]}
             />
           </Entry>
 
-          <Entry id="shared" name="Shared singletons" source="plugins/sdk/shared.ts">
-            <Sig>{`SHARED_SINGLETONS = {
-  react, 'react-dom', zod, '@kbase/design-system', '@kbase/plugin-sdk'
-}  // every one { singleton: true }`}</Sig>
+          <Entry id="build" name="pluginFederation()" source="plugins/sdk/pluginFederation.ts">
+            <Sig>{`function pluginFederation(options: {
+  name: string;        // must equal the manifest id
+  entry?: string;      // default './src/plugin.tsx'
+  offers?: string;
+}): Plugin;`}</Sig>
             <Behaviour
               items={[
-                'A second React breaks hooks; a second zod breaks instanceof; a second SDK creates a second panel context, so every usePanel() in the plugin throws.',
-                'pluginFederation() declares all five and takes their versions from the host’s package.json.',
+                'Emits remoteEntry.js exposing ./plugin, and ./offers when one is named.',
+                'Declares react, react-dom, zod, @kbase/design-system and @kbase/plugin-sdk as singletons. A plugin writes no versions: Module Federation reads them from the plugin’s own dependencies, and singleton is what makes the host’s copy win.',
+                'A second React breaks hooks; a second SDK creates a second panel context, so every usePanel() in the plugin throws.',
+                'A plugin using neither React nor the design system still shares the SDK, and drops the react() wrapper and the React build plugin.',
               ]}
             />
           </Entry>
         </Part>
 
         <Part id="howto" title="How to">
-          <Task id="task-terms" title="Answer about another plugin's terms">
-            <p className={styles.para}>
-              Expose a third module and name it in the manifest as <Code>entry.related</Code>. The
-              preset does not emit this one, so the federation config names it directly.
-            </p>
+          <Task id="task-vanilla" title="Write a surface without React">
             <File
-              name="src/related.ts"
+              name="src/plugin.ts"
               language="typescript"
-            >{`import type { Proposal, RelatedRequest } from '@kbase/plugin-sdk';
+            >{`import { definePlugin } from '@kbase/plugin-sdk';
 
-const NAME: Record<string, string> = { '562': 'Escherichia coli' };
+export default definePlugin({
+  route: {
+    mount(el, { panel, host }) {
+      const name = () => panel.params.q ?? 'nobody';
 
-export function related({ terms }: RelatedRequest): Proposal[] {
-  const taxa = terms.flatMap((t) => /^taxon:(\\d+)$/.exec(t)?.[1] ?? []);
-  return taxa.map((taxid) => ({
-    id: \`dossier:\${taxid}\`,
-    label: NAME[taxid] ?? \`Taxon \${taxid}\`,
-    detail: \`taxon \${taxid}\`,
-    params: { q: taxid },
-    item: {
-      id: \`hello:taxon:\${taxid}\`,
-      kind: 'taxon',
-      name: NAME[taxid] ?? \`Taxon \${taxid}\`,
-      terms: [\`taxon:\${taxid}\`],
-      source: { params: { q: taxid } },
+      const line = el.appendChild(document.createElement('p'));
+      const add = el.appendChild(document.createElement('button'));
+      add.textContent = 'Add';
+      add.onclick = () =>
+        host.cart.add({ id: \`hello:\${name()}\`, kind: 'greeting', name: name() });
+
+      const draw = () => {
+        line.textContent = \`Hello, \${name()}.\`;
+        panel.setTitle(name());
+        panel.setTerms([\`greeting:\${name()}\`]);
+      };
+
+      draw();
+      return panel.subscribe(draw);
     },
-  }));
-}`}</File>
-            <File name="vite.config.ts (excerpt)" language="typescript">{`federation({
-  name: 'hello',
-  filename: 'remoteEntry.js',
-  manifest: true,
-  exposes: {
-    './plugin': './src/plugin.tsx',
-    './match': './src/match.ts',
-    './related': './src/related.ts',
   },
-  shared: SHARED_SINGLETONS,
 });`}</File>
           </Task>
 
-          <Task id="task-cart" title="Put something in the cart">
+          <Task id="task-offers" title="Offer on typed text and on another plugin's terms">
             <File
-              name="src/Panel.tsx"
-              language="tsx"
-            >{`import { CartButton } from '@kbase/plugin-sdk';
+              name="src/offers.ts"
+              language="typescript"
+            >{`import type { Offer, Offers } from '@kbase/plugin-sdk';
 
-<CartButton
-  item={{
-    id: \`hello:taxon:\${taxid}\`,
+const NAME: Record<string, string> = { '562': 'Escherichia coli' };
+const TAXON = /^taxon:(\\d+)$/;
+
+const dossier = (taxid: string): Offer => ({
+  id: \`dossier:\${taxid}\`,
+  label: NAME[taxid] ?? \`Taxon \${taxid}\`,
+  detail: \`taxon \${taxid}\`,
+  params: { q: taxid },
+  terms: [\`taxon:\${taxid}\`],
+  item: {
     kind: 'taxon',
-    name: node.name,
-    subject: \`taxon \${taxid}\`,
+    name: NAME[taxid] ?? \`Taxon \${taxid}\`,
     terms: [\`taxon:\${taxid}\`],
     source: { params: { q: taxid } },
-    content: node,
-    context: { rank: node.rank, frame: 'siblings under the same parent' },
-  }}
-/>;`}</File>
-            <p className={styles.para}>
-              <Code>useCart()</Code> is the same handle without the control, for a plugin adding an
-              item from a command or drawing its own affordance.
-            </p>
+  },
+});
+
+const offers: Offers = ({ context, text, terms }) => {
+  if (context === 'prompt') {
+    const q = text?.trim() ?? '';
+    return /^\\d+$/.test(q) ? [dossier(q)] : [];
+  }
+  return (terms ?? []).flatMap((t) => TAXON.exec(t)?.[1] ?? []).map(dossier);
+};
+
+export default offers;`}</File>
           </Task>
 
-          <Task id="task-crumbs" title="Give a panel a title, a trail and terms">
+          <Task id="task-panel" title="Give a panel a title, a trail and terms">
             <File name="src/Panel.tsx" language="tsx">{`const { params } = usePanel();
 
 usePanelTitle(data?.name ?? params.q);
@@ -539,17 +622,32 @@ usePanelBreadcrumbs([
 ]);
 usePanelTerms(data ? [\`taxon:\${data.taxid}\`] : []);`}</File>
           </Task>
+
+          <Task id="task-cart" title="Add to the cart from a command">
+            <File name="src/plugin.tsx" language="tsx">{`export default definePlugin({
+  route: react(Dossier),
+  commands: {
+    'save-current': (_values, host) => {
+      host.cart.add({ id: 'hello:current', kind: 'greeting', name: 'The current greeting' });
+    },
+  },
+});`}</File>
+          </Task>
         </Part>
 
         <Part id="notes" title="Design notes">
-          <Note title="Why the matcher is its own module">
-            Matching runs on every keystroke and must be synchronous, so it cannot wait behind a UI
-            bundle. The host fetches <Code>./match</Code> at startup and everything else on demand.
+          <Note title="Why a surface is a mount function">
+            A contract typed <Code>ComponentType</Code> makes React a requirement of the platform
+            rather than a choice of the plugin. A mount function is the smallest thing every UI
+            framework can produce, and <Code>react()</Code> is a few dozen lines on top of it. The
+            cost is one wrapper call in every React plugin, which is the common case.
           </Note>
-          <Note title="Why a proposal is a link">
-            A pane that fetched a document to decide whether to mention it would cost one request
-            per plugin per keystroke. A proposal is assembled from what the answering plugin already
-            holds; its payload is added only when someone presses Add.
+          <Note title="Why one offers function">
+            Recognising typed text and recognising a term are the same act — the plugin says what it
+            has about something. They were two contracts only because one runs on a keystroke and
+            the other may reach the network, which is a property of the request and now sits in the
+            request. It also leaves room for the host to feed an offer’s own terms back to the other
+            plugins, which two separate functions could not express.
           </Note>
           <Note title="Why a cart item carries payload and pointer">
             An item holding only <Code>source</Code> makes every consumer re-fetch, and is worthless
@@ -560,6 +658,17 @@ usePanelTerms(data ? [\`taxon:\${data.taxid}\`] : []);`}</File>
             A registry of prefixes would make the host the arbiter of what plugins may discuss, and
             every new vocabulary a host release. The cost is that two plugins spelling one idea
             differently produce an empty pane and no error.
+          </Note>
+          <Note title="Why a duplicate view is explicit">
+            Panels are identified by what they show, so a link followed ten times cannot leave ten
+            identical tabs behind. Comparing one page against itself in two states is a real need
+            and a rare one, so it is a flag on the call rather than the default.
+          </Note>
+          <Note title="Why the host reads old manifests">
+            Negotiation asks every plugin to know about every host. Instead the host publishes a
+            contract version, reads every version it has published, and upgrades an older manifest
+            as it loads it — so a plugin written once keeps working, and the compatibility code
+            lives in one repository rather than a hundred.
           </Note>
         </Part>
       </article>
@@ -575,22 +684,23 @@ const SECTIONS: { id: string; label: string; children?: { id: string; label: str
     children: [
       { id: 'manifest', label: 'Manifest' },
       { id: 'commands', label: 'CommandDecl' },
+      { id: 'surfaces', label: 'Surface, react()' },
       { id: 'module', label: 'PluginModule' },
       { id: 'panel', label: 'PanelHandle' },
-      { id: 'matcher', label: 'Matcher, Offer' },
-      { id: 'cart', label: 'CartAddition' },
-      { id: 'related', label: 'Related, Proposal' },
+      { id: 'offers', label: 'Offers, Offer' },
+      { id: 'cart', label: 'CartItem, Cart' },
       { id: 'host', label: 'PluginHost' },
-      { id: 'shared', label: 'Shared singletons' },
+      { id: 'build', label: 'pluginFederation()' },
     ],
   },
   {
     id: 'howto',
     label: 'How to',
     children: [
-      { id: 'task-terms', label: 'Answer about terms' },
-      { id: 'task-cart', label: 'Add to the cart' },
-      { id: 'task-crumbs', label: 'Title, trail and terms' },
+      { id: 'task-vanilla', label: 'A surface without React' },
+      { id: 'task-offers', label: 'Offer on text and terms' },
+      { id: 'task-panel', label: 'Title, trail and terms' },
+      { id: 'task-cart', label: 'Add from a command' },
     ],
   },
   { id: 'notes', label: 'Design notes' },
@@ -689,8 +799,8 @@ function Fields({ rows, head }: { rows: string[][]; head?: string[] }) {
         </Tr>
       </Thead>
       <Tbody>
-        {rows.map(([name, type, required, text]) => (
-          <Tr key={name}>
+        {rows.map(([name, type, required, text], i) => (
+          <Tr key={`${name}-${i}`}>
             <Td>
               <code className={styles.name}>{name}</code>
             </Td>
