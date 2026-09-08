@@ -69,7 +69,7 @@ export default defineConfig({
           <File
             name="src/plugin.tsx"
             language="tsx"
-          >{`import { definePlugin, react, usePanel, usePanelTitle } from '@kbase/plugin-sdk';
+          >{`import { definePlugin, fromReact, usePanel, usePanelTitle } from '@kbase/plugin-sdk';
 
 function Hello() {
   const { path } = usePanel();
@@ -79,11 +79,11 @@ function Hello() {
 }
 
 export default definePlugin({
-  route: react(Hello),
+  route: fromReact(Hello),
   commands: { hello: ({ who }, { host }) => host.openRoute(\`/\${who}\`) },
 });`}</File>
           <p className={styles.para}>
-            A surface is a function that mounts into an element, and <Code>react()</Code> wraps a
+            A surface is a function that draws into an element, and <Code>fromReact()</Code> wraps a
             component as one. The command is how the page gets opened — typed, suggested, or run by
             another plugin.
           </p>
@@ -133,6 +133,27 @@ export function commands({ text, terms }: Query): CommandCall[] {
             The workbench asks its registry for <Code>GET /plugin-registry/plugins</Code> and
             expects an array of manifests, then fetches each bundle from that plugin's own prefix.
             The prefix locates both, so no path is configured twice.
+          </p>
+
+          <h3 className={styles.subhead}>Shared code</h3>
+          <p className={styles.para}>
+            The preset declares what the host already ships, so a plugin bundles none of it and
+            names no versions — Module Federation reads those from the plugin's own dependencies,
+            and <Code>singleton</Code> is what makes the host's copy win.
+          </p>
+          <File
+            name="declared by pluginFederation()"
+            language="text"
+          >{`react, react-dom            two copies break hooks
+@kbase/plugin-sdk           a second copy is a second panel context
+@kbase/design-system        its components carry React context
+zod                         schema identity
+@phosphor-icons/react       shipped by the host; every plugin draws from it
+@tanstack/react-router      shipped by the host; a plugin may run one in its panel`}</File>
+          <p className={styles.para}>
+            The first four break at runtime when duplicated. The last two are correctness-neutral
+            and shared because the alternative is every plugin shipping a second copy of an icon set
+            the host already sent.
           </p>
 
           <h3 className={styles.subhead}>In development</h3>
@@ -211,16 +232,16 @@ interface CommandCall {
             />
           </Entry>
 
-          <Entry id="surface" name="Mount, react()" source="plugins/sdk/plugin.ts">
+          <Entry id="surface" name="Mount, fromReact()" source="plugins/sdk/plugin.ts">
             <Sig>{`type Cleanup = () => void;
 type Mount = (el: HTMLElement, ctx: { panel: PanelHandle; host: PluginHost }) => Cleanup | void;
 
-function react(Component: ComponentType): { mount: Mount };`}</Sig>
+function fromReact(Component: ComponentType): { mount: Mount };`}</Sig>
             <Behaviour
               items={[
                 'Called once with an empty element the plugin owns; the function it returns runs when the panel closes.',
                 'Once per panel, not once per navigation — a new path arrives through ctx.panel and its subscription.',
-                'react(Component) renders the component with the panel and host contexts provided, so the hooks work inside it.',
+                'fromReact(Component) renders the component with the panel and host contexts provided, so the hooks work inside it. A plugin in any other framework writes { mount } itself and imports nothing but types.',
                 'A surface that throws while mounting is fenced: the panel shows the error and the rest of the workbench keeps working.',
               ]}
             />
@@ -272,6 +293,7 @@ function usePanelTerms(terms: string[]): void;`}</Sig>
             <Behaviour
               items={[
                 'A panel keeps its identity while it navigates, the way a browser tab does: the path is what it shows, not which panel it is.',
+                'A plugin may run its own router inside its panel — TanStack, or anything — reading path and writing navigate(). The host stores the string and parses none of it, including its query, so typed and validated params are the plugin’s to have and not the host’s to define.',
                 'The focused panel’s path is the browser URL, /p/<plugin><path>. The rest of the layout is not addressable.',
                 'Until setTitle is called the host shows the plugin title and the path; setCrumbs also tells two same-titled tabs apart.',
                 'setTerms is how a panel says what it is about, and the host puts those terms to every other plugin’s answers.',
@@ -407,7 +429,7 @@ const SECTIONS: { id: string; label: string; children?: { id: string; label: str
     children: [
       { id: 'manifest', label: 'Manifest' },
       { id: 'commands', label: 'SlashCommand, CommandCall' },
-      { id: 'surface', label: 'Mount, react()' },
+      { id: 'surface', label: 'Mount, fromReact()' },
       { id: 'module', label: 'PluginModule' },
       { id: 'panel', label: 'PanelHandle' },
       { id: 'answers', label: 'Query, answers' },
