@@ -1,5 +1,8 @@
-import type { Manifest } from '../../sdk';
-import { CONTRACT_VERSION } from '../../sdk';
+// From the module, not the barrel: vite.config reads these manifests, so this
+// file has to load in Node, and the barrel reaches React components that
+// import the design system.
+import type { Manifest } from '../../sdk/contract';
+import { CONTRACT_VERSION } from '../../sdk/contract';
 
 export const manifest: Manifest = {
   id: 'jobs',

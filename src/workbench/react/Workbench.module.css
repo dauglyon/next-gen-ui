@@ -1390,23 +1390,7 @@
   font-size: var(--fs-2);
 }
 
-/* Where the row goes, shown on the row rather than only in the tooltip. */
-.relatedGo {
-  flex: none;
-  margin-inline-start: auto;
-  color: var(--c-ink4);
-}
 
-.relatedAdd {
-  display: inline-flex;
-  flex: none;
-  padding: 2px;
-  border: 1px solid var(--bo-primary);
-  border-radius: var(--r-full);
-  background: none;
-  color: var(--ct-primary);
-  cursor: pointer;
-}
 
 /* Turning one down. Quiet until the row is under the pointer: a list of
    suggestions should not read as a list of things to close. */

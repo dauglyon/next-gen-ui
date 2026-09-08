@@ -1,7 +1,9 @@
 import { useEffect, useSyncExternalStore } from 'react';
-import { ArrowUpRight, Plus, X } from '@phosphor-icons/react';
+import { X } from '@phosphor-icons/react';
 import { EmptyState, Loader, Tooltip } from '@kbase/design-system';
+import { CartButton } from '../../../plugins/sdk';
 import { groupOf, groups, makePanel } from '../../core';
+import { itemIdOf } from './runner';
 import type { RelatedItem, RelatedSection } from '../../core';
 import { PluginMark } from '../PluginMark';
 import { useDispatch, useLayout, useServices } from '../../react/context';
@@ -159,7 +161,6 @@ function Row({ item, title }: { item: RelatedItem; title: string }) {
                   <span className={styles.relatedDetail}>{item.proposal.detail}</span>
                 )}
               </span>
-              <ArrowUpRight size={11} className={styles.relatedGo} aria-hidden="true" />
             </button>
           }
         />
@@ -167,21 +168,14 @@ function Row({ item, title }: { item: RelatedItem; title: string }) {
       </Tooltip.Root>
 
       {item.proposal.item && (
-        <Tooltip.Root>
-          <Tooltip.Trigger
-            render={
-              <button
-                type="button"
-                className={styles.relatedAdd}
-                aria-label={`Add ${item.proposal.label} to the cart`}
-                onClick={() => relatedRunner.accept(item.key)}
-              />
-            }
-          >
-            <Plus size={12} weight="bold" aria-hidden="true" />
-          </Tooltip.Trigger>
-          <Tooltip.Popup side="right">Add to the cart</Tooltip.Popup>
-        </Tooltip.Root>
+        // The same control the plugins draw on their own pages, minus the
+        // word: a row this narrow has no space for it, and a different glyph
+        // in a different shape would read as a different action.
+        <CartButton
+          id={itemIdOf(item)}
+          subject={item.proposal.label}
+          onAdd={() => relatedRunner.accept(item.key)}
+        />
       )}
 
       <button

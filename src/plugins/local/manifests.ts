@@ -1,4 +1,7 @@
-import type { Manifest } from '../sdk';
+// From the module, not the barrel: vite.config imports this file, so
+// anything reachable from here has to load in Node — and the barrel now
+// reaches React components that import the design system.
+import type { Manifest } from '../sdk/contract';
 import { manifest as data } from './data/manifest';
 import { manifest as jobs } from './jobs/manifest';
 import { manifest as koros } from './koros/manifest';
