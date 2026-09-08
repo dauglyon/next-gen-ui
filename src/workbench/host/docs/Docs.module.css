@@ -166,3 +166,41 @@
   font-size: var(--fs-3);
   overflow-wrap: anywhere;
 }
+
+/* Symptom, cause, fix. A definition list rather than a table: the symptom is
+   short and the fix is a sentence, and a three-column grid would set the fix
+   in a gutter. */
+.trouble {
+  display: grid;
+  gap: var(--s-5);
+  max-inline-size: 46rem;
+}
+
+.symptom {
+  display: grid;
+  gap: var(--s-1);
+}
+
+.symptomName {
+  margin: 0;
+  font-size: var(--fs-4);
+}
+
+.symptomName code {
+  font-family: var(--font-mono);
+  font-size: var(--fs-3);
+}
+
+/* The numbered path from nothing to a running plugin. */
+.steps {
+  margin: 0;
+  padding-inline-start: var(--s-6);
+  max-inline-size: 46rem;
+  display: grid;
+  gap: var(--s-3);
+}
+
+.steps code {
+  font-family: var(--font-mono);
+  font-size: var(--fs-3);
+}
