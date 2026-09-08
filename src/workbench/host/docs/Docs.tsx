@@ -8,8 +8,10 @@ import styles from './Docs.module.css';
 //
 // What differs from what ships today, each of them work to do: a surface is a
 // mount function with React as a wrapper, rather than a React component
-// outright; `navigator` and `document` are `pane` and `route`; `match` and
-// `related` are one `offers` function; a panel shows a plugin at a path and
+// outright; `navigator` and `document` are `pane` and `route`; the manifest
+// says nothing about where the code is, because the service prefix locates it;
+// `match` and `related` are one `./answers` module of three independent
+// functions over one query; a panel shows a plugin at a path and
 // the host never parses that path, so params leave the contract entirely;
 // panel identity is an opaque id rather than the params, which is what lets a
 // plugin navigate inside its own panel; a plugin's federation config names no
@@ -51,12 +53,7 @@ export function DocsDocument() {
   "contractVersion": 2,
   "icon": "HandWaving",
   "color": "teal",
-  "route": { "opensEmpty": true },
-  "entry": {
-    "url": "/services/hello/plugin/mf-manifest.json",
-    "module": "./plugin",
-    "offers": "./offers"
-  }
+  "route": { "opensEmpty": true }
 }`}</File>
 
           <File name="vite.config.ts" language="typescript">{`import { defineConfig } from 'vite';
@@ -64,7 +61,7 @@ import react from '@vitejs/plugin-react';
 import { pluginFederation } from '@kbase/plugin-sdk/vite';
 
 export default defineConfig({
-  plugins: [pluginFederation({ name: 'hello', offers: './src/offers.ts' }), react()],
+  plugins: [pluginFederation({ name: 'hello' }), react()],
 });`}</File>
 
           <File
@@ -82,22 +79,26 @@ function Hello() {
 export default definePlugin({ route: react(Hello) });`}</File>
 
           <File
-            name="src/offers.ts"
+            name="src/answers.ts"
             language="typescript"
-          >{`import type { Offers } from '@kbase/plugin-sdk';
+          >{`import type { Command, Query } from '@kbase/plugin-sdk';
 
-const offers: Offers = ({ text }) => {
+export function commands({ text }: Query): Command[] {
   const q = text?.trim();
   if (!q || !/^H\\w+$/.test(q)) return [];
-  return [{ id: \`hello:\${q}\`, label: \`Say hello to \${q}\`, path: \`/\${q}\` }];
-};
+  return [{ label: \`Say hello to \${q}\`, run: (host) => host.openRoute(\`/\${q}\`) }];
+}
 
-export default offers;`}</File>
+export function terms({ text }: Query): string[] {
+  const q = text?.trim();
+  return q && /^H\\w+$/.test(q) ? [\`greeting:\${q}\`] : [];
+}`}</File>
 
           <p className={styles.para}>
-            The registry serves the manifest and <Code>entry.url</Code> resolves against the
-            registry origin. Nothing else is registered: the host knows the tab, the route, the icon
-            and the offer before it fetches any code.
+            The registry holds one thing per plugin: the prefix its service is served under. The
+            manifest sits at <Code>manifest.json</Code> beneath it and the code at{' '}
+            <Code>plugin/</Code>, so nothing in the manifest says where anything is. The host draws
+            the launcher entry, the tab and the icon from it before fetching a line of code.
           </p>
         </Part>
 
@@ -114,7 +115,6 @@ export default offers;`}</File>
   route?: { opensEmpty?: boolean };
   commands?: CommandDecl[];
   promptHandler?: boolean;
-  entry?: { url: string; module: string; offers?: string };
 }`}</Sig>
             <Fields
               rows={[
@@ -168,19 +168,13 @@ export default offers;`}</File>
                   '',
                   'Mirrors a prompt export. Lets Settings offer this plugin as the assistant before its code loads.',
                 ],
-                [
-                  'entry',
-                  'object',
-                  '',
-                  'The remote. module holds the surfaces and commands; offers is fetched separately at startup. Absent for plugins bundled with the host.',
-                ],
               ]}
             />
             <Behaviour
               items={[
                 'A manifest that fails to parse is dropped with a console error naming the field; the other plugins load.',
                 'A route path carrying a $param, without opensEmpty, cannot appear in the launcher: there would be nothing to open.',
-                'Declaring neither pane nor route is valid; the plugin then contributes commands and offers.',
+                'Declaring neither pane nor route is valid; the plugin then contributes commands and answers.',
               ]}
             />
           </Entry>
@@ -233,21 +227,13 @@ interface ArgDecl {
             />
           </Entry>
 
-          <Entry id="surfaces" name="Surface, Mount, react()" source="plugins/sdk/surface.ts">
+          <Entry id="surfaces" name="mount, react()" source="plugins/sdk/plugin.ts">
             <Sig>{`type Cleanup = () => void;
 
-type Mount = (el: HTMLElement, ctx: SurfaceContext) => Cleanup | void;
+type Mount = (el: HTMLElement, ctx: { panel: PanelHandle; host: PluginHost }) => Cleanup | void;
 
-interface Surface {
-  mount: Mount;
-}
-
-interface SurfaceContext {
-  panel: PanelHandle;
-  host: PluginHost;
-}
-
-function react(Component: ComponentType): Surface;`}</Sig>
+// A React component wrapped as one.
+function react(Component: ComponentType): { mount: Mount };`}</Sig>
             <Fields
               head={['Member', 'Type', 'Req.', 'Description']}
               rows={[
@@ -263,12 +249,12 @@ function react(Component: ComponentType): Surface;`}</Sig>
                   'yes',
                   'This panel’s path, focus and setters. A plain object; subscribe for changes.',
                 ],
-                ['ctx.host', 'PluginHost', 'yes', 'Opening routes, running commands, the cart.'],
+                ['ctx.host', 'PluginHost', 'yes', 'Opening pages, running commands, the cart.'],
               ]}
             />
             <Behaviour
               items={[
-                'react(Component) returns a Surface that renders the component with the panel and host contexts already provided, so the hooks work inside it.',
+                'react(Component) renders the component with the panel and host contexts already provided, so the hooks work inside it.',
                 'A mount function is called once per panel, not once per navigation: a new path arrives through ctx.panel and its subscription.',
                 'A surface that throws during mount is fenced. The panel shows the error; the rest of the workbench keeps working.',
               ]}
@@ -277,8 +263,8 @@ function react(Component: ComponentType): Surface;`}</Sig>
 
           <Entry id="module" name="PluginModule" source="plugins/sdk/plugin.ts">
             <Sig>{`interface PluginModule {
-  route?: Surface;
-  pane?: Surface;
+  route?: { mount: Mount };
+  pane?: { mount: Mount };
   commands?: Record<string, (values: CommandValues, host: PluginHost) => void | Promise<void>>;
   prompt?: PromptHandler;
   status?: (host: PluginHost) => StatusItem[];
@@ -345,7 +331,7 @@ function usePanelTerms(terms: string[]): void;`}</Sig>
                   'setTerms',
                   '(terms) => void',
                   '',
-                  'What this panel is about. The host asks every other plugin for offers on them.',
+                  'What this panel is about. The host puts these terms to every other plugin’s answers.',
                 ],
                 [
                   'subscribe',
@@ -365,102 +351,87 @@ function usePanelTerms(terms: string[]): void;`}</Sig>
             />
           </Entry>
 
-          <Entry id="offers" name="Offers, OfferRequest, Offer" source="plugins/sdk/offers.ts">
-            <Sig>{`type Offers = (request: OfferRequest) => Offer[] | Promise<Offer[]>;
-
-// Optional, exported by name from the same module.
-type Canonicalize = (path: string) => string;
-
-interface OfferRequest {
-  context: 'prompt' | 'view' | 'cart';
-  text?: string;                    // set when context is 'prompt'
-  terms?: readonly string[];        // set when context is 'view' or 'cart'
+          <Entry id="answers" name="Query, PluginAnswers" source="plugins/sdk/answers.ts">
+            <Sig>{`// One question shape. The host fills in whatever it knows at the call site.
+interface Query {
+  text?: string;          // the prompt bar, as typed
+  terms?: string[];       // from the focused panel, the cart, or a previous answer
   signal: AbortSignal;
 }
 
-interface Offer {
-  id: string;
+// Any of the three, exported by name from ./answers.
+interface PluginAnswers {
+  terms?(q: Query): string[] | Promise<string[]>;
+  commands?(q: Query): Command[] | Promise<Command[]>;
+  cartItems?(q: Query): CartItem[] | Promise<CartItem[]>;
+}
+
+interface Command {
   label: string;
-  detail?: string;
-  path: string;
-  terms?: string[];
-  item?: Omit<CartItem, 'id'> & { id?: string };
+  run: (host: PluginHost) => void | Promise<void>;
 }`}</Sig>
             <Fields
+              head={['Member', 'Type', 'Req.', 'Description']}
               rows={[
-                [
-                  'context',
-                  "'prompt' | 'view' | 'cart'",
-                  'yes',
-                  'What prompted the question: text being typed, the page on screen, or what is in the cart.',
-                ],
-                [
-                  'text',
-                  'string',
-                  '',
-                  'The prompt-bar text, untrimmed. Only in the prompt context.',
-                ],
-                [
-                  'terms',
-                  'readonly string[]',
-                  '',
-                  'Namespaced keys: uniprot:P0AEX9, taxon:562. Only in the view and cart contexts.',
-                ],
-                [
-                  'id',
-                  'string',
-                  'yes',
-                  'Stable per offer. The key a dismissal is remembered under.',
-                ],
-                [
-                  'label',
-                  'string',
-                  'yes',
-                  'What the offer lands on, in the plugin’s words. About thirty characters are visible in a pane.',
-                ],
-                ['detail', 'string', '', 'A second line, one step down the type scale.'],
-                ['path', 'string', 'yes', 'The page this offer opens, below /p/<id>.'],
+                ['text', 'string', '', 'What the user has typed. Absent where there is no prompt.'],
                 [
                   'terms',
                   'string[]',
                   '',
-                  'What the offer is about, so the host can relate offers to each other without opening them.',
+                  'Namespaced keys — uniprot:P0AEX9, taxon:562 — from the focused panel, from cart items, or returned by another plugin’s terms().',
                 ],
                 [
-                  'item',
-                  'CartItem',
+                  'signal',
+                  'AbortSignal',
+                  'yes',
+                  'Aborted when the answer stops being wanted: another keystroke, a change of panel, a closed pane.',
+                ],
+                [
+                  'terms()',
+                  '(q) => string[]',
                   '',
-                  'What the offer’s Add control puts in the cart. An offer without one is a link only.',
+                  'What this plugin makes of the query. Recognising an accession, resolving a name, expanding a taxon into its genomes.',
+                ],
+                [
+                  'commands()',
+                  '(q) => Command[]',
+                  '',
+                  'What can be done with it. label is what the row says; run does it.',
+                ],
+                [
+                  'cartItems()',
+                  '(q) => CartItem[]',
+                  '',
+                  'What is worth collecting. Rendered as a row that opens source.path and adds on the Add control.',
                 ],
               ]}
             />
             <Behaviour
               items={[
-                'One function answers all three contexts. Its module is fetched at startup, so it must stay small and must not import a UI bundle.',
-                'In the prompt context it runs on every keystroke and must return synchronously: no I/O, no await. In the view and cart contexts it may return a promise.',
-                'An empty array is the normal answer, in every context.',
-                'A plugin is never asked about the page it is already showing.',
-                'Cart terms arrive newest first and offers are shown in the order returned, so a plugin that truncates its own list discards the answer to what was just added.',
-                'The host drops offers whose path is already open in a tab, and whose item id is already in the cart.',
-                'A call that throws is logged with the plugin id and the request; that plugin is skipped for the round.',
-                'canonicalize(path) reduces a path to the page it names, and the host opens and deduplicates on the result. /P0AEX9?from=related, /P0AEX9#structure and /P0AEX9 are one tab if the plugin says they are; without it the host compares the raw strings and opens three.',
-                'canonicalize runs on every open and every deep link, before any of the plugin’s UI exists. Keep it total: an unparseable path comes back unchanged rather than throwing.',
+                'The three are independent. A plugin that only recognises identifiers exports terms(); one that only suggests pages exports commands().',
+                'The host calls terms() first, pools every plugin’s answer with the terms it already had, and passes the result to commands() and cartItems() — so one plugin’s recognition reaches another plugin’s answers.',
+                'Every call may be asynchronous and every call carries a signal. The prompt bar debounces and aborts; nothing in the contract requires a synchronous answer.',
+                'An empty array is the normal answer.',
+                'A plugin is not asked about the page it is already showing.',
+                'Cart terms arrive newest first, and answers are shown in the order returned.',
+                'A call that throws or rejects is logged with the plugin id and the query; that plugin is skipped for the round.',
+                'normalize(path), exported from the same module, reduces a path to the page it names, and the host opens and deduplicates on the result. /P0AEX9?from=related and /P0AEX9 are one tab if the plugin says they are; without it the host compares raw strings and opens two.',
               ]}
             />
           </Entry>
 
-          <Entry id="canonical" name="canonicalize()" source="plugins/sdk/offers.ts">
-            <Sig>{`// src/offers.ts
-export function canonicalize(path: string): string {
-  const [without] = path.split('#');
-  const [route] = without.split('?');
+          <Entry id="normalize" name="normalize()" source="plugins/sdk/answers.ts">
+            <Sig>{`// src/answers.ts — optional, called only by the host
+export function normalize(path: string): string {
+  const [withoutHash] = path.split('#');
+  const [route] = withoutHash.split('?');
   return route.toUpperCase();
 }`}</Sig>
             <Behaviour
               items={[
                 'The host never parses a plugin’s path, so it cannot know that a query string is decoration or that an accession is case-insensitive. This is where a plugin says so.',
-                'Only the host calls it. A plugin’s own links should already be canonical; this catches the ones that are not — a pasted URL, an offer built somewhere else, a link carrying where it came from.',
-                'Absent, paths are compared as strings, which is correct for a plugin whose paths have one spelling.',
+                'Run on every open and every deep link, before any of the plugin’s UI exists. Keep it total: an unparseable path comes back unchanged rather than throwing.',
+                'Absent, paths are compared as strings, which is right for a plugin whose paths have one spelling.',
               ]}
             />
           </Entry>
@@ -559,20 +530,16 @@ function useHost(): PluginHost;`}</Sig>
             />
             <Behaviour
               items={[
-                'A plugin cannot open another plugin’s pages, read the layout, or read another plugin’s cart items. Plugins meet through terms and offers, so neither imports the other and either can be uninstalled.',
+                'A plugin cannot open another plugin’s pages, read the layout, or read another plugin’s cart items. Plugins meet through terms and answers, so neither imports the other and either can be uninstalled.',
               ]}
             />
           </Entry>
 
           <Entry id="build" name="pluginFederation()" source="plugins/sdk/pluginFederation.ts">
-            <Sig>{`function pluginFederation(options: {
-  name: string;        // must equal the manifest id
-  entry?: string;      // default './src/plugin.tsx'
-  offers?: string;
-}): Plugin;`}</Sig>
+            <Sig>{`function pluginFederation(options: { name: string }): Plugin;  // name = the manifest id`}</Sig>
             <Behaviour
               items={[
-                'Emits remoteEntry.js exposing ./plugin, and ./offers when one is named.',
+                'Exposes ./plugin from src/plugin.tsx and ./answers from src/answers.ts, by convention: the host reads the emitted Module Federation manifest to see which of them exist.',
                 'Declares react, react-dom, zod, @kbase/design-system and @kbase/plugin-sdk as singletons. A plugin writes no versions: Module Federation reads them from the plugin’s own dependencies, and singleton is what makes the host’s copy win.',
                 'A second React breaks hooks; a second SDK creates a second panel context, so every usePanel() in the plugin throws.',
                 'A plugin using neither React nor the design system still shares the SDK, and drops the react() wrapper and the React build plugin.',
@@ -612,38 +579,41 @@ export default definePlugin({
 });`}</File>
           </Task>
 
-          <Task id="task-offers" title="Offer on typed text and on another plugin's terms">
+          <Task id="task-answers" title="Recognise text, and answer about someone else's terms">
             <File
-              name="src/offers.ts"
+              name="src/answers.ts"
               language="typescript"
-            >{`import type { Offer, Offers } from '@kbase/plugin-sdk';
+            >{`import type { CartItem, Command, Query } from '@kbase/plugin-sdk';
 
 const NAME: Record<string, string> = { '562': 'Escherichia coli' };
-const TAXON = /^taxon:(\\d+)$/;
+const TAXID = /^taxon:(\\d+)$/;
 
-const dossier = (taxid: string): Offer => ({
-  id: \`dossier:\${taxid}\`,
-  label: NAME[taxid] ?? \`Taxon \${taxid}\`,
-  detail: \`taxon \${taxid}\`,
-  path: \`/\${taxid}\`,
-  terms: [\`taxon:\${taxid}\`],
-  item: {
+const taxaIn = (q: Query) => [
+  ...(/^\\d+$/.test(q.text?.trim() ?? '') ? [q.text!.trim()] : []),
+  ...(q.terms ?? []).flatMap((t) => TAXID.exec(t)?.[1] ?? []),
+];
+
+export function terms(q: Query): string[] {
+  return taxaIn(q).map((taxid) => \`taxon:\${taxid}\`);
+}
+
+export function commands(q: Query): Command[] {
+  return taxaIn(q).map((taxid) => ({
+    label: \`Taxon dossier for \${NAME[taxid] ?? taxid}\`,
+    run: (host) => host.openRoute(\`/\${taxid}\`),
+  }));
+}
+
+export function cartItems(q: Query): CartItem[] {
+  return taxaIn(q).map((taxid) => ({
+    id: \`genknown:taxon:\${taxid}\`,
     kind: 'taxon',
     name: NAME[taxid] ?? \`Taxon \${taxid}\`,
+    subject: \`taxon \${taxid}\`,
     terms: [\`taxon:\${taxid}\`],
     source: { path: \`/\${taxid}\` },
-  },
-});
-
-const offers: Offers = ({ context, text, terms }) => {
-  if (context === 'prompt') {
-    const q = text?.trim() ?? '';
-    return /^\\d+$/.test(q) ? [dossier(q)] : [];
-  }
-  return (terms ?? []).flatMap((t) => TAXON.exec(t)?.[1] ?? []).map(dossier);
-};
-
-export default offers;`}</File>
+  }));
+}`}</File>
           </Task>
 
           <Task id="task-panel" title="Give a panel a title, a trail and terms">
@@ -677,12 +647,13 @@ usePanelTerms(data ? [\`taxon:\${data.taxid}\`] : []);`}</File>
             framework can produce, and <Code>react()</Code> is a few dozen lines on top of it. The
             cost is one wrapper call in every React plugin, which is the common case.
           </Note>
-          <Note title="Why one offers function">
-            Recognising typed text and recognising a term are the same act — the plugin says what it
-            has about something. They were two contracts only because one runs on a keystroke and
-            the other may reach the network, which is a property of the request and now sits in the
-            request. It also leaves room for the host to feed an offer’s own terms back to the other
-            plugins, which two separate functions could not express.
+          <Note title="Why three functions over one query">
+            A plugin is asked three separable questions — what is this, what can be done with it,
+            what is worth keeping — and the same query answers all of them, whether it arrived as
+            typed text or as terms from a panel. Splitting by answer rather than by surface is what
+            lets the host run <Code>terms()</Code> first and hand the pooled result to everyone
+            else’s <Code>commands()</Code>, so recognising something is not the same plugin’s job as
+            knowing what to do with it.
           </Note>
           <Note title="Why a cart item carries payload and pointer">
             An item holding only <Code>source</Code> makes every consumer re-fetch, and is worthless
@@ -694,7 +665,7 @@ usePanelTerms(data ? [\`taxon:\${data.taxid}\`] : []);`}</File>
             every new vocabulary a host release. The cost is that two plugins spelling one idea
             differently produce an empty pane and no error.
           </Note>
-          <Note title="Why the host asks a plugin to canonicalize">
+          <Note title="Why the host asks a plugin to normalize a path">
             Opening a page that is already open focuses the tab holding it, which stops a link
             followed ten times from leaving ten tabs. That check compares paths, and the host does
             not read paths — so <Code>/P0AEX9</Code> and <Code>/P0AEX9?from=related</Code> would be
@@ -727,11 +698,11 @@ const SECTIONS: { id: string; label: string; children?: { id: string; label: str
     children: [
       { id: 'manifest', label: 'Manifest' },
       { id: 'commands', label: 'CommandDecl' },
-      { id: 'surfaces', label: 'Surface, react()' },
+      { id: 'surfaces', label: 'mount, react()' },
       { id: 'module', label: 'PluginModule' },
       { id: 'panel', label: 'PanelHandle' },
-      { id: 'offers', label: 'Offers, Offer' },
-      { id: 'canonical', label: 'canonicalize()' },
+      { id: 'answers', label: 'Query, PluginAnswers' },
+      { id: 'normalize', label: 'normalize()' },
       { id: 'cart', label: 'CartItem, Cart' },
       { id: 'host', label: 'PluginHost' },
       { id: 'build', label: 'pluginFederation()' },
@@ -742,7 +713,7 @@ const SECTIONS: { id: string; label: string; children?: { id: string; label: str
     label: 'How to',
     children: [
       { id: 'task-vanilla', label: 'A surface without React' },
-      { id: 'task-offers', label: 'Offer on text and terms' },
+      { id: 'task-answers', label: 'Recognise text, answer on terms' },
       { id: 'task-panel', label: 'Title, trail and terms' },
       { id: 'task-cart', label: 'Add from a command' },
     ],
