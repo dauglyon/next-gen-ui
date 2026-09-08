@@ -53,7 +53,14 @@ export function DocsDocument() {
   "contractVersion": 2,
   "icon": "HandWaving",
   "color": "teal",
-  "route": { "opensEmpty": true }
+  "route": { "opensEmpty": true },
+  "commands": [
+    {
+      "name": "hello",
+      "title": "Say hello to someone",
+      "args": [{ "name": "who", "required": true }]
+    }
+  ]
 }`}</File>
 
           <File name="vite.config.ts" language="typescript">{`import { defineConfig } from 'vite';
@@ -76,17 +83,20 @@ function Hello() {
   return <p>Hello, {name}.</p>;
 }
 
-export default definePlugin({ route: react(Hello) });`}</File>
+export default definePlugin({
+  route: react(Hello),
+  commands: { hello: ({ who }, host) => host.openRoute(\`/\${who}\`) },
+});`}</File>
 
           <File
             name="src/answers.ts"
             language="typescript"
-          >{`import type { Command, Query } from '@kbase/plugin-sdk';
+          >{`import type { CommandCall, Query } from '@kbase/plugin-sdk';
 
-export function commands({ text }: Query): Command[] {
+export function commands({ text }: Query): CommandCall[] {
   const q = text?.trim();
   if (!q || !/^H\\w+$/.test(q)) return [];
-  return [{ label: \`Say hello to \${q}\`, run: (host) => host.openRoute(\`/\${q}\`) }];
+  return [{ label: \`Say hello to \${q}\`, command: 'hello', args: { who: q } }];
 }
 
 export function terms({ text }: Query): string[] {
@@ -113,7 +123,8 @@ export function terms({ text }: Query): string[] {
   color?: string;
   pane?: { fit?: 'content' };
   route?: { opensEmpty?: boolean };
-  commands?: CommandDecl[];
+  commands?: SlashCommand[];
+  shortcuts?: CommandCall[];
   promptHandler?: boolean;
 }`}</Sig>
             <Fields
@@ -161,7 +172,13 @@ export function terms({ text }: Query): string[] {
                   '',
                   'Declares that this plugin has addressable pages; everything under /p/<id> is then its own. opensEmpty marks a plugin whose root path renders something, which is the condition for the launcher listing it.',
                 ],
-                ['commands', 'CommandDecl[]', '', 'Slash commands.'],
+                ['commands', 'SlashCommand[]', '', 'What a user can type in the prompt bar.'],
+                [
+                  'shortcuts',
+                  'CommandCall[]',
+                  '',
+                  'Buttons in the sidebar toolbar. Each names a command and what the button reads.',
+                ],
                 [
                   'promptHandler',
                   'boolean',
@@ -179,22 +196,22 @@ export function terms({ text }: Query): string[] {
             />
           </Entry>
 
-          <Entry id="commands" name="CommandDecl, ArgDecl" source="plugins/sdk/contract.ts">
-            <Sig>{`interface CommandDecl {
-  name: string;               // /^[a-z][a-z0-9-]*$/
+          <Entry id="commands" name="SlashCommand, CommandCall" source="plugins/sdk/contract.ts">
+            <Sig>{`// Declared in the manifest. What a user types.
+interface SlashCommand {
+  name: string;               // /^[a-z][a-z0-9-]*$/ — "/job"
   title: string;
   description?: string;
-  args?: ArgDecl[];
+  args?: { name: string; description?: string; required?: boolean }[];
   icon?: string;
-  shortcut?: boolean | string;
 }
 
-interface ArgDecl {
-  name: string;
-  type: 'string' | 'number' | 'choice';
-  required?: boolean;
-  description?: string;
-  choices?: string[];
+// A call to one, with its arguments filled in. What commands() returns, and
+// what the manifest's shortcuts are.
+interface CommandCall {
+  label: string;
+  command: string;            // a SlashCommand name
+  args?: Record<string, string | number>;
 }`}</Sig>
             <Fields
               rows={[
@@ -207,22 +224,30 @@ interface ArgDecl {
                 ['title', 'string', 'yes', 'Shown in the command list.'],
                 [
                   'args',
-                  'ArgDecl[]',
+                  'object[]',
                   '',
-                  'Parsed by the host and passed to the handler as values.',
+                  'The values a user types after the name, in order. Read before the plugin loads, which is why they are declared and not parsed by the plugin.',
                 ],
                 [
-                  'shortcut',
-                  'boolean | string',
+                  'required',
+                  'boolean',
                   '',
-                  'Places the command in the sidebar toolbar; a string replaces the button label.',
+                  'Whether the command can run without this value. The prompt bar uses it to tell "press enter" from "still needs an id".',
                 ],
-                ['choices', 'string[]', '', 'Required when an argument’s type is "choice".'],
+                ['label', 'string', 'yes', 'What the row or the button reads.'],
+                ['command', 'string', 'yes', 'The SlashCommand this call runs.'],
+                [
+                  'args',
+                  'object',
+                  '',
+                  'Values by argument name. A call supplies what a user would have typed.',
+                ],
               ]}
             />
             <Behaviour
               items={[
-                'A shortcut command should have no required arguments: the toolbar runs it with none.',
+                'A recommendation and a shortcut are the same thing — a call — so a suggested action and a toolbar button run by one path, and both show the user a command they could have typed.',
+                'Arguments carry no type and no list of choices. One string each, validated by the command that receives them, which is loaded by the time it runs.',
               ]}
             />
           </Entry>
@@ -362,14 +387,10 @@ interface Query {
 // Any of the three, exported by name from ./answers.
 interface PluginAnswers {
   terms?(q: Query): string[] | Promise<string[]>;
-  commands?(q: Query): Command[] | Promise<Command[]>;
+  commands?(q: Query): CommandCall[] | Promise<CommandCall[]>;
   cartItems?(q: Query): CartItem[] | Promise<CartItem[]>;
 }
-
-interface Command {
-  label: string;
-  run: (host: PluginHost) => void | Promise<void>;
-}`}</Sig>
+`}</Sig>
             <Fields
               head={['Member', 'Type', 'Req.', 'Description']}
               rows={[
@@ -394,9 +415,9 @@ interface Command {
                 ],
                 [
                   'commands()',
-                  '(q) => Command[]',
+                  '(q) => CommandCall[]',
                   '',
-                  'What can be done with it. label is what the row says; run does it.',
+                  'What can be done with it, as calls to this plugin’s own slash commands.',
                 ],
                 [
                   'cartItems()',
@@ -583,7 +604,7 @@ export default definePlugin({
             <File
               name="src/answers.ts"
               language="typescript"
-            >{`import type { CartItem, Command, Query } from '@kbase/plugin-sdk';
+            >{`import type { CartItem, CommandCall, Query } from '@kbase/plugin-sdk';
 
 const NAME: Record<string, string> = { '562': 'Escherichia coli' };
 const TAXID = /^taxon:(\\d+)$/;
@@ -597,10 +618,11 @@ export function terms(q: Query): string[] {
   return taxaIn(q).map((taxid) => \`taxon:\${taxid}\`);
 }
 
-export function commands(q: Query): Command[] {
+export function commands(q: Query): CommandCall[] {
   return taxaIn(q).map((taxid) => ({
     label: \`Taxon dossier for \${NAME[taxid] ?? taxid}\`,
-    run: (host) => host.openRoute(\`/\${taxid}\`),
+    command: 'taxon',
+    args: { q: taxid },
   }));
 }
 
@@ -646,6 +668,12 @@ usePanelTerms(data ? [\`taxon:\${data.taxid}\`] : []);`}</File>
             rather than a choice of the plugin. A mount function is the smallest thing every UI
             framework can produce, and <Code>react()</Code> is a few dozen lines on top of it. The
             cost is one wrapper call in every React plugin, which is the common case.
+          </Note>
+          <Note title="Why a recommendation calls a command instead of doing the work">
+            A call is something a user could have typed, so a suggested action teaches the command
+            behind it and a toolbar button is the same object as a suggestion. It also survives
+            being written down — into history, into a saved shortcut, into a message to an assistant
+            — which a function cannot.
           </Note>
           <Note title="Why three functions over one query">
             A plugin is asked three separable questions — what is this, what can be done with it,
