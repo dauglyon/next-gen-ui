@@ -48,10 +48,11 @@ export default definePluginManifest({
   description: 'The smallest plugin that draws something.',
   icon: 'HandWaving',
   color: 'teal',
-  route: { opensEmpty: true },
+  route: true,
   commands: [
-    { name: 'hello', title: 'Say hello to someone', args: [{ name: 'who', required: true }] },
+    { name: 'hello', title: 'Say hello to someone', args: [{ name: 'who' }] },
   ],
+  launcher: { label: 'Hello', command: 'hello' },
 });`}</File>
           <p className={styles.para}>
             Everything the workbench needs before it has any of the plugin's code: what to call it,
@@ -87,7 +88,7 @@ function Hello() {
 
 export default definePlugin({
   route: fromReact(Hello),
-  commands: { hello: ({ who }, { host }) => host.openRoute(\`/\${who}\`) },
+  commands: { hello: ({ who }, { host }) => host.openRoute(\`/\${who ?? ''}\`) },
 });`}</File>
           <p className={styles.para}>
             A surface is a function that draws into an element, and <Code>fromReact()</Code> wraps a
@@ -197,7 +198,8 @@ zod                         schema identity
   icon?: string;                    // a name from the host's icon table
   color?: string;                   // blue | green | teal | purple | orange | red
   pane?: { fit?: 'content' };
-  route?: { opensEmpty?: boolean };
+  route?: true;                     // this plugin has pages under /p/<id>
+  launcher?: CommandCall;           // listed on the Browse page; this runs
   commands?: SlashCommand[];
   shortcuts?: CommandCall[];
   promptHandler?: boolean;
@@ -209,7 +211,7 @@ function definePluginManifest(m: Omit<Manifest, 'contractVersion'>): Manifest;`}
                 'The id appears in panel URLs and in every saved layout; changing it strands both.',
                 'A manifest that fails to parse is dropped with a console error naming the field. The other plugins load.',
                 'The pane key declares a sidebar surface. fit: "content" holds it at its natural height instead of giving it a share of the stack — right for a toolbar, starvation for the blocks beneath a long list.',
-                'opensEmpty marks a plugin whose root path renders something, which is the condition for the launcher offering it: without it, nothing can be opened until a link supplies a path.',
+                'launcher is what the Browse page lists and what pressing it runs. A plugin without one is installed and reachable by link, and not offered: a page that needs an identifier has nothing to show a reader who has not named one yet.',
                 'shortcuts are the buttons in the sidebar toolbar. promptHandler offers the plugin in Settings as the receiver of free text.',
                 'The host reads every contract version it has published and upgrades an older manifest as it loads it, so a plugin written once keeps working and the compatibility code lives in one repository.',
               ]}
@@ -273,6 +275,9 @@ function definePlugin(module: PluginModule): PluginModule;`}</Sig>
                 'definePlugin() types the export and returns it unchanged.',
                 'The host compares the module against the manifest and logs a mismatch rather than throwing: one wrong declaration costs that surface, not the session.',
                 'caller lets a command tell a keystroke from another plugin acting for the user. Commands answer nothing; what one plugin knows reaches another through terms and answers.',
+                'Running a command changes no focus by itself: the host loads the plugin’s module if it is cold and calls the handler. A handler that should land the reader somewhere calls openRoute, and calls it before awaiting anything, so the page is on screen showing its own loading state while the work runs.',
+                'A handler is given no panel, so a command that acts on a page takes the path as an argument. This is what lets any plugin run any command without it meaning something different depending on what the caller happened to be looking at.',
+                'A command either changes what is on screen or says something. The host shows the invoking control as busy until the handler settles, and raises a toast naming the command if it rejects — for a run the user started; a rejection from a plugin’s own execute() belongs to the plugin that asked. Everything else is host.notify.',
                 'prompt receives free text — neither a slash command nor a suggestion taken — and only in the plugin Settings names. attachments is the cart as it stood when enter was pressed: the one place a plugin sees another plugin’s items, and the user put them there deliberately.',
                 'status contributes to the strip along the bottom of the window. "1 running" is a plugin saying so.',
               ]}
@@ -375,6 +380,7 @@ function CartButton(props: { item: CartItem; tooltip?: string }): JSX.Element;`}
   openRoute: (path: string, options?: { duplicate?: boolean }) => void;
   execute: (command: string, args?: Record<string, string | number>) => Promise<void>;
   hasCommand: (command: string) => boolean;
+  notify: (text: string) => void;
   cart: Cart;
 }
 
@@ -383,6 +389,7 @@ function useHost(): PluginHost;`}</Sig>
               items={[
                 'openRoute focuses a panel of this plugin already showing that path, so a link followed ten times leaves one tab; duplicate: true asks for a second view instead.',
                 'execute runs a command by plugin:name, this plugin’s or another’s, and resolves when the handler does.',
+                'notify raises a toast. It is for the command that finished and changed nothing on screen; a command that opened or navigated something has already told the user.',
                 'A plugin cannot open another plugin’s pages, read the layout, or read another plugin’s cart items. Plugins meet through terms, answers and commands, so neither imports the other and either can be uninstalled.',
               ]}
             />
@@ -400,6 +407,19 @@ function useHost(): PluginHost;`}</Sig>
             A plugin is asked three separable things, and one query answers all of them whether it
             arrived as typed text or as terms from a panel. Splitting by answer rather than by
             surface is what lets one plugin recognise something and another know what to do with it.
+          </Note>
+          <Note title="Why a command reports itself">
+            The host knows two things about a command: that it is running, and that it rejected. It
+            shows the first as a busy control and the second as a toast naming the command. What it
+            cannot know is whether a handler that resolved did anything a reader would notice, so
+            the contract puts that on the plugin — change the screen, or say something. A command
+            that does neither is a defect rather than a matter of taste.
+          </Note>
+          <Note title="Why the launcher entry is a call">
+            A boolean saying a page renders without parameters describes a property of a route in
+            order to answer a question about a menu. A call says what the menu offers and what
+            pressing it does, which is the same thing a shortcut and a suggestion say, and it lets a
+            plugin whose pages all need an identifier put a command there that asks for one.
           </Note>
           <Note title="Why a recommendation is a call">
             A call is something a user could have typed, so a suggestion teaches the command behind
