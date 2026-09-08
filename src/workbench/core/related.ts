@@ -41,11 +41,6 @@ export interface RelatedState {
   sections: RelatedSection[];
   // A request is out. The pane keeps what it has while this is true.
   loading: boolean;
-  // Proposals dropped because the reader already holds them — in the cart, or
-  // open in a tab. Kept as a number so the pane can account for itself: a
-  // plugin that answered and was filtered out looks exactly like a plugin
-  // that said nothing, and the second is a bug report.
-  covered: number;
 }
 
 export const keyOf = (plugin: string, id: string) => `${plugin}:${id}`;
@@ -62,7 +57,7 @@ export interface RelatedStore {
 }
 
 export function createRelatedStore(): RelatedStore {
-  let state: RelatedState = { sections: [], loading: false, covered: 0 };
+  let state: RelatedState = { sections: [], loading: false };
   const gone = new Set<string>();
   const listeners = new Set<() => void>();
   let version = 0;

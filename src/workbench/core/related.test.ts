@@ -37,18 +37,18 @@ describe('the store', () => {
 
   it('drops a dismissed proposal from the answers that follow', () => {
     const store = createRelatedStore();
-    store.set({ sections: [section([item('a', '1'), item('a', '2')])], loading: false, covered: 0 });
+    store.set({ sections: [section([item('a', '1'), item('a', '2')])], loading: false });
     store.dismiss('a:1');
     expect(store.get().sections[0].items.map((i) => i.key)).toEqual(['a:2']);
 
     // The next round of questions returns it; it stays gone.
-    store.set({ sections: [section([item('a', '1'), item('a', '2')])], loading: false, covered: 0 });
+    store.set({ sections: [section([item('a', '1'), item('a', '2')])], loading: false });
     expect(store.get().sections[0].items.map((i) => i.key)).toEqual(['a:2']);
   });
 
   it('hides a section whose every proposal was dismissed', () => {
     const store = createRelatedStore();
-    store.set({ sections: [section([item('a', '1')])], loading: false, covered: 0 });
+    store.set({ sections: [section([item('a', '1')])], loading: false });
     store.dismiss('a:1');
     expect(store.get().sections).toEqual([]);
   });
@@ -57,7 +57,7 @@ describe('the store', () => {
     const store = createRelatedStore();
     const seen = vi.fn();
     store.subscribe(seen);
-    store.set({ sections: [], loading: true, covered: 0 });
+    store.set({ sections: [], loading: true });
     store.dismiss('nothing');
     expect(seen).toHaveBeenCalledTimes(2);
   });

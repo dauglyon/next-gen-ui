@@ -67,7 +67,7 @@ export function RelatedNavigator() {
 
   useEffect(() => () => relatedRunner.stop(), [relatedRunner]);
 
-  const { sections, loading, covered } = related.get();
+  const { sections, loading } = related.get();
   // The sidebar draws this block's header whether or not there is anything in
   // it, so the body has to account for itself. The house form is EmptyState —
   // a title, a line saying what would fill it, and the loading case wearing
@@ -79,14 +79,6 @@ export function RelatedNavigator() {
           <EmptyState
             icon={<Loader size={28} label="Asking the other plugins" />}
             title="Asking…"
-          />
-        ) : covered > 0 ? (
-          // Not the same state as nothing being related, and it used to draw
-          // as if it were: everything the other plugins offered is something
-          // the reader already has.
-          <EmptyState
-            title="Nothing new"
-            description={`${covered === 1 ? 'The one related page' : `All ${covered} related pages`} ${covered === 1 ? 'is' : 'are'} already in your cart or open in a tab.`}
           />
         ) : (
           <EmptyState
@@ -103,16 +95,6 @@ export function RelatedNavigator() {
       {sections.map((section) => (
         <Section key={section.context} section={section} />
       ))}
-      {/* A plugin that answered and was filtered out reads exactly like a
-          plugin that said nothing. One line, at the foot, so the pane
-          accounts for what it is not showing without listing it. */}
-      {covered > 0 && (
-        <p className={styles.relatedCovered}>
-          {covered === 1
-            ? '1 more, already in your cart or open'
-            : `${covered} more, already in your cart or open`}
-        </p>
-      )}
     </div>
   );
 }
