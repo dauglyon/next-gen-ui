@@ -1,6 +1,6 @@
 import { useState, useSyncExternalStore } from 'react';
 import { Button, Chip, SearchBar } from '@kbase/design-system';
-import { Gear } from '@phosphor-icons/react';
+import { Code, Gear } from '@phosphor-icons/react';
 import type { Manifest } from '../../../plugins/sdk';
 import { usePanelTitle } from '../../../plugins/sdk';
 import { makePanel } from '../../core';
@@ -36,7 +36,7 @@ export function HomeDocument() {
     (m.description?.toLowerCase().includes(q) ?? false);
   const listed = source
     .manifests()
-    .filter((m) => m.id !== 'home' && m.id !== 'catalog' && matches(m));
+    .filter((m) => m.id !== 'home' && m.id !== 'catalog' && m.id !== 'docs' && matches(m));
   const apps = listed.filter(isApp);
   const panels = listed.filter((m) => m.navigator);
 
@@ -47,6 +47,9 @@ export function HomeDocument() {
   // reader looking for it is looking for a link, not a search result.
   const openSettings = () =>
     dispatch({ type: 'open', panel: makePanel('catalog', 'document', {}) });
+  // Beside Settings for the same reason: the host's own pages, reached by a
+  // link rather than found in a search over what is installed.
+  const openDocs = () => dispatch({ type: 'open', panel: makePanel('docs', 'document', {}) });
   // Show where it lives, never pin: a pinned plugin's navigator is
   // focused in its sidebar block, an unpinned one is previewed the way
   // the sidebar's More menu previews it. Pinning is the catalog's job.
@@ -73,6 +76,10 @@ export function HomeDocument() {
         <Button variant="ghost" size="sm" quiet onClick={openSettings}>
           <Gear size={14} aria-hidden="true" />
           Settings
+        </Button>
+        <Button variant="ghost" size="sm" quiet onClick={openDocs}>
+          <Code size={14} aria-hidden="true" />
+          Plugin developer documentation
         </Button>
       </div>
 

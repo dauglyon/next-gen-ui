@@ -1,0 +1,183 @@
+/* Reference layout: a rail that stays put and one column of content at
+   reading measure. The panel is the scroller, so the rail is sticky against
+   the panel rather than the window. */
+
+.layout {
+  display: grid;
+  grid-template-columns: 14rem minmax(0, 1fr);
+  gap: var(--s-7);
+  align-items: start;
+  padding: var(--s-7);
+}
+
+/* Under about 60rem the rail would take a third of the column it indexes. */
+@media (max-width: 60rem) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rail {
+    display: none;
+  }
+}
+
+.rail {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  padding-block: var(--s-2);
+  font-size: var(--fs-3);
+}
+
+.railList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-1);
+}
+
+.railList .railList {
+  margin-block: var(--s-1) var(--s-3);
+  padding-inline-start: var(--s-3);
+  border-inline-start: 1px solid var(--c-border);
+}
+
+.railTop,
+.railItem {
+  display: block;
+  inline-size: 100%;
+  padding: var(--s-1) var(--s-2);
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  text-align: start;
+  cursor: pointer;
+  color: var(--c-ink2);
+}
+
+.railTop {
+  font-weight: var(--fw-bold, 700);
+  color: var(--c-ink);
+}
+
+.railTop:hover,
+.railItem:hover {
+  background: var(--c-raised);
+  color: var(--c-ink);
+}
+
+.root {
+  display: grid;
+  gap: var(--s-8);
+  align-content: start;
+  max-inline-size: 62rem;
+}
+
+.head {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.lede,
+.para {
+  margin: 0;
+  max-inline-size: 46rem;
+}
+
+.lede {
+  color: var(--c-ink2);
+}
+
+.part {
+  display: grid;
+  gap: var(--s-6);
+  align-content: start;
+}
+
+/* One documented item: name and source, signature, fields, behaviour. The
+   rule under the name is what separates two entries in a long page; sections
+   inside an entry are separated by space alone. */
+.entry {
+  display: grid;
+  gap: var(--s-4);
+  align-content: start;
+  padding-block-start: var(--s-4);
+  border-block-start: 1px solid var(--c-border);
+}
+
+.entryHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.entryName {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-6);
+}
+
+.source {
+  font-size: var(--fs-2);
+  color: var(--c-ink4);
+}
+
+.file {
+  margin: 0;
+  display: grid;
+  gap: var(--s-2);
+}
+
+.fileName {
+  font-family: var(--font-mono);
+  font-size: var(--fs-2);
+  color: var(--c-ink3);
+}
+
+.table {
+  /* Fixed layout, because the last column holds sentences: left to size
+     itself the table grew past the panel and the ends were clipped. */
+  inline-size: 100%;
+  table-layout: fixed;
+}
+
+.table td:last-child {
+  overflow-wrap: anywhere;
+}
+
+.behaviour {
+  margin: 0;
+  padding-inline-start: var(--s-5);
+  max-inline-size: 46rem;
+  display: grid;
+  gap: var(--s-2);
+  color: var(--c-ink2);
+}
+
+.noteBlock {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.noteTitle {
+  margin: 0;
+  font-size: var(--fs-4);
+}
+
+.name,
+.type,
+.inline {
+  font-family: var(--font-mono);
+  font-size: var(--fs-3);
+  overflow-wrap: anywhere;
+}
+
+.type {
+  color: var(--c-ink3);
+}
+
+.req {
+  color: var(--c-ink3);
+}

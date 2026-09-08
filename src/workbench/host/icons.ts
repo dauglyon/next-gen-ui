@@ -4,6 +4,7 @@ import type { IconProps } from '@phosphor-icons/react';
 import {
   Briefcase,
   ChatCircleDots,
+  Code,
   Database,
   Flask,
   FolderOpen,
@@ -26,6 +27,7 @@ import {
 export const ICONS: Readonly<Record<string, ComponentType<IconProps>>> = {
   Briefcase,
   ChatCircleDots,
+  Code,
   Database,
   Flask,
   FolderOpen,

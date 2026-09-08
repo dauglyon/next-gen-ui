@@ -22,6 +22,7 @@ import { createPreviewHandle, createPromptHandle } from '../react/services';
 import type { InstalledPlugin } from './installed';
 import { createHostIndex } from './installed';
 import { catalog } from './catalog';
+import { docs } from './docs';
 import { home } from './home';
 import { shortcutsPlugin } from './shortcuts';
 import { relatedPlugin } from './related';
@@ -56,7 +57,14 @@ export function createWorkbench({
   const prompt = createPromptHandle();
   const preview = createPreviewHandle();
   const focusIntentRef: WorkbenchServices['focusIntentRef'] = { current: 'command' };
-  const source = createHostIndex([...installed, catalog, shortcutsPlugin, relatedPlugin, home]);
+  const source = createHostIndex([
+    ...installed,
+    catalog,
+    docs,
+    shortcutsPlugin,
+    relatedPlugin,
+    home,
+  ]);
   const settings = createSettingsStore(storage, { assistant: defaultAssistant });
   // The cart is host state, not layout: it survives a layout reset, and it is
   // the thing most likely to move to the account later.
