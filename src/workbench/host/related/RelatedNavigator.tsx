@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { flushSync } from 'react-dom';
 import { X } from '@phosphor-icons/react';
 import { Loader, Tooltip } from '@kbase/design-system';
 import { CartButton, qualifyCommand, usePanelTitle } from '../../../plugins/sdk';
@@ -21,7 +20,9 @@ import styles from '../../react/Workbench.module.css';
 // appears until nothing offers it any more; a new answer adds rows at the
 // end and takes rows away, and never re-sorts. The plugin is the mark on the
 // row. What is still being asked is one line under the group's rows, never
-// a row.
+// a row. Rows enter and leave without animation: a view transition here
+// snapshots the whole document, and iPhone Safari drew a blank frame at
+// each snapshot, so a keystroke read as the page flashing.
 //
 // A row is a link and an offer. Pressing it opens the item's `source` in the
 // answering plugin; the `+` puts the item in the cart. An item already in the
@@ -43,10 +44,6 @@ const HEADING: Record<QuerySource, (label: string) => string> = {
 // How long the pane stays blank before saying nothing is related.
 const QUIET_MS = 1500;
 
-// A view transition carries rows that enter and leave; names must be CSS
-// identifiers, and item ids are not.
-const transitionName = (id: string) => `related-${id.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
-
 export function RelatedNavigator() {
   usePanelTitle('Related');
   const { query, cart } = useServices();
@@ -57,27 +54,16 @@ export function RelatedNavigator() {
   const [rows, setRows] = useState<Recommendation[]>([]);
   const current = useRef(rows);
   useEffect(() => {
-    const update = (animate: boolean) => {
+    const update = () => {
       const next = mergeRecommendations(
         current.current,
         QUERY_SOURCES.map((source) => ({ source, state: query.get(source) })),
       );
-      // Only a change in which rows exist is worth a transition: a keystroke
-      // that changes nothing here must not snapshot the page.
-      const prev = current.current;
-      const moved = next.length !== prev.length || next.some((r, i) => r.id !== prev[i]?.id);
       current.current = next;
-      if (animate && moved && typeof document.startViewTransition === 'function') {
-        const t = document.startViewTransition(() => flushSync(() => setRows(next)));
-        // A transition overtaken by the next one rejects; that is not an error here.
-        t.ready.catch(() => {});
-        t.finished.catch(() => {});
-      } else {
-        setRows(next);
-      }
+      setRows(next);
     };
-    update(false);
-    return query.subscribe(() => update(true));
+    update();
+    return query.subscribe(update);
   }, [query]);
 
   const shown = rows.filter((r) => !cart.has(r.id) && !query.dismissed(r.id));
@@ -211,7 +197,7 @@ function RelatedRow({ row }: { row: Recommendation }) {
   );
 
   return (
-    <li className={styles.relatedRow} style={{ viewTransitionName: transitionName(row.id) }}>
+    <li className={styles.relatedRow}>
       <Tooltip.Root>
         <Tooltip.Trigger
           render={

@@ -1428,12 +1428,6 @@
 
 /* What the per-plugin cap is holding back, counted rather than dropped. */
 
-/* Related: one list, the recommendation as the unit. Rows keep their place;
-   a view transition carries a row that enters or leaves. */
-.relatedList > li {
-  view-transition-class: related-row;
-}
-
 /* Who offers a row, as a small count when more than one does. */
 .relatedOffers {
   font-size: var(--fs-1);
