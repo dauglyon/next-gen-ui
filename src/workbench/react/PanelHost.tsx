@@ -100,8 +100,11 @@ export function PanelHost({ panel }: { panel: Panel }) {
   );
 }
 
-// The element the plugin draws into. `display: contents` keeps the plugin's
-// own root in the same flex or grid context the panel body gives it.
+// The element the plugin draws into: a fresh child per mount, so a mount
+// whose teardown is still pending — a React root unmounts after the commit
+// that removed it — never shares an element with the next. `display:
+// contents` keeps the plugin's own root in the same flex or grid context
+// the panel body gives it.
 function Mounted({ mount, handle, host }: { mount: Mount; handle: PanelHandle; host: PluginHost }) {
   const ref = useRef<HTMLDivElement>(null);
   const mountOnce = useCallback(
@@ -109,9 +112,16 @@ function Mounted({ mount, handle, host }: { mount: Mount; handle: PanelHandle; h
     [mount, handle, host],
   );
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    return mountOnce(el);
+    const body = ref.current;
+    if (!body) return;
+    const el = document.createElement('div');
+    el.style.display = 'contents';
+    body.appendChild(el);
+    const cleanup = mountOnce(el);
+    return () => {
+      cleanup?.();
+      el.remove();
+    };
   }, [mountOnce]);
   return <div ref={ref} style={{ display: 'contents' }} data-panel-body={handle.id} />;
 }

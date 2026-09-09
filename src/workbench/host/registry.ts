@@ -42,7 +42,11 @@ export function remotePlugin(manifest: Manifest, base: string = SERVICES_BASE): 
   const register = () => {
     const already = registered.get(manifest.id);
     if (already === entry) return;
-    registerRemotes([{ name: manifest.id, entry }], { force: already !== undefined });
+    // A Vite federation build is an ES module; without saying so the runtime
+    // would load the entry as a classic script.
+    registerRemotes([{ name: manifest.id, entry, type: 'module' }], {
+      force: already !== undefined,
+    });
     registered.set(manifest.id, entry);
   };
   const loader =

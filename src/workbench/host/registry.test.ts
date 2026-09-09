@@ -61,7 +61,7 @@ describe('remotePlugin', () => {
     expect(Object.keys(plugin.modules)).toEqual(['route', 'background']);
     await expect(plugin.modules.route!()).resolves.toBe(route);
     expect(registerRemotes).toHaveBeenCalledWith(
-      [{ name: 'commons', entry: '/services/commons/plugin/remoteEntry.js' }],
+      [{ name: 'commons', entry: '/services/commons/plugin/remoteEntry.js', type: 'module' }],
       { force: false },
     );
     expect(loadRemote).toHaveBeenCalledTimes(1);
