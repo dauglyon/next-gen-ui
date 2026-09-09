@@ -1284,7 +1284,6 @@
   outline-offset: 1px;
 }
 
-
 /* The Related navigator's own contents. The block around it — header, fold,
    resize, rail glyph — is the sidebar's, like any other navigator's. */
 .related {
@@ -1293,12 +1292,12 @@
   padding-block-end: var(--s-2);
 }
 
-/* EmptyState centres in whatever it is given; in a sidebar block that is a
-   narrow column, so it takes the block's own padding and no more height than
-   its text. */
+/* The pane's empty line, set as Shortcuts sets its own. It keeps a line's
+   height while empty, so the words land without moving the blocks below. */
 .relatedEmpty {
-  padding: var(--s-2) var(--s-3) var(--s-4);
-  font-size: var(--fs-3);
+  margin: 0;
+  padding: var(--s-3) var(--s-4);
+  min-block-size: 1lh;
 }
 
 /* What the list was computed from, and nothing else: the block's own header
@@ -1406,8 +1405,6 @@
   font-size: var(--fs-2);
 }
 
-
-
 /* Turning one down. Quiet until the row is under the pointer: a list of
    suggestions should not read as a list of things to close. */
 .relatedDismiss {
@@ -1470,9 +1467,3 @@
 }
 
 /* Nothing related, said quietly: a line, not an event. */
-.relatedQuiet {
-  margin: 0;
-  padding: var(--s-2) var(--s-4);
-  font-size: var(--fs-2);
-  color: var(--c-ink3);
-}

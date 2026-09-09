@@ -106,17 +106,13 @@ export function RelatedNavigator() {
   }, [empty, run]);
   const settledEmpty = empty && settledRun === run;
 
-  // The sidebar draws this block's header whether or not there is anything in
-  // it, so the body has to account for itself.
+  // The pane's empty line, as the other panes write theirs; it holds its
+  // line while the quiet period runs, so the words arrive without a shift.
   if (empty) {
     return (
-      <div className={styles.relatedEmpty}>
-        {settledEmpty && (
-          <p className={styles.relatedQuiet}>
-            Nothing related yet. Open a page or add to the cart.
-          </p>
-        )}
-      </div>
+      <p className={`caption ${styles.relatedEmpty}`}>
+        {settledEmpty && 'Nothing related. Open a page or add to the cart.'}
+      </p>
     );
   }
 
