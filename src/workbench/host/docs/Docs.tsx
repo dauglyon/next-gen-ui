@@ -20,11 +20,19 @@ export function DocsDocument() {
         <header className={styles.head} id="top">
           <h1 className="h2">Plugin developer documentation</h1>
           <p className={styles.lede}>
-            A plugin is a config object and up to five modules: <Code>background</Code>,{' '}
-            <Code>route</Code>, <Code>pane</Code>, <Code>commands</Code> and <Code>prompt</Code>.{' '}
-            <Code>pluginFederation</Code> in the plugin's Vite config exposes the modules and writes
-            the config to <Code>manifest.json</Code>. The workbench reads the manifest at startup
-            and loads each module the first time it is needed.
+            A plugin is a config object and up to five modules. The config names the plugin and
+            declares its slash commands. The workbench's prompt bar is a text input: text beginning
+            with <Code>/</Code> runs a slash command; other text, once sent, goes to the plugin
+            chosen as the assistant. The modules are <Code>route</Code>, a page; <Code>pane</Code>,
+            a sidebar block (the page's tab and the block are both panels); <Code>commands</Code>,
+            the slash command handlers; <Code>background</Code>, functions called as the user types
+            in the prompt bar, to suggest commands and data related to the text; and{' '}
+            <Code>prompt</Code>, the handler for sent text when the plugin is the assistant.{' '}
+            <Code>pluginFederation</Code>, a Vite plugin from <Code>@kbase/plugin-sdk/vite</Code>,
+            exposes each module over Module Federation and writes the config to{' '}
+            <Code>manifest.json</Code>. The workbench reads the manifest at startup and loads each
+            module the first time it is needed, except <Code>background</Code>, which it loads at
+            startup.
           </p>
         </header>
 
@@ -79,21 +87,22 @@ export default defineCommands({ hello: ({ who }, { host }) => host.openRoute(\`/
 cd hello && npm i @kbase/plugin-sdk
 npm run dev -- --port 8770`}</File>
           <p className={styles.para}>
-            Add <Code>VITE_DEV_SERVICE_PROXY=/services/hello=http://127.0.0.1:8770</Code> to the
-            workbench's <Code>.env.local</Code> and restart it. The workbench proxies{' '}
-            <Code>/services/hello</Code> to the dev server and reads{' '}
-            <Code>/services/hello/manifest.json</Code> at startup. <Code>launcher</Code> puts Hello
-            on Browse. <Code>/hello Alice</Code> runs the <Code>hello</Code> handler, which opens
+            With <Code>VITE_DEV_SERVICE_PROXY=/services/hello=http://127.0.0.1:8770</Code> in the
+            workbench's <Code>.env.local</Code>, read when its dev server starts, the workbench
+            proxies <Code>/services/hello</Code> to that origin and reads{' '}
+            <Code>/services/hello/manifest.json</Code> at startup. <Code>launcher</Code> puts a
+            Hello card on Browse, the workbench's page listing every plugin; pressing the card runs
+            the command. <Code>/hello Alice</Code> runs the <Code>hello</Code> handler, which opens
             the <Code>route</Code> module at <Code>/Alice</Code>: <Code>usePanel().path</Code> is{' '}
-            <Code>/Alice</Code>, and <Code>usePanelTitle</Code> names the tab Alice.
+            <Code>/Alice</Code> (<Code>openRoute</Code> uses <Code>normalize</Code> only to compare
+            the requested path with each open tab's), and <Code>usePanelTitle</Code> names the tab
+            Alice. <Code>/hello alice</Code> focuses that tab instead of opening another.
           </p>
         </Part>
 
         <Part id="manifest" title="The manifest">
           <p className={styles.para}>
-            The config is the file <Code>vite.config.ts</Code> passes as <Code>config</Code>. The
-            build serves it as <Code>manifest.json</Code>, and the workbench reads it at startup,
-            before loading any module.
+            The config is the object <Code>vite.config.ts</Code> passes as <Code>config</Code>.
           </p>
           <File
             name="plugin.config.ts"
@@ -112,25 +121,24 @@ npm run dev -- --port 8770`}</File>
   launcher: { label: 'Function Junction', command: 'open' },
 });`}</File>
           <p className={styles.para}>
-            <Code>launcher</Code> adds a card to Browse that runs the command. <Code>commands</Code>{' '}
-            declares slash commands. The prompt bar completes each one and validates its arguments
-            from this declaration; the <Code>commands</Code> module must export a handler with the
-            same name. <Code>shortcuts</Code> adds buttons to the sidebar; each runs the command
-            with the given arguments.
+            The prompt bar completes each declared command and validates its arguments from the
+            declaration; the <Code>commands</Code> module must export a handler with the same name.{' '}
+            <Code>shortcuts</Code> adds buttons to the sidebar; each runs the command with the given
+            arguments.
           </p>
           <p className={styles.para}>
-            <Code>id</Code> appears in URLs and saved layouts and must not change. A command's full
-            name is <Code>&lt;id&gt;:&lt;name&gt;</Code>. <Code>/open</Code> resolves to it while no
-            other plugin declares <Code>open</Code>; otherwise <Code>/function-junction:open</Code>{' '}
-            is required.
+            <Code>id</Code> appears in URLs and saved layouts and must not change. Command names are
+            namespaced by plugin id: <Code>function-junction:open</Code>. The short form{' '}
+            <Code>/open</Code> is accepted when it is unambiguous. If another installed plugin also
+            declares <Code>open</Code>, the prompt bar rejects <Code>/open</Code> and lists the
+            qualified names.
           </p>
         </Part>
 
         <Part id="pages" title="Pages">
           <p className={styles.para}>
-            The <Code>route</Code> module exports the page. The workbench opens it in a tab at{' '}
-            <Code>/p/&lt;id&gt;&lt;path&gt;</Code>; <Code>usePanel().path</Code> is the part after{' '}
-            <Code>/p/&lt;id&gt;</Code>, including the query string.
+            A tab's URL is <Code>/p/&lt;id&gt;&lt;path&gt;</Code>; <Code>usePanel().path</Code> is
+            the part after <Code>/p/&lt;id&gt;</Code>, including the query string.
           </p>
           <File name="src/route.tsx" language="tsx">{`function Dossier() {
   const { path, navigate } = usePanel();
@@ -146,41 +154,40 @@ export default defineRoute({
   normalize: (path) => path.split('?')[0].toUpperCase(),
 });`}</File>
           <p className={styles.para}>
-            <Code>normalize(path)</Code> returns a canonical form of the path. Before opening a tab,{' '}
-            <Code>openRoute</Code> compares the normalized path with the plugin's open tabs and
-            focuses a match instead of opening a new tab. <Code>navigate(path)</Code> changes the
-            tab's path and pushes a history entry. <Code>usePanelTitle(title)</Code> sets the tab
-            title. <Code>usePanelTerms(terms)</Code> registers the page's terms; the workbench
-            passes them to every plugin's <Code>recommend</Code> while the tab is in front.
+            <Code>openRoute(path)</Code> focuses an open tab whose path has the same{' '}
+            <Code>normalize</Code> result as <Code>path</Code>, and opens a new tab otherwise; this
+            route's <Code>normalize</Code> ignores case and the query string.{' '}
+            <Code>navigate(path)</Code> changes the tab's path and pushes a history entry.{' '}
+            <Code>usePanelTerms(terms)</Code> sets the tab's terms, strings of the form{' '}
+            <Code>prefix:value</Code>; while the tab is in front, the workbench passes them to every
+            other plugin's <Code>recommend</Code> function, described under Background.
           </p>
         </Part>
 
         <Part id="pane" title="Sidebar pane">
           <p className={styles.para}>
-            The <Code>pane</Code> module exports the sidebar block. A plugin with one can be pinned
-            from Settings.
+            A plugin with a <Code>pane</Code> module can be pinned to the sidebar from Settings.
           </p>
           <File
             name="src/pane.tsx"
             language="tsx"
           >{`export default definePane({ ...fromReact(RecentProteins), fit: 'content' });`}</File>
           <p className={styles.para}>
-            <Code>fit: 'content'</Code> sizes the block to its content; without it, the block shares
-            the sidebar's height with the other pinned panes. <Code>usePanel().path</Code> is{' '}
-            <Code>''</Code>. The pane unmounts when its block is folded, and is mounted a second
-            time in the flyout while the sidebar is collapsed.
+            <Code>fit: 'content'</Code> sizes the block to its content; otherwise it shares the
+            sidebar's height with the other pinned panes. <Code>usePanel().path</Code> is{' '}
+            <Code>''</Code>. Folding the block unmounts the pane; with the sidebar collapsed, its
+            icon opens a popover holding a second mount, alongside the block's.
           </p>
         </Part>
 
         <Part id="background" title="Background">
           <p className={styles.para}>
-            The <Code>background</Code> module is loaded at startup. It exports up to three
-            functions.
+            The <Code>background</Code> module's default export has up to three members.
           </p>
           <File
             name="src/background.ts"
             language="typescript"
-          >{`const ACCESSION = /^[A-NR-Z][0-9][A-Z0-9]{3}[0-9]$/i;
+          >{`const ACCESSION = /^[A-Z][0-9][A-Z0-9]{3}[0-9]$/i;
 const idsIn = (terms) => (terms ?? []).flatMap((t) => t.match(/^uniprot:(.+)$/)?.[1] ?? []);
 
 export default defineBackground({
@@ -214,21 +221,22 @@ export default defineBackground({
 });`}</File>
           <p className={styles.para}>
             <Code>terms(query)</Code> is called on every keystroke with <Code>query.text</Code> set
-            to the typed text. Return the terms found in it, as strings of the form{' '}
-            <Code>prefix:value</Code>. It must be synchronous.
+            to the typed text, and returns the terms found in it, synchronously.
           </p>
           <p className={styles.para}>
             <Code>recommend.commands(query)</Code> and <Code>recommend.cartItems(query)</Code> are
             called 250 ms after typing stops, with <Code>query.terms</Code> set to every term
             returned by every plugin. They may be async; <Code>query.signal</Code> aborts when the
-            text changes. Returned commands are shown as rows in the prompt bar. Returned cart items
-            are shown in the Related pane, where the user can open one or add it to the cart. Both
-            functions are also called with the front tab's terms and with the cart items' terms,
-            except that a plugin is not called with its own tab's terms.
+            text changes, and a result returned after that is discarded. Returned commands are shown
+            as rows in the prompt bar. Returned cart items are shown in Related, a sidebar pane,
+            where the user can open one or add it to the cart, the list of items sent with the next
+            message. Both functions are also called 250 ms after the front tab's terms change, with
+            those terms, and 250 ms after the cart changes, with its items' terms; a plugin is not
+            called with its own tab's terms.
           </p>
           <p className={styles.para}>
-            <Code>status()</Code> is called at startup and after every command. Return lines for the
-            status bar.
+            <Code>status()</Code> is called at startup and after every command, and returns lines
+            for the status bar.
           </p>
           <p className={styles.para}>
             In a cart item, <Code>content</Code> is the data as JSON and <Code>context</Code>{' '}
@@ -242,8 +250,8 @@ export default defineBackground({
 
         <Part id="assistant" title="Assistant">
           <p className={styles.para}>
-            The <Code>prompt</Code> module exports the assistant handler. Settings lists every
-            plugin with a prompt module, and the user picks one.
+            Settings lists every plugin with a <Code>prompt</Code> module, and the user picks the
+            assistant from them.
           </p>
           <File name="src/prompt.ts" language="typescript">{`export default definePrompt({
   handle: async ({ text }, { host, attachments }) => {
@@ -258,20 +266,19 @@ export default defineBackground({
             with <Code>/</Code>. <Code>query.text</Code> is the text, <Code>query.terms</Code> the
             terms found in it, and <Code>ctx.attachments</Code> the cart's items. The cart is
             emptied when <Code>handle</Code> is called. The workbench renders nothing for the
-            response; call <Code>host.openRoute</Code> and render it in the plugin's page.
+            response; the handler opens the plugin's page with <Code>host.openRoute</Code> and
+            renders it there.
           </p>
           <p className={styles.para}>
-            <Code>destination.current()</Code> returns what the prompt bar shows above the input: a
-            label, and optionally a path and a list of options. The bar calls it again after each{' '}
-            <Code>subscribe</Code> notification.
+            <Code>destination.current()</Code> returns what the prompt bar shows above the input: a{' '}
+            <Code>label</Code>; optionally a <Code>path</Code>, shown as a link that opens it with{' '}
+            <Code>openRoute</Code>; and optionally <Code>options</Code> and <Code>select</Code>, the
+            options shown as a menu and the chosen key passed to <Code>select</Code>. The bar calls
+            it again after each <Code>subscribe</Code> notification.
           </p>
         </Part>
 
         <Part id="commands" title="Commands and the host">
-          <p className={styles.para}>
-            The <Code>commands</Code> module exports one handler per command declared in the
-            manifest.
-          </p>
           <File name="src/commands.ts" language="typescript">{`export default defineCommands({
   open: ({ id }, { host }) => host.openRoute(\`/\${id}\`),
   compare: async ({ taxid }, { host }) => {
@@ -280,23 +287,20 @@ export default defineBackground({
   },
 });`}</File>
           <p className={styles.para}>
-            A handler receives the arguments and a <Code>host</Code>.{' '}
-            <Code>host.openRoute(path)</Code> opens the plugin's page.{' '}
+            A handler receives the arguments and a context holding <Code>host</Code>.{' '}
             <Code>host.execute(command, args)</Code> runs a command: <Code>name</Code> runs this
             plugin's command, <Code>plugin:name</Code> another plugin's.{' '}
             <Code>host.hasCommand(command)</Code> returns whether it is registered.{' '}
-            <Code>host.notify(text)</Code> shows a toast. <Code>host.cart</Code> adds and removes
-            this plugin's items. Pages get the same object from <Code>useHost()</Code>;{' '}
-            <Code>CartButton</Code> renders the Add button for an item.
+            <Code>host.notify(text)</Code> shows a toast. <Code>host.cart.add(item)</Code> and{' '}
+            <Code>host.cart.remove(id)</Code> change the cart; <Code>has</Code> and{' '}
+            <Code>count</Code> see only this plugin's items. <Code>useHost()</Code> returns the same
+            object inside a page or pane; <Code>CartButton</Code> renders an Add/Added button for an
+            item.
           </p>
         </Part>
 
         <Part id="reference" title="Reference">
-          <Entry
-            id="r-config"
-            name="config"
-            when="The object vite.config.ts passes as config. Served as manifest.json; read by the workbench at startup."
-          >
+          <Entry id="r-config" name="config" when="Served as manifest.json.">
             <Sig>{`interface Manifest {
   id: string;                    // /^[a-z][a-z0-9-]{1,40}$/
   title: string;
@@ -308,7 +312,7 @@ export default defineBackground({
   launcher?: CommandCall;
 
   // written by the build
-  contractVersion: number;
+  sdkVersion: string;            // the SDK's package version
   modules: ('background' | 'route' | 'pane' | 'commands' | 'prompt')[];
 }
 
@@ -328,8 +332,7 @@ interface CommandCall {
 
 function definePluginManifest(m: Manifest): Manifest;`}</Sig>
             <p className={styles.para}>
-              A <Code>CommandCall</Code> is rendered as a button that runs the command. The
-              workbench rejects a manifest whose <Code>contractVersion</Code> it does not accept and
+              The workbench rejects a manifest whose <Code>sdkVersion</Code> it does not accept and
               logs the reason.
             </p>
           </Entry>
@@ -352,11 +355,7 @@ function definePluginManifest(m: Manifest): Manifest;`}</Sig>
             </p>
           </Entry>
 
-          <Entry
-            id="r-background"
-            name="background"
-            when="Loaded at startup. Each member has its own schedule."
-          >
+          <Entry id="r-background" name="background" when="Loaded at startup.">
             <Sig>{`function defineBackground(b: {
   terms?: (q: Query) => string[];
   recommend?: {
@@ -451,9 +450,8 @@ function defineCommands(
 ): Commands;`}</Sig>
             <p className={styles.para}>
               Arguments typed in the prompt bar arrive as strings. A handler that throws produces a
-              toast naming the command. A handler that opens a page should call{' '}
-              <Code>openRoute</Code> before its first <Code>await</Code>, so the tab appears at
-              once.
+              toast naming the command. The tab appears when <Code>openRoute</Code> is called, so a
+              handler that opens a page calls it before its first <Code>await</Code>.
             </p>
           </Entry>
 
@@ -524,8 +522,9 @@ function usePanelBreadcrumbs(crumbs: { label: string; path?: string; icon?: stri
 function usePanelTerms(terms: string[]): void;
 function CartButton(props: { item: CartItem; tooltip?: string }): JSX.Element;`}</Sig>
             <p className={styles.para}>
-              A component that throws is replaced inside its panel by the error and a Try again
-              button.
+              <Code>setCrumbs</Code> draws a trail above the panel; a crumb with a <Code>path</Code>{' '}
+              is a link that moves the panel there. A component that throws is replaced inside its
+              panel by the error and a Try again button.
             </p>
           </Entry>
         </Part>
@@ -536,10 +535,10 @@ function CartButton(props: { item: CartItem; tooltip?: string }): JSX.Element;`}
 /plugin-registry/plugins         the list of manifests`}</File>
           <p className={styles.para}>
             The plugin's service serves the first two paths. A registry answers the third with an
-            array of manifests. The workbench fetches all three from its own origin, so a deployment
-            must route them to the plugin services and the registry; the workbench image does not do
-            this itself. Without a registry the workbench runs its bundled plugins only. In
-            development, <Code>VITE_DEV_SERVICE_PROXY</Code> proxies each{' '}
+            array of manifests. The workbench fetches all three from its own origin; a deployment
+            routes them to the plugin services and the registry in front of the workbench image.
+            Without a registry the workbench runs its bundled plugins only. In development,{' '}
+            <Code>VITE_DEV_SERVICE_PROXY</Code> proxies each{' '}
             <Code>&lt;prefix&gt;=&lt;origin&gt;</Code> pair and serves as the registry for them.
           </p>
         </Part>
@@ -555,27 +554,28 @@ function CartButton(props: { item: CartItem; tooltip?: string }): JSX.Element;`}
             </Symptom>
             <Symptom name="Invalid hook call, or a context that is always null">
               The bundle carried its own copy of React or the SDK. <Code>mf-manifest.json</Code> in
-              the build output lists what was shared; add the missing package to{' '}
-              <Code>package.json</Code>.
+              the build output lists what was shared; a package missing there was missing from{' '}
+              <Code>package.json</Code> when the build ran.
             </Symptom>
             <Symptom name="usePanel() called outside a workbench panel">
-              The component rendered outside the panel's tree, for example in a portal. Read the
-              handle inside the panel and pass it down.
+              The component rendered outside the panel's tree, for example in a portal. The handle
+              exists only inside that tree; a component rendered elsewhere receives it as a prop.
             </Symptom>
             <Symptom name="A command completes, then fails">
               The toast says why: <Code>vite.config.ts</Code> does not name <Code>commands</Code>,
               the module has no handler for that name, or the handler threw.
             </Symptom>
             <Symptom name="A recommendation never appears">
-              Check in order: <Code>background</Code> is named in <Code>vite.config.ts</Code>; the
-              console does not report it failing to load; <Code>terms</Code> returns a term that{' '}
-              <Code>recommend</Code> handles; the item is not already in the cart. Commands are
-              shown only for typed text, and a plugin is not asked about its own page's terms.
+              In order of likelihood: <Code>background</Code> is named in{' '}
+              <Code>vite.config.ts</Code>; the console does not report it failing to load;{' '}
+              <Code>terms</Code> returns a term that <Code>recommend</Code> handles; the item is not
+              already in the cart. Commands are shown only for typed text, and a plugin is not asked
+              about its own page's terms.
             </Symptom>
             <Symptom name="This panel crashed">
               Either the module failed to load, or the component threw while rendering. "exposed
-              nothing at ./route" means the file has no default export. Close and reopen the tab
-              after fixing a load failure.
+              nothing at ./route" means the file has no default export. A load failure is retried
+              when the tab is closed and reopened.
             </Symptom>
           </div>
         </Part>
