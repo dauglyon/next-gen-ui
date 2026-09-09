@@ -1,14 +1,21 @@
 import { definePrompt } from '@kbase/plugin-sdk';
 import { koros } from './store';
 
-// Free text lands in the current arc; with none, a new arc is started. The
-// cart travels with it: an attachment is part of what was asked, so it is
-// recorded on the question rather than read from the cart later, which by
-// then may hold something else.
+// Free text steers the current arc's session, as KIND*AI's composer does.
+// With no arc current it is a new question, and starting an arc is a
+// commitment the user makes on the New question page, so the text goes there
+// prefilled. The cart travels with a turn: an attachment is part of what was
+// sent, so it is recorded on the turn rather than read from the cart later,
+// which by then may hold something else.
 export default definePrompt({
   handle: async ({ text }, { host, attachments }) => {
-    const slug = koros.current() ?? koros.newArc().slug;
-    koros.ask(
+    const slug = koros.current();
+    if (!slug) {
+      koros.propose({ question: text });
+      host.openRoute('/new');
+      return;
+    }
+    koros.steer(
       slug,
       text ?? '',
       attachments.map((item) => ({

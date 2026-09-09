@@ -3,7 +3,11 @@ import { koros } from './store';
 
 export default defineBackground({
   status: () => {
-    const n = koros.answering();
-    return n > 0 ? [{ text: `${n} answering` }] : [];
+    const you = koros.needingYou();
+    const working = koros.working();
+    return [
+      ...(you > 0 ? [{ text: `${you} need${you === 1 ? 's' : ''} you` }] : []),
+      ...(working > 0 ? [{ text: `${working} working` }] : []),
+    ];
   },
 });

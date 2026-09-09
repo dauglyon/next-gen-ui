@@ -3,9 +3,10 @@ import { definePluginManifest } from '@kbase/plugin-sdk/config';
 export default definePluginManifest({
   id: 'koros',
   title: 'KOROS',
-  description: 'The assistant: projects, arcs and the questions asked in them.',
+  description:
+    'The co-scientist: ask a question, approve its plan, steer the arc to a deliverable.',
   icon: 'ChatCircleDots',
   color: 'blue',
-  commands: [{ name: 'new-question', title: 'Start a new arc for a question' }],
-  shortcuts: [{ label: 'New arc', command: 'new-question' }],
+  commands: [{ name: 'new-question', title: 'New question', icon: 'Plus' }],
+  shortcuts: [{ label: 'New question', command: 'new-question' }],
 });

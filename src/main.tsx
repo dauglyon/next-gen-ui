@@ -57,7 +57,7 @@ const workbench = createWorkbench({
   // Related is last on purpose: it appears and disappears with what is on
   // screen, and anywhere above the navigators it would shove them down the
   // column every time it did.
-  defaultPinned: ['shortcuts', 'koros', 'data', 'jobs', 'related'],
+  defaultPinned: ['shortcuts', 'koros', 'related'],
   defaultAssistant: 'koros',
 });
 
