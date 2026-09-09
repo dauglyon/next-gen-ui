@@ -78,213 +78,127 @@ export default defineCommands({ hello: ({ who }, { host }) => host.openRoute(\`/
 cd hello && npm i @kbase/plugin-sdk
 npm run dev -- --port 8770`}</File>
           <p className={styles.para}>
-            The workbench finds it through one line in its <Code>.env.local</Code>,{' '}
-            <Code>VITE_DEV_SERVICE_PROXY=/services/hello=http://127.0.0.1:8770</Code>, and one
-            restart, since Vite reads the variable when it starts. From then on the plugin is
-            installed whenever its server answers at load time.
+            Point the workbench at it with{' '}
+            <Code>VITE_DEV_SERVICE_PROXY=/services/hello=http://127.0.0.1:8770</Code> in its{' '}
+            <Code>.env.local</Code>, and restart it once. The card on Browse comes from{' '}
+            <Code>launcher</Code>; <Code>/hello</Code> completes from <Code>commands</Code>;{' '}
+            <Code>/hello Alice</Code> loads <Code>commands.ts</Code>, whose handler opens{' '}
+            <Code>route.tsx</Code> at <Code>/Alice</Code>.
+          </p>
+        </Part>
+
+        <Part id="model" title="How it works">
+          <p className={styles.para}>
+            The manifest is trusted; the code is deferred. Browse, completion, the shortcut buttons
+            and the assistant list are built from <Code>plugin.config.ts</Code> at startup, and each
+            entry point is fetched by the first action that needs it. <Code>background</Code> alone
+            is fetched at startup, because it runs on every keystroke.
           </p>
           <p className={styles.para}>
-            What appears, and where each thing comes from. The card on Browse is the{' '}
-            <Code>launcher</Code>. <Code>/hel</Code> completes to <Code>/hello</Code> from the{' '}
-            <Code>commands</Code> declaration, before any code has loaded. <Code>/hello Alice</Code>{' '}
-            loads <Code>commands.ts</Code> and runs <Code>hello</Code> with{' '}
-            <Code>{"{ who: 'Alice' }"}</Code>. <Code>openRoute('/Alice')</Code> loads{' '}
-            <Code>route.tsx</Code> and opens a tab at <Code>/p/hello/Alice</Code>;{' '}
-            <Code>usePanelTitle</Code> names it <em>Alice</em>. Typing <Code>/hello alice</Code>{' '}
-            focuses that same tab, because <Code>normalize</Code> lower-cases both paths.
+            Plugins exchange terms, not calls. A term is a namespaced identifier —{' '}
+            <Code>uniprot:P0AEX9</Code>. Plugins turn what the user types, opens and collects into
+            terms, and every plugin is asked what it has for them. One recognises an accession,
+            another offers its page for it; neither knows the other.
+          </p>
+          <p className={styles.para}>
+            The cart holds things between plugins and the assistant. An item carries its data, so it
+            outlives its page and can be read by a plugin that never saw it. Enter sends the cart
+            with the text.
+          </p>
+          <p className={styles.para}>
+            A page is its own router. The workbench hands a tab a path and asks one thing of it —
+            which paths are the same page — and <Code>normalize</Code> answers.
           </p>
         </Part>
 
         <Part id="can" title="What a plugin can do">
           <Section id="can-found" title="Be found">
             <p className={styles.para}>
-              Everything the workbench shows before loading any code comes from{' '}
-              <Code>plugin.config.ts</Code>. <Code>title</Code>, <Code>icon</Code> and{' '}
-              <Code>color</Code> are the plugin's mark wherever it appears — the Browse card, the
-              tab, the rows it recommends, the Settings list; <Code>description</Code> sits under
-              the title on Browse. <Code>launcher</Code> is a card on Browse under Apps, and the
-              command it runs is what the card does; a plugin without one has no card. Each of{' '}
-              <Code>shortcuts</Code> is a button in the sidebar's Shortcuts block. Each of{' '}
-              <Code>commands</Code> is a slash command, completed and its arguments checked from the
-              declaration alone; the handler comes from <Code>commands.ts</Code> when the command
-              first runs, so every declared name needs one there.
-            </p>
-            <p className={styles.para}>
-              Rules that bite. <Code>id</Code> is in every URL and every saved layout, so it never
-              changes after release. A command name is registered as <Code>&lt;id&gt;:name</Code>; a
-              bare <Code>/name</Code> works while this plugin is the only one declaring it, and once
-              another does, completion offers <Code>/plugin:name</Code> and the bare form is
-              refused. A command returns nothing; data between plugins travels as terms and cart
-              items. The build checks the config: an <Code>id</Code> or command name outside its
-              pattern fails the build rather than the workbench.
+              <Code>plugin.config.ts</Code> is all the workbench knows until code loads, so what it
+              declares must hold without the code: a declared command needs a handler in{' '}
+              <Code>commands.ts</Code>, and <Code>id</Code> never changes, because it is in every
+              URL and saved layout. Commands register as <Code>&lt;id&gt;:&lt;name&gt;</Code>;{' '}
+              <Code>/name</Code> works bare until another plugin declares the same name, then only{' '}
+              <Code>/plugin:name</Code> does. A command returns nothing; data moves as terms and
+              cart items.
             </p>
           </Section>
 
           <Section id="can-pages" title="Have pages">
             <p className={styles.para}>
-              A tab is the plugin's <Code>route</Code> module at a path. The path is everything
-              after <Code>/p/&lt;id&gt;</Code>, query string included, and the plugin routes on it
-              however it likes; the host never parses it. <Code>normalize</Code> is required, and it
-              is the plugin's answer to which paths are the same page: <Code>openRoute</Code> runs
-              it on the requested path and on each open tab of this plugin, and focuses a tab whose
-              result matches instead of opening another. Fold case, strip a query string, or map a
-              synonym there. A route that wants a second tab of the same page passes{' '}
-              <Code>{'{ duplicate: true }'}</Code>.
-            </p>
-            <p className={styles.para}>
-              Inside the tab, <Code>navigate</Code> moves it to another path and pushes a history
-              entry, so a search at <Code>/</Code> and a result at <Code>/&lt;id&gt;</Code> live in
-              one tab and Back returns to the search. <Code>usePanelTitle</Code> names the tab —
-              until it is called, the tab shows the plugin's title and the path.{' '}
-              <Code>usePanelBreadcrumbs</Code> draws a trail above the panel; a crumb with a path is
-              a link that moves this tab there. <Code>usePanelTerms</Code> tells the workbench what
-              the page is about, which is what fills Related while the page is in front. The focused
-              tab's path is the browser URL, and a URL entered by hand opens the same way{' '}
-              <Code>openRoute</Code> does.
-            </p>
-            <p className={styles.para}>
-              <Code>fromReact</Code> turns a component into the panel body, with the hooks working
-              inside it. A plugin in another framework writes <Code>mount</Code> by hand: it
-              receives an element and the two handles, and returns a cleanup.
+              A tab is the <Code>route</Code> module at a path: everything after{' '}
+              <Code>/p/&lt;id&gt;</Code>, query string included, rendered as the plugin would any
+              URL. <Code>normalize</Code> maps paths that mean the same page to one string;{' '}
+              <Code>openRoute</Code> compares by it and focuses an open tab instead of opening a
+              second. <Code>navigate</Code> moves the tab and pushes history: a search at{' '}
+              <Code>/</Code> and a result at <Code>/P0AEX9</Code> share one tab, with Back between
+              them. <Code>usePanelTitle</Code> names the tab. <Code>usePanelTerms</Code> says what
+              the page is about, which is what fills Related while it is in front.
             </p>
           </Section>
 
           <Section id="can-pane" title="Have a sidebar pane">
             <p className={styles.para}>
-              A <Code>pane</Code> module is the plugin's block in the sidebar. Listing it in{' '}
-              <Code>vite.config.ts</Code> is what makes the plugin pinnable: Settings gets a Pin
-              switch for it, the sidebar's More menu offers a preview, and Browse lists it under
-              Panels. The plugin does not pin itself. A pane has no path —{' '}
-              <Code>usePanel().path</Code> is <Code>''</Code> — and without <Code>fit</Code> it
-              takes a share of the sidebar's height and scrolls; <Code>fit: 'content'</Code> makes
-              the block as tall as its content, for toolbars and status.
-            </p>
-            <p className={styles.para}>
-              Rule that bites: the body unmounts when the block is folded, and the flyout from the
-              collapsed rail is a second mount of the same pane beside the block. State that must
-              survive lives outside the component.
+              A <Code>pane</Code> is the plugin's sidebar block; listing it makes the plugin
+              pinnable from Settings. It has no path. <Code>fit: 'content'</Code> sizes the block to
+              its content; otherwise it shares the sidebar's height. The block unmounts when folded,
+              and the collapsed rail's flyout is a second mount, so state lives outside the
+              component.
             </p>
           </Section>
 
-          <Section id="can-react" title="React to what the user types, reads and collects">
+          <Section id="can-react" title="React to the user">
             <p className={styles.para}>
-              The <Code>background</Code> module is fetched at startup, and its three members are
-              how a plugin takes part in what the user is doing without being open.{' '}
-              <Code>terms</Code> turns text into terms: <Code>P0AEX9</Code> into{' '}
-              <Code>uniprot:P0AEX9</Code>. It runs in every plugin on every keystroke, so it must be
-              synchronous and must not fetch; it recognises a shape — a pattern over an accession, a
-              name from an inventory already in memory — and returns. A term is{' '}
-              <Code>prefix:value</Code>, and there is no registry of prefixes: a prefix means what
-              the plugins that react to it do with it, so choosing one begins with reading the
-              plugin meant to react.
+              <Code>terms</Code> turns text into terms. It runs in every plugin on every keystroke:
+              synchronous, no fetching, recognise the shape and return. Prefixes are not registered
+              anywhere; a prefix means what the plugins reacting to it do with it, so pick one by
+              reading them.
             </p>
             <p className={styles.para}>
-              <Code>recommend</Code> is asked once typing pauses, and again for what the front tab
-              declared with <Code>usePanelTerms</Code> and for what is in the cart. It may fetch,
-              and the <Code>signal</Code> it is given aborts when the question changes.{' '}
-              <Code>recommend.commands</Code> returns calls the prompt bar lists as rows under what
-              was typed — "Evidence dossier for P0AEX9" — and pressing one runs the command.{' '}
-              <Code>recommend.cartItems</Code> returns items the Related pane lists, one section per
-              source; a row opens the item's <Code>source.path</Code> in this plugin, and its{' '}
-              <Code>+</Code> puts the item in the cart. A plugin is never asked about the terms its
-              own front tab declared, so a page does not recommend itself.
+              <Code>recommend</Code> is asked once typing pauses, and for the front tab's terms and
+              the cart's. It may fetch; its signal aborts when the question changes.{' '}
+              <Code>commands</Code> become rows under the typed text — "Evidence dossier for P0AEX9"
+              — and <Code>cartItems</Code> become rows in Related that open <Code>source.path</Code>{' '}
+              or add the item to the cart. A plugin is not asked about its own front tab's terms, so
+              a page never recommends itself.
             </p>
             <p className={styles.para}>
-              A cart item is a payload and a pointer, and three readers take three fields.{' '}
-              <Code>source.path</Code> is what a Related row opens and the cart's preview names.{' '}
-              <Code>terms</Code> is what other plugins' <Code>recommend</Code> are asked with once
-              the item is in the cart; leave it out and the item is in the cart and nothing else
-              knows. <Code>content</Code> and <Code>context</Code> are what the assistant reads: the
-              data itself, as JSON, and what the data cannot say — units, the population a number
-              was measured over, the caveats. <Code>id</Code> is derived from what the item is,{' '}
-              <Code>plugin:kind:identifier</Code>, so adding it twice replaces rather than
-              duplicates.
+              A cart item is data plus pointer. <Code>content</Code> and <Code>context</Code> are
+              what the assistant reads: the data, and what the data cannot say — units, population,
+              caveats. <Code>terms</Code> is what other plugins are asked about once the item is in
+              the cart. <Code>source.path</Code> reopens it. <Code>id</Code> is derived from the
+              thing — <Code>plugin:kind:identifier</Code> — so adding twice replaces.
             </p>
             <p className={styles.para}>
-              <Code>status</Code> returns lines for the status bar — "3 lookups running" — read at
-              startup and after every command; a line with an <Code>action</Code> is a button.
+              <Code>status</Code> returns status-bar lines, read at startup and after every command.
             </p>
           </Section>
 
           <Section id="can-answer" title="Answer free text">
             <p className={styles.para}>
-              A <Code>prompt</Code> module makes the plugin an assistant Settings can name. When it
-              is named, Enter on text that is not a slash command calls <Code>handle</Code> with the
-              text, the terms recognised in it, and <Code>attachments</Code>: the whole cart, every
-              plugin's items, which the host empties at that moment because the attachments belong
-              to that message. The host draws nothing for the answer; the handler opens one of this
-              plugin's pages with <Code>openRoute</Code> and writes there. The bar is busy until the
-              promise settles, and a rejection's message is shown under the field.
-            </p>
-            <p className={styles.para}>
-              <Code>destination</Code> is what the bar shows above the field beside the plugin's
-              name: where the next message lands. <Code>current()</Code> returns the label, an
-              optional path the bar offers a jump to, and optional alternatives the bar offers as a
-              menu; <Code>subscribe</Code> is how the plugin says it changed. A store that already
-              notifies listeners is handed over as it is.
+              A <Code>prompt</Code> module makes the plugin an assistant Settings can name. Enter on
+              text that is not a slash command calls <Code>handle</Code> with the text, its terms,
+              and the cart as <Code>attachments</Code>; the cart is emptied, because the attachments
+              belong to that message. The workbench draws no answer: the handler opens a page and
+              writes there. <Code>destination</Code> is the row above the field — where the next
+              message lands — read through <Code>current()</Code> and re-read when{' '}
+              <Code>subscribe</Code> fires.
             </p>
           </Section>
         </Part>
 
         <Part id="host" title="Talking to the host">
           <p className={styles.para}>
-            Every mount, command handler and prompt handler receives two handles; in React,{' '}
-            <Code>useHost()</Code> and <Code>usePanel()</Code> read them.{' '}
             <Code>host.openRoute</Code> opens this plugin's pages, deduplicated by{' '}
-            <Code>normalize</Code>; another plugin's page is reached by running that plugin's
-            command. <Code>host.execute</Code> runs a command — a bare name is this plugin's own,{' '}
-            <Code>plugin:name</Code> is another's — and resolves when the handler does;{' '}
-            <Code>host.hasCommand</Code> says whether a name is installed, for a plugin that works
-            with a neighbour it cannot assume. <Code>host.notify</Code> is a toast, for the outcome
-            only the plugin can see: a command that ran and changed nothing on screen.{' '}
-            <Code>host.cart</Code> — <Code>useCart()</Code> in React, or <Code>CartButton</Code> for
-            the standard Add control — adds items under this plugin's name, and its <Code>has</Code>
-            , <Code>remove</Code> and <Code>count</Code> answer for this plugin's items only.
-          </p>
-          <p className={styles.para}>
-            The panel handle is the tab or block itself: <Code>path</Code> and <Code>focused</Code>{' '}
-            as they stand, <Code>navigate</Code>, and the setters behind the hooks —{' '}
-            <Code>setTitle</Code>, <Code>setCrumbs</Code>, <Code>setTerms</Code>. Under{' '}
-            <Code>fromReact</Code> the tree redraws whenever the path or focus changes, so{' '}
-            <Code>usePanel()</Code> is current on every render; a hand-written <Code>mount</Code>{' '}
-            uses <Code>subscribe</Code> for the same changes. A component that throws while
-            rendering is replaced, inside its own panel, by the message and a Try again; the rest of
-            the workbench keeps working.
-          </p>
-        </Part>
-
-        <Part id="together" title="How it fits together">
-          <File
-            name=""
-            language="text"
-          >{`startup    GET /plugin-registry/plugins   →  cards, completion, shortcuts, assistant choices
-           fetch ./background from every plugin that lists it
-
-type       text → every terms()  ─┐
-read       the front tab's terms  ├→  pause → every recommend()  →  rows in the bar and in Related
-collect    the cart's terms      ─┘
-
-open       a tab                  →  fetch ./route
-show       a pane                 →  fetch ./pane
-run        a command              →  fetch ./commands
-enter      free text              →  fetch ./prompt of the assistant Settings names`}</File>
-          <p className={styles.para}>
-            At startup the workbench fetches every manifest and builds everything it can from them:
-            Browse, completion, the shortcut buttons, the assistant list. It fetches{' '}
-            <Code>background</Code> at once, because that module is called on the workbench's
-            schedule rather than the user's, and each other module the first time a user action
-            needs it; a module, once fetched, is kept for the session. A registry that is missing or
-            down leaves the bundled plugins working alone.
-          </p>
-          <p className={styles.para}>
-            Three things carry terms: the text being typed, the front tab, and the cart. Each is
-            pooled separately, and when one settles every plugin's <Code>recommend</Code> is asked
-            about that pool. Commands recommended for the typed text become rows in the prompt bar;
-            cart items recommended for any of the three become rows in Related, grouped by which one
-            they answer. The workbench passes terms and never reads one: one plugin recognises an
-            identifier, another says what to do with it, and neither knows the other exists. The
-            cart is where things wait between plugins and the assistant — one list, kept in local
-            storage, sent whole as <Code>attachments</Code> on Enter and emptied.
+            <Code>normalize</Code>. <Code>host.execute</Code> runs a command — bare for its own,{' '}
+            <Code>plugin:name</Code> for another's — and <Code>hasCommand</Code> checks before
+            relying on a neighbour. <Code>host.notify</Code> is a toast, for an outcome nothing on
+            screen shows. <Code>host.cart</Code> adds under this plugin's name; <Code>has</Code>,{' '}
+            <Code>remove</Code> and <Code>count</Code> see only its items. The panel handle carries{' '}
+            <Code>path</Code>, <Code>focused</Code>, <Code>navigate</Code> and the setters behind
+            the hooks; under <Code>fromReact</Code> the tree redraws on every change, so{' '}
+            <Code>usePanel()</Code> is current. A component that throws is replaced within its panel
+            by the error and a Try again.
           </p>
         </Part>
 
@@ -690,6 +604,7 @@ function CartButton(props: { item: CartItem; tooltip?: string }): JSX.Element;  
 
 const SECTIONS: { id: string; label: string; children?: { id: string; label: string }[] }[] = [
   { id: 'start', label: 'Getting started' },
+  { id: 'model', label: 'How it works' },
   {
     id: 'can',
     label: 'What a plugin can do',
@@ -702,7 +617,6 @@ const SECTIONS: { id: string; label: string; children?: { id: string; label: str
     ],
   },
   { id: 'host', label: 'Talking to the host' },
-  { id: 'together', label: 'How it fits together' },
   {
     id: 'reference',
     label: 'Reference',
