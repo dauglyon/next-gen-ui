@@ -127,6 +127,9 @@ export default defineConfig(({ mode }) => {
         '@kbase/design-system': designSystemSrc,
         // Same idea for the plugin SDK: local plugins import the name external
         // plugins will install, and Module Federation shares one instance of it.
+        '@kbase/plugin-sdk/config': fileURLToPath(
+          new URL('./src/plugins/sdk/contract.ts', import.meta.url),
+        ),
         '@kbase/plugin-sdk': fileURLToPath(new URL('./src/plugins/sdk/index.ts', import.meta.url)),
       },
     },

@@ -11,7 +11,7 @@ describe('ManifestSchema', () => {
   it.each([
     ['an uppercase id', { ...base, id: 'Jobs' }],
     ['an id with a slash', { ...base, id: 'a/b' }],
-    ['another contract version', { ...base, contractVersion: 99 }],
+    ['a contract version the host never shipped', { ...base, contractVersion: 1 }],
     ['a module the host does not know', { ...base, modules: ['matcher'] }],
     ['no module list', { id: 'x', title: 'x', contractVersion: CONTRACT_VERSION }],
     ['a command name with spaces', { ...base, commands: [{ name: 'do it', title: 'x' }] }],

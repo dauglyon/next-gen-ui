@@ -6,6 +6,7 @@
   "private": true,
   "exports": {
     ".": "./index.ts",
+    "./config": "./contract.ts",
     "./vite": "./pluginFederation.ts"
   }
 }

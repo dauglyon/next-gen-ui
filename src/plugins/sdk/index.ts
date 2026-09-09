@@ -4,7 +4,9 @@ export { HostContext, useHost } from './host';
 export type { PluginHost } from './host';
 export {
   CONTRACT_VERSION,
+  ACCEPTED_CONTRACT_VERSIONS,
   MODULES,
+  manifestFor,
   ManifestSchema,
   PluginConfigSchema,
   SlashCommandSchema,

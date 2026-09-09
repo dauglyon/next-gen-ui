@@ -44,18 +44,27 @@ const pkg = {
   type: 'module',
   exports: {
     '.': { types: './types/index.d.ts', import: './index.js' },
+    './config': { types: './types/contract.d.ts', import: './config.js' },
     './vite': { types: './types/pluginFederation.d.ts', import: './vite.js' },
   },
-  files: ['index.js', 'index.js.map', 'vite.js', 'vite.js.map', 'types/', 'README.md'],
+  files: ['*.js', '*.js.map', 'types/', 'README.md'],
   sideEffects: false,
   // Keep in step with rollupOptions.external in vite.config.pluginsdk.ts.
+  // The design system has no registry version: a plugin takes it from this
+  // repo, the way it takes this SDK.
   peerDependencies: {
     react: dep('react'),
     'react-dom': dep('react-dom'),
     zod: dep('zod'),
+    '@phosphor-icons/react': dep('@phosphor-icons/react'),
+    '@kbase/design-system': '*',
     '@module-federation/vite': dep('@module-federation/vite'),
+    vite: dep('vite'),
   },
-  peerDependenciesMeta: { '@module-federation/vite': { optional: true } },
+  peerDependenciesMeta: {
+    '@module-federation/vite': { optional: true },
+    vite: { optional: true },
+  },
   repository: {
     type: 'git',
     url: 'https://github.com/kbase/next-gen-ui.git',

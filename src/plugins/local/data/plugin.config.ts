@@ -1,4 +1,4 @@
-import { definePluginManifest } from '@kbase/plugin-sdk';
+import { definePluginManifest } from '@kbase/plugin-sdk/config';
 
 export default definePluginManifest({
   id: 'data',

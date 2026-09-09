@@ -48,7 +48,7 @@ GET /services/hello/plugin/remoteEntry.js  the bundle; modules load from here as
           <File
             name="plugin.config.ts"
             language="typescript"
-          >{`import { definePluginManifest } from '@kbase/plugin-sdk';
+          >{`import { definePluginManifest } from '@kbase/plugin-sdk/config';
 
 export default definePluginManifest({
   id: 'hello',
