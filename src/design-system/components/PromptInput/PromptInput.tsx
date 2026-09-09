@@ -20,8 +20,9 @@ export interface PromptInputProps {
   placeholder?: string;
   /**
    * A line under the field. Defaults to the submit gesture the device can
-   * actually reach. Pass `null` for none. Announced when focus arrives, so
-   * changing it while the field is focused is silent.
+   * actually reach. Pass `null` for none, or `''` to keep the line and fill
+   * it later without the composer changing height. Announced when focus
+   * arrives, so changing it while the field is focused is silent.
    */
   hint?: ReactNode;
   /** Announced when it appears. */
@@ -157,7 +158,12 @@ export function PromptInput({
         {busy && !action ? 'Running. Send is now stop.' : ''}
       </span>
 
-      {hintText && <Field.Description className={styles.hint}>{hintText}</Field.Description>}
+      {/* Present whenever there is a slot, empty or not: a row that comes and
+          goes with its text moves everything above the composer. `null`
+          suppresses the slot; '' reserves it. */}
+      {hintText != null && (
+        <Field.Description className={styles.hint}>{hintText}</Field.Description>
+      )}
       {error && <Alert color="red">{error}</Alert>}
     </Field.Root>
   );

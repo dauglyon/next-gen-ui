@@ -311,11 +311,13 @@ export function PromptBar() {
   const found = parsed.kind === 'command' ? registry.find(parsed.name) : undefined;
   const known = found?.ok ? found.command : undefined;
   // Free-text destination is the row above the bar; the hint slot only
-  // ever explains the command being typed.
+  // ever explains the command being typed. The slot is always there ('')
+  // so its text appearing does not grow the composer and shrink every
+  // panel above it.
   const hint =
     parsed.kind === 'command' && known && known.args?.length
       ? `${usage(parsed.name, known.args)} — ${known.title}`
-      : null;
+      : '';
 
   const accept = (s: BarSuggestion) => {
     // A row that acts has nothing to complete; a command completion is

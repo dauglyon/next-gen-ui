@@ -105,6 +105,9 @@
 .hint {
   font-size: var(--fs-3);
   color: var(--c-ink4);
+  /* Holds its line when empty, so the composer's height does not follow
+     the text: above it sits every panel, and each iframe follows its panel. */
+  min-block-size: 1lh;
 }
 
 /* The root has no padding of its own, so the hint takes the surface's.
