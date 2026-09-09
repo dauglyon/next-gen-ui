@@ -16,6 +16,13 @@ import type { HostIndex } from '../installed';
 // what the user just did.
 export const SETTLE_MS = 250;
 
+// How long a `recommend` has to answer. Past it the signal aborts and the
+// answer, if it ever comes, is dropped: a suggestion that arrives after the
+// reader has moved on is noise, and one slow plugin must not hold the pane
+// for the rest. Each plugin's answer is shown as it lands, so the budget is
+// the most a reader waits for the last of them, not for the first.
+export const BUDGET_MS = 2000;
+
 export interface QueryInput {
   text?: string;
   terms?: string[];
@@ -62,37 +69,52 @@ export function createQueryRunner(index: HostIndex, store: QueryStore): QueryRun
     const controller = new AbortController();
     inflight.set(source, controller);
     const query: Query = { text: input.text, terms, signal: controller.signal };
-    const answers = await Promise.all(
-      index
-        .backgrounds()
-        .filter(({ plugin, background }) => background.recommend && plugin !== input.owner)
-        .map(async ({ plugin, background }): Promise<Answer> => {
-          const recommend = background.recommend!;
-          const call = async <T>(fn: ((q: Query) => T[] | Promise<T[]>) | undefined) => {
-            if (!fn) return [] as T[];
-            try {
-              return await fn(query);
-            } catch (err) {
-              if (!controller.signal.aborted) {
-                console.warn(`plugin ${plugin}: its recommend() threw; ignoring it`, err);
-              }
-              return [] as T[];
+    const label = input.label ?? input.text ?? '';
+    const asked = index
+      .backgrounds()
+      .filter(({ plugin, background }) => background.recommend && plugin !== input.owner);
+
+    // Answers go into the store one plugin at a time, in arrival order; the
+    // round is over when every plugin has answered or the budget has run out.
+    const answers: Answer[] = [];
+    let pending = asked.length;
+    const publish = (loading: boolean) => {
+      if (controller.signal.aborted) return;
+      store.set(source, { label, pool: terms, answers: [...answers], loading });
+    };
+    const budget = window.setTimeout(() => {
+      if (pending > 0) {
+        publish(false);
+        controller.abort();
+      }
+    }, BUDGET_MS);
+
+    await Promise.all(
+      asked.map(async ({ plugin, background }) => {
+        const recommend = background.recommend!;
+        const call = async <T>(fn: ((q: Query) => T[] | Promise<T[]>) | undefined) => {
+          if (!fn) return [] as T[];
+          try {
+            return await fn(query);
+          } catch (err) {
+            if (!controller.signal.aborted) {
+              console.warn(`plugin ${plugin}: its recommend() threw; ignoring it`, err);
             }
-          };
-          const [commands, cartItems] = await Promise.all([
-            call(recommend.commands),
-            call(recommend.cartItems),
-          ]);
-          return { plugin, commands, cartItems };
-        }),
+            return [] as T[];
+          }
+        };
+        const [commands, cartItems] = await Promise.all([
+          call(recommend.commands),
+          call(recommend.cartItems),
+        ]);
+        if (controller.signal.aborted) return;
+        pending -= 1;
+        if (commands.length || cartItems.length) answers.push({ plugin, commands, cartItems });
+        publish(pending > 0);
+      }),
     );
-    if (controller.signal.aborted) return;
-    store.set(source, {
-      label: input.label ?? input.text ?? '',
-      pool: terms,
-      answers: answers.filter((a) => a.commands.length || a.cartItems.length),
-      loading: false,
-    });
+    window.clearTimeout(budget);
+    if (asked.length === 0) publish(false);
   };
 
   return {

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Background, CommandCall, Query } from '../../../plugins/sdk';
 import { createQueryStore } from '../../core';
 import type { HostIndex } from '../installed';
-import { SETTLE_MS, createQueryRunner } from './runner';
+import { BUDGET_MS, SETTLE_MS, createQueryRunner } from './runner';
 
 // The runner over a stand-in index: only `backgrounds()` is consulted.
 function index(backgrounds: Record<string, Background>): HostIndex {
@@ -85,6 +85,30 @@ describe('the query runner', () => {
     expect(store.get('typing').answers).toHaveLength(1);
     runner.set('typing', { text: '' });
     expect(store.get('typing')).toMatchObject({ pool: [], answers: [], loading: false });
+  });
+
+  it('shows a fast answer while a slow plugin is still working, and drops the slow one past the budget', async () => {
+    let release: (() => void) | undefined;
+    const slow: Background = {
+      recommend: {
+        commands: ({ signal }) =>
+          new Promise<CommandCall[]>((resolve) => {
+            release = () => resolve([{ label: 'late', command: 'x' }]);
+            signal.addEventListener('abort', () => resolve([]));
+          }),
+      },
+    };
+    const store = createQueryStore();
+    const runner = createQueryRunner(index({ slow, fj }), store);
+    runner.set('typing', { text: 'P0AEX9' });
+    await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    expect(store.get('typing').answers.map((a) => a.plugin)).toEqual(['fj']);
+    expect(store.get('typing').loading).toBe(true);
+    await vi.advanceTimersByTimeAsync(BUDGET_MS);
+    expect(store.get('typing').loading).toBe(false);
+    release?.();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(store.get('typing').answers.map((a) => a.plugin)).toEqual(['fj']);
   });
 
   it('a terms() or recommend() that throws costs that plugin its answer, not the round', async () => {
