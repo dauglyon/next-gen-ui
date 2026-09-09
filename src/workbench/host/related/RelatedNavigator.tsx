@@ -1,79 +1,61 @@
-import { useEffect, useSyncExternalStore } from 'react';
+import { useSyncExternalStore } from 'react';
 import { X } from '@phosphor-icons/react';
 import { EmptyState, Loader, Tooltip } from '@kbase/design-system';
-import { CartButton } from '../../../plugins/sdk';
-import { groupOf, groups } from '../../core';
-import { itemIdOf } from './runner';
-import type { RelatedItem, RelatedSection } from '../../core';
+import { CartButton, usePanelTitle } from '../../../plugins/sdk';
+import type { CartItem } from '../../../plugins/sdk';
+import type { QuerySource, SourceState } from '../../core';
+import { QUERY_SOURCES, rowKey } from '../../core';
 import { openRoute } from '../open';
 import { PluginMark } from '../PluginMark';
-import { useLayout, useServices } from '../../react/context';
+import { useServices } from '../../react/context';
 import styles from '../../react/Workbench.module.css';
 
-// What the rest of the workbench is about, given what is on screen and what is
-// in the cart.
+// What the rest of the workbench has about what is being typed, what is on
+// screen, and what is in the cart: every plugin's `recommend.cartItems`,
+// one section per source, each headed by what it was computed from.
 //
-// A navigator like any other, so the sidebar's own machinery applies: it
-// folds, it resizes, it reorders, it appears in the rail when the sidebar is
+// A pane like any other, so the sidebar's own machinery applies: it folds,
+// it resizes, it reorders, it appears in the rail when the sidebar is
 // collapsed, and Settings can unpin it.
 //
-// Two sections, in that order. The first changes as you navigate and is the
-// one that usually has something in it; the second is rarer and more
-// considered. Each is hidden when empty. The headings say only what the list
-// was computed from — the block already says what the relation is.
-//
-// A row is a link. Pressing it opens the page the answering plugin named; the
-// `+` puts the item that plugin offered into the cart. Nothing is fetched to
-// show a row, because a proposal carries no payload.
+// A row is a link and an offer. Pressing it opens the item's `source.path`
+// in the answering plugin; the `+` puts the item in the cart. An item
+// already in the cart is not shown: the reader has it.
+
+const HEADINGS: Record<QuerySource, (label: string) => string> = {
+  typing: (label) => `Typing: ${label}`,
+  page: (label) => label,
+  cart: (label) => `Cart: ${label}`,
+};
 
 export function RelatedNavigator() {
-  const { related, relatedRunner, cart, terms: termStore, titles } = useServices();
-  const layout = useLayout();
-  useSyncExternalStore(related.subscribe, related.version, related.version);
+  usePanelTitle('Related');
+  const { query, cart } = useServices();
+  useSyncExternalStore(query.subscribe, query.version, query.version);
   useSyncExternalStore(cart.subscribe, cart.version, cart.version);
-  useSyncExternalStore(termStore.subscribe, termStore.version, termStore.version);
 
-  // The front tab of the main area, not whatever has focus: the pane should
-  // not change because a click landed in the sidebar.
-  const front = frontPanel(layout);
-  const viewTerms = front ? termStore.get(front.id) : [];
-  const items = cart.items();
-  // Newest first. Each plugin answers in the order it is asked and the pane
-  // shows three rows per plugin, so this is what makes an add visible: the
-  // thing just put in the cart leads, and what it displaces is counted in the
-  // "N more" line rather than silently keeping its seat.
-  const cartTerms = [...items].reverse().flatMap((i) => i.terms ?? []);
+  const sections = QUERY_SOURCES.map((source) => ({ source, state: query.get(source) }))
+    .map(({ source, state }) => ({
+      source,
+      state,
+      rows: state.answers.flatMap((answer) =>
+        answer.cartItems
+          .filter(
+            (item) =>
+              !cart.has(item.id) && !query.dismissed(rowKey(source, answer.plugin, item.id)),
+          )
+          .map((item) => ({
+            key: rowKey(source, answer.plugin, item.id),
+            plugin: answer.plugin,
+            item,
+          })),
+      ),
+    }))
+    .filter((s) => s.rows.length > 0);
+  const loading = QUERY_SOURCES.some((source) => query.get(source).loading);
 
-  const viewKey = viewTerms.join(',');
-  // The cart's identity, not its size: swapping one item for another leaves
-  // the count alone, and a count is what this used to watch.
-  const cartKey = items.map((i) => `${i.id}#${(i.terms ?? []).join('+')}`).join('|');
-  useEffect(() => {
-    relatedRunner.run({
-      view:
-        front && viewKey
-          ? {
-              plugin: front.plugin,
-              // The heading says what the view section was computed from:
-              // the panel's own title, which is the thing it is open on.
-              subject: titles.get(front.id) ?? front.path,
-              terms: viewTerms,
-            }
-          : null,
-      cart: { count: items.length, terms: cartTerms },
-      held: items.map((i) => i.id),
-    });
-    // Values, not the arrays holding them.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [front?.plugin, front?.id, viewKey, cartKey]);
-
-  useEffect(() => () => relatedRunner.stop(), [relatedRunner]);
-
-  const { sections, loading } = related.get();
   // The sidebar draws this block's header whether or not there is anything in
-  // it, so the body has to account for itself. The house form is EmptyState —
-  // a title, a line saying what would fill it, and the loading case wearing
-  // the Loader as its icon, exactly as a panel does.
+  // it, so the body has to account for itself.
   if (sections.length === 0) {
     return (
       <div className={styles.relatedEmpty}>
@@ -85,7 +67,7 @@ export function RelatedNavigator() {
         ) : (
           <EmptyState
             title="Nothing related"
-            description="Open a page or add to the cart, and anything else that knows about it appears here."
+            description="Open a page, type into the prompt bar, or add to the cart, and anything else that knows about it appears here."
           />
         )}
       </div>
@@ -94,40 +76,38 @@ export function RelatedNavigator() {
 
   return (
     <div className={styles.related}>
-      {sections.map((section) => (
-        <Section key={section.context} section={section} />
+      {sections.map(({ source, state, rows }) => (
+        <Section key={source} source={source} state={state} rows={rows} />
       ))}
     </div>
   );
 }
 
-function Section({ section }: { section: RelatedSection }) {
-  const { source } = useServices();
+interface Row {
+  key: string;
+  plugin: string;
+  item: CartItem;
+}
+
+function Section({
+  source,
+  state,
+  rows,
+}: {
+  source: QuerySource;
+  state: SourceState;
+  rows: Row[];
+}) {
+  const { source: index } = useServices();
   return (
     <div className={styles.relatedSection}>
-      <p className={styles.relatedFrom}>
-        {section.context === 'cart' ? (
-          <>
-            <span aria-hidden="true">🛒</span>
-            {`${section.count} item${section.count === 1 ? '' : 's'}`}
-          </>
-        ) : (
-          <>
-            {section.subject}
-            {section.alsoCart && (
-              <span className={styles.relatedAlso} aria-label="and the cart">
-                <span aria-hidden="true">· 🛒</span>
-              </span>
-            )}
-          </>
-        )}
-      </p>
+      <p className={styles.relatedFrom}>{HEADINGS[source](state.label)}</p>
       <ul className={styles.relatedList}>
-        {section.items.map((item) => (
-          <Row
-            key={item.key}
-            item={item}
-            title={source.manifest(item.plugin)?.title ?? item.plugin}
+        {rows.map((row) => (
+          <RelatedRow
+            key={row.key}
+            row={row}
+            title={index.manifest(row.plugin)?.title ?? row.plugin}
           />
         ))}
       </ul>
@@ -135,70 +115,75 @@ function Section({ section }: { section: RelatedSection }) {
   );
 }
 
-function Row({ item, title }: { item: RelatedItem; title: string }) {
+function RelatedRow({ row, title }: { row: Row; title: string }) {
   const services = useServices();
-  const { related, relatedRunner, source } = services;
-  const manifest = source.manifest(item.plugin);
-  const open = () => void openRoute(services, item.plugin, item.proposal.path);
+  const { query, cart, source } = services;
+  const manifest = source.manifest(row.plugin);
+  const { item } = row;
+  const path = item.source?.path;
+  const label = (
+    <span className={styles.relatedLabel}>
+      <span className={styles.relatedName}>{item.subject ?? item.name}</span>
+      {item.summary && <span className={styles.relatedDetail}>{item.summary}</span>}
+    </span>
+  );
 
   return (
     <li className={styles.relatedRow}>
       <Tooltip.Root>
         <Tooltip.Trigger
           render={
-            <button type="button" className={styles.relatedOpen} onClick={open}>
-              <PluginMark
-                icon={manifest?.icon}
-                color={manifest?.color}
-                size={14}
-                className={styles.relatedMark}
-                aria-hidden="true"
-              />
-              <span className={styles.relatedLabel}>
-                <span className={styles.relatedName}>{item.proposal.label}</span>
-                {item.proposal.detail && (
-                  <span className={styles.relatedDetail}>{item.proposal.detail}</span>
-                )}
+            path !== undefined ? (
+              <button
+                type="button"
+                className={styles.relatedOpen}
+                onClick={() => void openRoute(services, row.plugin, path)}
+              >
+                <PluginMark
+                  icon={manifest?.icon}
+                  color={manifest?.color}
+                  size={14}
+                  className={styles.relatedMark}
+                  aria-hidden="true"
+                />
+                {label}
+              </button>
+            ) : (
+              <span className={styles.relatedOpen}>
+                <PluginMark
+                  icon={manifest?.icon}
+                  color={manifest?.color}
+                  size={14}
+                  className={styles.relatedMark}
+                  aria-hidden="true"
+                />
+                {label}
               </span>
-            </button>
+            )
           }
         />
-        <Tooltip.Popup side="right">{`Open in ${title}`}</Tooltip.Popup>
+        <Tooltip.Popup side="right">
+          {path !== undefined ? `Open in ${title}` : `${item.name} — ${title}`}
+        </Tooltip.Popup>
       </Tooltip.Root>
 
-      {item.proposal.item && (
-        // The same control the plugins draw on their own pages, minus the
-        // word: a row this narrow has no space for it, and a different glyph
-        // in a different shape would read as a different action.
-        <CartButton
-          id={itemIdOf(item)}
-          subject={item.proposal.label}
-          onAdd={() => relatedRunner.accept(item.key)}
-        />
-      )}
+      {/* The same control the plugins draw on their own pages. The item is
+          stamped with the answering plugin, the same way that plugin's own
+          `cart.add` would stamp it. */}
+      <CartButton
+        id={item.id}
+        subject={item.subject ?? item.name}
+        onAdd={() => cart.add({ ...item, plugin: row.plugin, addedAt: Date.now() })}
+      />
 
       <button
         type="button"
         className={styles.relatedDismiss}
-        aria-label={`Dismiss ${item.proposal.label}`}
-        onClick={() => related.dismiss(item.key)}
+        aria-label={`Dismiss ${item.name}`}
+        onClick={() => query.dismiss(row.key)}
       >
         <X size={11} aria-hidden="true" />
       </button>
     </li>
   );
-}
-
-// The panel at the front of the main area.
-//
-// Never `layout.focus` on its own: focus follows the pointer into the sidebar,
-// and clicking a row in this very pane would then make the pane about the
-// pane. The main area's focused group if focus is in it, otherwise the first
-// group's active tab — what a reader would call "the page I am on".
-function frontPanel(layout: ReturnType<typeof useLayout>) {
-  const focused = layout.focus ? groupOf(layout.main, layout.focus) : undefined;
-  const group = focused ?? groups(layout.main).find((g) => g.tabs.length > 0);
-  const id = group?.active ?? group?.tabs[0];
-  const panel = id ? layout.panels[id] : undefined;
-  return panel && id ? { ...panel, id } : null;
 }

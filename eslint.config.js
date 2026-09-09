@@ -42,10 +42,11 @@ export default tseslint.config(
     },
   },
   {
-    // A plugin module exports components and its definePlugin() default
-    // together on purpose: that object is what the host loads. HMR for
-    // plugin code goes through the panel, not fast refresh.
-    files: ['src/plugins/local/**/plugin.tsx'],
+    // A route or pane module's default export is a Route or Pane — the
+    // object the host mounts — beside the component it wraps. That is the
+    // contract's file shape; HMR for plugin code goes through the panel,
+    // not fast refresh.
+    files: ['src/plugins/local/**/route.tsx', 'src/plugins/local/**/pane.tsx'],
     rules: {
       'react-refresh/only-export-components': 'off',
     },

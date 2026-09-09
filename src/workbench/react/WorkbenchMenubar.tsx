@@ -111,7 +111,7 @@ export function WorkbenchMenubar() {
           <Menu.Popup>
             {source
               .plugins()
-              .filter((p) => source.panel(`${p.id}/pane`))
+              .filter((p) => source.has(p.id, 'pane'))
               .map((p) => {
                 const pinned = layout.sidebar.pinned.includes(p.id);
                 return (

@@ -23,10 +23,11 @@ export function Sidebar() {
   const layout = useLayout();
   const dispatch = useDispatch();
   const { source, preview: previewHandle } = useServices();
+  useSyncExternalStore(source.subscribe, source.version, source.version);
   const { sidebar } = layout;
   const plugins = source.plugins();
   const infoOf = (id: PluginId) => plugins.find((p) => p.id === id);
-  const withNavigator = plugins.filter((p) => source.panel(`${p.id}/pane`));
+  const withNavigator = plugins.filter((p) => source.has(p.id, 'pane'));
   const unpinned = withNavigator.filter((p) => !sidebar.pinned.includes(p.id));
   const blocks = sidebarPanels(layout);
   const dragging = useDragging();
@@ -109,12 +110,13 @@ export function Sidebar() {
               dir="col"
               className={styles.blockStack}
               sizes={blocks.map((b) => sidebar.sizes[b.plugin] ?? 1)}
-              // Folded blocks and content-fit navigators keep natural
-              // height; only the rest share the stack.
+              // Folded blocks and content-fit panes keep natural height;
+              // only the rest share the stack. A pane's fit is known once
+              // its module has loaded, which showing it does.
               fixed={blocks.map(
                 (b) =>
                   sidebar.folded.includes(b.id) ||
-                  source.manifest(b.plugin)?.navigator?.fit === 'content',
+                  source.loaded(b.plugin, 'pane')?.fit === 'content',
               )}
               onSizes={(sizes) =>
                 dispatch({
@@ -257,7 +259,7 @@ function Block({ panel, info }: { panel: Panel; info: PluginInfo | undefined }) 
             }
           }}
         >
-          <PanelHost panel={panel} focused={focused} />
+          <PanelHost panel={panel} />
         </div>
       )}
     </section>
@@ -388,7 +390,7 @@ function PreviewBlock({
         </Button>
       </div>
       <div className={styles.blockBody}>
-        <PanelHost panel={makePane(plugin)} focused={false} />
+        <PanelHost panel={makePane(plugin)} />
       </div>
     </section>
   );
@@ -409,7 +411,7 @@ function PreviewPopout({
 }) {
   const dispatch = useDispatch();
   const width = useLayout().sidebar.width;
-  const fit = useServices().source.manifest(plugin)?.navigator?.fit;
+  const fit = useServices().source.loaded(plugin, 'pane')?.fit;
   const title = info?.title ?? plugin;
   const Icon = info?.icon ?? PushPin;
   return (
@@ -443,7 +445,7 @@ function PreviewPopout({
             </Button>
           </div>
           <div className={styles.blockBody}>
-            <PanelHost panel={makePane(plugin)} focused={false} />
+            <PanelHost panel={makePane(plugin)} />
           </div>
         </div>
       </Popover.Popup>
@@ -464,8 +466,8 @@ function PopoutIcon({
 }) {
   const panel = makePane(plugin);
   const width = useLayout().sidebar.width;
-  // A content-fit navigator's flyout hugs its content too.
-  const fit = useServices().source.manifest(plugin)?.navigator?.fit;
+  // A content-fit pane's flyout hugs its content too.
+  const fit = useServices().source.loaded(plugin, 'pane')?.fit;
   return (
     <Popover.Root>
       <Popover.Trigger
@@ -489,7 +491,7 @@ function PopoutIcon({
             <span className={styles.popoutTitle}>{label}</span>
           </div>
           <div className={styles.blockBody}>
-            <PanelHost panel={panel} focused={false} />
+            <PanelHost panel={panel} />
           </div>
         </div>
       </Popover.Popup>

@@ -43,14 +43,15 @@ import { HostContext } from './host';
 //            that decides whether an assistant's answer is any good, and it is
 //            the one most often left empty.
 //
-//   source   The path that reopens your route on this thing. The pointer half:
-//            it is what lets a user get back to it and lets you refresh it.
+//   source   The path that reopens your route on this thing, or a URL outside
+//            the workbench. The pointer half: it is what lets a user get back
+//            to it and lets you refresh it.
 //
 // Send both halves. A pointer alone makes every consumer re-fetch and strands
 // the item when a service is slow; a payload alone leaves the user unable to
 // get back to the thing it came from.
 
-export interface CartAddition {
+export interface CartItem {
   id: string;
   kind: string;
   name: string;
@@ -58,7 +59,7 @@ export interface CartAddition {
   summary?: string;
   // Namespaced keys other plugins may recognise — `uniprot:P0AEX9`,
   // `taxon:562`. Optional and unpoliced: a plugin answers on the prefixes it
-  // knows and stays silent on the rest, the same way a matcher does. This is
+  // knows and stays silent on the rest, the same way `terms` does. This is
   // what lets a second plugin say something about an item without knowing
   // anything about the plugin that added it.
   terms?: string[];
@@ -67,36 +68,37 @@ export interface CartAddition {
   context?: Record<string, unknown>;
 }
 
-// An item as it sits in the cart. The host stamps `plugin` and `addedAt`.
-export interface CartItem extends CartAddition {
-  plugin: string;
-  addedAt: number;
-}
-
-export interface CartHandle {
-  add: (item: CartAddition) => void;
+// The slice of the host's cart a plugin can see. It cannot read other
+// plugins' items: what is in the cart is the user's business and the
+// assistant's, and a plugin that could read it could fingerprint the session.
+export interface Cart {
+  // Same id replaces.
+  add: (item: CartItem) => void;
   remove: (id: string) => void;
-  // Whether this id is already in the cart, so a button can say "Added" and
-  // a second press can take it out again.
+  // This plugin's ids only.
   has: (id: string) => boolean;
-  count: number;
+  count: () => number;
+  subscribe: (listener: () => void) => () => void;
 }
 
-export function useCart(): CartHandle {
+// The host's cart handle, re-rendering the caller on change so a button
+// that reads `has()` updates when the user removes the item from the tray
+// rather than from the button.
+export function useCart(): Cart {
   const host = useContext(HostContext);
   const cart = host?.cart;
-
-  // Subscribed, so a button that reads `has()` re-renders when the user
-  // removes the item from the tray rather than from the button.
-  const count = useSyncExternalStore(
+  useSyncExternalStore(
     useCallback((cb: () => void) => cart?.subscribe(cb) ?? (() => {}), [cart]),
     () => cart?.count() ?? 0,
     () => 0,
   );
-
-  const add = useCallback((item: CartAddition) => cart?.add(item), [cart]);
+  const add = useCallback((item: CartItem) => cart?.add(item), [cart]);
   const remove = useCallback((id: string) => cart?.remove(id), [cart]);
   const has = useCallback((id: string) => cart?.has(id) ?? false, [cart]);
-
-  return { add, remove, has, count };
+  const count = useCallback(() => cart?.count() ?? 0, [cart]);
+  const subscribe = useCallback(
+    (listener: () => void) => cart?.subscribe(listener) ?? (() => {}),
+    [cart],
+  );
+  return { add, remove, has, count, subscribe };
 }

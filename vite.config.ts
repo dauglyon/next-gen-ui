@@ -8,7 +8,6 @@ import { tanstackRouter } from '@tanstack/router-plugin/vite';
 import { federation } from '@module-federation/vite';
 import { themeInitScript } from './src/design-system/theme/useTheme';
 import { SHARED_SINGLETONS } from './src/plugins/sdk/shared';
-import { localManifests } from './src/plugins/local/manifests';
 
 // `@kbase/design-system` is the public name; the canonical source
 // lives in this repo at `src/design-system/`. Keep this alias in
@@ -45,9 +44,11 @@ export default defineConfig(({ mode }) => {
         ? []
         : [federation({ name: 'host', remotes: {}, shared: SHARED_SINGLETONS, dts: false })]),
       {
-        // Dev stand-in for the registry: the bundled manifests, so the fetch
-        // and merge path runs against real data. The container proxies this
-        // path to the registry service instead (nginx.conf).
+        // Dev stand-in for the registry: the manifests of the proxied
+        // services. Bundled plugins are not listed — the host has them
+        // already and would ignore a registry entry with the same id. The
+        // container proxies this path to the registry service instead
+        // (nginx.conf).
         name: 'local-plugin-registry',
         apply: 'serve' as const,
         configureServer(server) {
@@ -61,14 +62,16 @@ export default defineConfig(({ mode }) => {
             Promise.all(
               proxied.map(async (prefix) => {
                 try {
-                  const answer = await fetch(`http://127.0.0.1:${server.config.server.port}${prefix}/manifest.json`);
+                  const answer = await fetch(
+                    `http://127.0.0.1:${server.config.server.port}${prefix}/manifest.json`,
+                  );
                   return answer.ok ? await answer.json() : undefined;
                 } catch {
                   return undefined;
                 }
               }),
             ).then((manifests) => {
-              res.end(JSON.stringify([...localManifests, ...manifests.filter(Boolean)]));
+              res.end(JSON.stringify(manifests.filter(Boolean)));
             });
           });
         },
@@ -154,28 +157,28 @@ export default defineConfig(({ mode }) => {
         ...serviceProxies(env.VITE_DEV_SERVICE_PROXY),
         ...(env.VITE_DEV_AUTH_PROXY
           ? {
-            '/services/auth': {
-              target: env.VITE_DEV_AUTH_PROXY,
-              changeOrigin: true,
-              secure: true,
-              configure: (proxy) => {
-                proxy.on('proxyReq', (proxyReq) => {
-                  // Strip the locally-set kbase_session cookie (it
-                  // was set on the dev origin; the auth service
-                  // wouldn't recognize it anyway — Authorization
-                  // header carries the bearer).
-                  proxyReq.removeHeader('cookie');
-                  proxyReq.setHeader('Origin', env.VITE_DEV_AUTH_PROXY);
-                  proxyReq.setHeader('Referer', env.VITE_DEV_AUTH_PROXY + '/');
-                  // Cloudflare's bot manager challenges browser UAs
-                  // without a __cf_bm cookie; that cookie can't
-                  // round-trip through this proxy (Domain mismatch).
-                  // A non-browser UA is on the API allowlist.
-                  proxyReq.setHeader('User-Agent', 'kbase-frontend-dev-proxy');
-                });
+              '/services/auth': {
+                target: env.VITE_DEV_AUTH_PROXY,
+                changeOrigin: true,
+                secure: true,
+                configure: (proxy) => {
+                  proxy.on('proxyReq', (proxyReq) => {
+                    // Strip the locally-set kbase_session cookie (it
+                    // was set on the dev origin; the auth service
+                    // wouldn't recognize it anyway — Authorization
+                    // header carries the bearer).
+                    proxyReq.removeHeader('cookie');
+                    proxyReq.setHeader('Origin', env.VITE_DEV_AUTH_PROXY);
+                    proxyReq.setHeader('Referer', env.VITE_DEV_AUTH_PROXY + '/');
+                    // Cloudflare's bot manager challenges browser UAs
+                    // without a __cf_bm cookie; that cookie can't
+                    // round-trip through this proxy (Domain mismatch).
+                    // A non-browser UA is on the API allowlist.
+                    proxyReq.setHeader('User-Agent', 'kbase-frontend-dev-proxy');
+                  });
+                },
               },
-            },
-          }
+            }
           : {}),
       },
     },

@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { CartAddition } from './cart';
+import type { Cart } from './cart';
 
 // What a plugin may ask the workbench to do: open its own route, run a
 // command — its own by bare name, another plugin's by "plugin:name" — say
@@ -19,18 +19,7 @@ export interface PluginHost {
   // The cart is the host's; a plugin adds to it and reads whether a thing of
   // its own is in it. Reached through `useCart()` rather than directly, so a
   // plugin does not have to hold the handle.
-  cart: PluginCart;
-}
-
-// The slice of the host's cart a plugin can see. It cannot read other plugins'
-// items: what is in the cart is the user's business and the assistant's, and a
-// plugin that could read it could fingerprint the session.
-export interface PluginCart {
-  add: (item: CartAddition) => void;
-  remove: (id: string) => void;
-  has: (id: string) => boolean;
-  count: () => number;
-  subscribe: (listener: () => void) => () => void;
+  cart: Cart;
 }
 
 export const HostContext = createContext<PluginHost | null>(null);

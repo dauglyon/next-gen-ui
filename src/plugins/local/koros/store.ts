@@ -7,7 +7,6 @@
 // itself stays in the cart item the handler was given.
 export interface Attached {
   id: string;
-  plugin: string;
   kind: string;
   name: string;
   subject?: string;
@@ -64,6 +63,10 @@ function arc(slug: string, title: string, project: string, asked: string[]): Arc
   };
 }
 
+// The arc named by a path: `/nitro`, with any query or fragment dropped.
+// Slugs are lowercase, so case never splits one arc into two panels.
+export const slugOf = (path: string) => path.split(/[?#]/)[0].slice(1).toLowerCase();
+
 let currentArc: string | null = 'nitro';
 let version = 0;
 const listeners = new Set<() => void>();
@@ -89,6 +92,17 @@ export const koros = {
   },
   answering: () =>
     [...arcs.values()].reduce((n, a) => n + a.questions.filter((q) => !q.answer).length, 0),
+  // Where the next free-text message lands, for the prompt bar: the current
+  // arc, else a new one; every arc is offered as a switch target.
+  destination() {
+    const arc = currentArc ? arcs.get(currentArc) : undefined;
+    return {
+      label: arc ? arc.title : 'A new arc',
+      path: arc ? `/${arc.slug}` : undefined,
+      options: [...arcs.values()].map((a) => ({ key: a.slug, label: a.title })),
+      select: (key: string) => koros.setCurrent(key),
+    };
+  },
   newArc(): Arc {
     const n = [...arcs.keys()].filter((k) => k.startsWith('q-')).length + 1;
     const created = arc(`q-${n}`, `Question ${n}`, 'soil-isolates', []);

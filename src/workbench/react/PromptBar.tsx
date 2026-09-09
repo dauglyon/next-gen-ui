@@ -1,9 +1,9 @@
-import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import type { ComponentType, KeyboardEvent } from 'react';
 import { ArrowUpRight, CaretRight, CaretUpDown, Check } from '@phosphor-icons/react';
 import type { IconProps } from '@phosphor-icons/react';
 import { Menu, PromptInput, cx } from '@kbase/design-system';
-import type { Manifest, PromptContext } from '../../plugins/sdk';
+import type { Destination, Manifest, Prompt } from '../../plugins/sdk';
 import { qualifyCommand } from '../../plugins/sdk';
 import type { Suggestion } from '../commands';
 import { complete, parse, qualifiedName, resolve, usage } from '../commands';
@@ -36,7 +36,8 @@ export function PromptBar() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const services = useServices();
-  const { registry, announcer, prompt, settings, source, preview, cart } = services;
+  const { registry, announcer, prompt, settings, source, preview, cart, query, queryRunner } =
+    services;
   const layout = useLayout();
   const run = useRun();
   const wrapper = useRef<HTMLDivElement>(null);
@@ -48,6 +49,21 @@ export function PromptBar() {
   // composer's attachments row — border, padding and all — around nothing.
   useSyncExternalStore(cart.subscribe, cart.version, cart.version);
   const inCart = cart.items().length;
+  const queryVersion = useSyncExternalStore(query.subscribe, query.version, query.version);
+
+  // The typing query: every plugin's terms on each keystroke, every
+  // recommend once it settles. A slash command is not a query.
+  useEffect(() => {
+    queryRunner.set('typing', { text: parse(value).kind === 'prompt' ? value.trim() : '' });
+  }, [queryRunner, value]);
+
+  // Fetched when Settings names the plugin, so the destination row can be
+  // drawn before the first message is sent.
+  useEffect(() => {
+    if (assistant && source.has(assistant, 'prompt')) {
+      source.module(assistant, 'prompt').catch(() => undefined);
+    }
+  }, [assistant, source]);
   const assistantTitle = assistant ? source.manifest(assistant)?.title : undefined;
 
   useEffect(
@@ -79,8 +95,7 @@ export function PromptBar() {
       announcer.announce(message);
       return;
     }
-    const handler = await source.promptHandler(assistant);
-    if (!handler) {
+    if (!source.has(assistant, 'prompt')) {
       const message = `${assistantTitle ?? assistant} cannot answer prompts.`;
       setError(message);
       announcer.announce(message);
@@ -97,9 +112,10 @@ export function PromptBar() {
       // them again to the next one.
       const attachments = cart.items();
       cart.clear();
-      await handler(
-        { text, signal: controller.signal, attachments },
-        pluginHostFor(services, assistant),
+      const handler = await source.module(assistant, 'prompt');
+      await handler.handle(
+        { text, terms: query.get('typing').pool, signal: controller.signal },
+        { host: pluginHostFor(services, assistant), attachments },
       );
     } catch (err) {
       const message = err instanceof Error ? err.message : 'The assistant failed.';
@@ -113,21 +129,27 @@ export function PromptBar() {
     }
   };
 
-  // What plugins volunteered for this text, ahead of name matches: a
+  // What plugins recommended for this text, ahead of name matches: a
   // plugin recognising its own data is a better answer than a plugin
-  // whose description happens to share a word.
-  const offerSuggestions = (text: string): BarSuggestion[] =>
-    source
-      .offers(text.trim())
-      .slice(0, 4)
-      .map(({ plugin, title, offer }) => ({
-        value: text,
-        // The offer says where you land; the app is who takes you.
-        label: offer.label,
-        detail: title,
-        icon: iconFor(source.manifest(plugin)?.icon, source.manifest(plugin)?.color),
-        run: () => void openRoute(services, plugin, offer.path),
-      }));
+  // whose description happens to share a word. Each row is a command
+  // call the plugin filled in; pressing it does what typing it would.
+  const recommended = (text: string): BarSuggestion[] =>
+    query
+      .get('typing')
+      .answers.flatMap((answer) =>
+        answer.commands.map((call) => {
+          const manifest = source.manifest(answer.plugin);
+          return {
+            value: text,
+            // The call says where you land; the plugin is who takes you.
+            label: call.label,
+            detail: manifest?.title,
+            icon: iconFor(manifest?.icon, manifest?.color),
+            run: () => void run(qualifyCommand(call.command, answer.plugin), call.args),
+          };
+        }),
+      )
+      .slice(0, 4);
 
   // Row zero is what Enter will do. Nothing is guessed: the assistant
   // stays the default and the alternatives sit under it, visible before
@@ -184,7 +206,7 @@ export function PromptBar() {
   // focused where it already lives, an unpinned one is previewed. The
   // bar never changes the layout to show you something.
   const panelSuggestions = (text: string): BarSuggestion[] =>
-    nameHits(text, (m) => Boolean(m.navigator)).map((m) => {
+    nameHits(text, (m) => source.has(m.id, 'pane')).map((m) => {
       const pinned = layout.sidebar.pinned.includes(m.id);
       return {
         value: text,
@@ -225,12 +247,12 @@ export function PromptBar() {
 
   // The full-density form of the same search, for when the rows above are
   // guesses rather than answers.
-  const browseSuggestion: BarSuggestion = {
-    value: '/open home',
+  const browseSuggestion = (text: string): BarSuggestion => ({
+    value: text,
     label: 'Browse everything',
     icon: iconFor(source.manifest('home')?.icon, source.manifest('home')?.color),
-    run: () => void submit('/open home'),
-  };
+    run: () => void run('workbench:open', { plugin: 'home' }),
+  });
 
   // Completion follows the text; a stale async result for older text is dropped.
   useEffect(() => {
@@ -254,7 +276,7 @@ export function PromptBar() {
       // An offer is a plugin saying it recognises this text and what it would
       // do with it. The rows under it are name and description matches — the
       // same search the Browse page runs, inline.
-      const offers = list.length ? [] : offerSuggestions(value);
+      const offers = list.length ? [] : recommended(value);
       const guesses = list.length
         ? []
         : [...shortcutSuggestions(value), ...appSuggestions(value), ...panelSuggestions(value)];
@@ -271,7 +293,7 @@ export function PromptBar() {
           ? [
               ...defaultSuggestion(value),
               ...alternatives,
-              ...(offers.length ? [] : [browseSuggestion]),
+              ...(offers.length ? [] : [browseSuggestion(value)]),
             ]
           : [];
       setSuggestions(found);
@@ -282,8 +304,8 @@ export function PromptBar() {
     return () => {
       live = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- ctx() reads the layout, which changes how commands filter but should not refetch on every layout change
-  }, [value, registry]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ctx() reads the layout, which changes how commands filter but should not refetch on every layout change; queryVersion stands for the recommendations
+  }, [value, registry, queryVersion]);
 
   const parsed = parse(value);
   const found = parsed.kind === 'command' ? registry.find(parsed.name) : undefined;
@@ -414,7 +436,7 @@ function PromptDestination() {
   }
   const manifest = source.manifest(assistant);
   const title = manifest?.title ?? assistant;
-  const usePromptContext = source.loaded(assistant)?.usePromptContext;
+  const destination = source.loaded(assistant, 'prompt')?.destination;
   return (
     <p className={styles.promptContext}>
       <PluginMark
@@ -425,23 +447,22 @@ function PromptDestination() {
         aria-hidden="true"
       />
       <span className={styles.promptDestination}>{title}</span>
-      {usePromptContext && (
-        <AssistantContext assistant={assistant} usePromptContext={usePromptContext} />
-      )}
+      {destination && <AssistantContext assistant={assistant} destination={destination} />}
     </p>
   );
 }
 
 // The destination control: a switcher over the assistant's offered
-// targets, and a jump to the destination's document.
+// targets, and a jump to the destination's page. Read from the prompt
+// module's own store; it re-reads each time the plugin says it changed.
 function AssistantContext({
   assistant,
-  usePromptContext,
+  destination,
 }: {
   assistant: string;
-  usePromptContext: () => PromptContext | null;
+  destination: NonNullable<Prompt['destination']>;
 }) {
-  const context = usePromptContext();
+  const context = useDestination(destination);
   const services = useServices();
   if (!context) return null;
   const { label, path, options, select } = context;
@@ -487,4 +508,26 @@ function AssistantContext({
       )}
     </>
   );
+}
+
+// `current()` is read once per change the plugin reports, and the value is
+// held until the next: a plugin builds the object afresh on every call,
+// which React's store hook would otherwise take for an endless change.
+function useDestination(destination: NonNullable<Prompt['destination']>): Destination | null {
+  const cache = useRef<{ of: typeof destination; value: Destination | null } | null>(null);
+  const read = useCallback(() => {
+    if (cache.current?.of !== destination) {
+      cache.current = { of: destination, value: destination.current() };
+    }
+    return cache.current.value;
+  }, [destination]);
+  const subscribe = useCallback(
+    (onChange: () => void) =>
+      destination.subscribe(() => {
+        cache.current = { of: destination, value: destination.current() };
+        onChange();
+      }),
+    [destination],
+  );
+  return useSyncExternalStore(subscribe, read, read);
 }

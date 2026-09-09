@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CONTRACT_VERSION, ManifestSchema, qualifyCommand } from './contract';
 
-const base = { id: 'jobs', title: 'Jobs', contractVersion: CONTRACT_VERSION };
+const base = { id: 'jobs', title: 'Jobs', contractVersion: CONTRACT_VERSION, modules: [] };
 
 describe('ManifestSchema', () => {
   it('accepts a minimal manifest', () => {
@@ -11,8 +11,9 @@ describe('ManifestSchema', () => {
   it.each([
     ['an uppercase id', { ...base, id: 'Jobs' }],
     ['an id with a slash', { ...base, id: 'a/b' }],
-    ['another contract version', { ...base, contractVersion: 2 }],
-    ['a route without a leading slash', { ...base, document: { route: 'job/$id' } }],
+    ['another contract version', { ...base, contractVersion: 99 }],
+    ['a module the host does not know', { ...base, modules: ['matcher'] }],
+    ['no module list', { id: 'x', title: 'x', contractVersion: CONTRACT_VERSION }],
     ['a command name with spaces', { ...base, commands: [{ name: 'do it', title: 'x' }] }],
     ['a call to a command with a slash', { ...base, launcher: { label: 'x', command: '/open' } }],
   ])('rejects %s', (_label, raw) => {
@@ -23,8 +24,7 @@ describe('ManifestSchema', () => {
     const result = ManifestSchema.safeParse({
       ...base,
       icon: 'Gear',
-      navigator: {},
-      document: { route: '/job/$id' },
+      modules: ['background', 'route', 'pane', 'commands', 'prompt'],
       commands: [
         {
           name: 'cancel',
@@ -34,8 +34,6 @@ describe('ManifestSchema', () => {
       ],
       shortcuts: [{ label: 'Cancel 12', command: 'cancel', args: { id: '12' } }],
       launcher: { label: 'Jobs', command: 'workbench:open', args: { plugin: 'jobs' } },
-      promptHandler: false,
-      entry: { url: '/plugin-registry/jobs/remoteEntry.js', module: './plugin' },
     });
     expect(result.success).toBe(true);
   });

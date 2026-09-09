@@ -90,8 +90,11 @@ describe('complete', () => {
     expect(options[0].label).toBe('/cancel <id>');
   });
 
-  it('offers the qualified form where the bare name is contested', async () => {
-    expect((await complete(contested(), '/o')).map((o) => o.value)).toEqual([]);
+  it('offers the qualified forms where the bare name is contested', async () => {
+    expect((await complete(contested(), '/o')).map((o) => o.value)).toEqual([
+      '/fj:open',
+      '/workbench:open',
+    ]);
     expect((await complete(contested(), '/fj:')).map((o) => o.value)).toEqual(['/fj:open']);
     expect((await complete(contested(), '/workbench:o')).map((o) => o.value)).toEqual([
       '/workbench:open',

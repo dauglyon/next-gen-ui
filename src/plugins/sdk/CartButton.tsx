@@ -1,7 +1,7 @@
 import { Button, Tooltip } from '@kbase/design-system';
 import { Check, Plus } from '@phosphor-icons/react';
 import { useCart } from './cart';
-import type { CartAddition } from './cart';
+import type { CartItem } from './cart';
 
 // Putting a thing in the cart, drawn the same way everywhere.
 //
@@ -24,7 +24,7 @@ import type { CartAddition } from './cart';
 export interface CartButtonProps {
   // The item to add. Omit only when building it is expensive enough to defer,
   // in which case pass `id` and `onAdd`.
-  item?: CartAddition & { id: string };
+  item?: CartItem;
   id?: string;
   onAdd?: () => void;
   // Said on hover, where the caller has something to say that the label does

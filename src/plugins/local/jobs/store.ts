@@ -1,4 +1,17 @@
+import type { ChipColor } from '@kbase/design-system';
+
 export type JobStatus = 'queued' | 'running' | 'done' | 'cancelled' | 'failed';
+
+// The job named by a path: `/12`, with any query or fragment dropped.
+export const idOf = (path: string) => path.split(/[?#]/)[0].slice(1);
+
+export const COLORS: Record<JobStatus, ChipColor> = {
+  queued: 'neutral',
+  running: 'purple',
+  done: 'green',
+  cancelled: 'neutral',
+  failed: 'red',
+};
 
 export interface Job {
   id: string;

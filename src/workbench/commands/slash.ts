@@ -83,13 +83,16 @@ export async function complete(
 
   const namingCommand = parsed.tokens.length === 0 && !parsed.trailingSpace;
   if (namingCommand) {
+    // A prefix of the bare name reaches a contested command too, shown in
+    // the qualified form the user will have to type.
     return registry
       .list(ctx)
       .map((c) => ({ c, shown: displayName(registry, c) }))
       .filter(
         ({ c, shown }) =>
           shown.startsWith(parsed.name) ||
-          (parsed.name.includes(':') && qualifiedName(c).startsWith(parsed.name)),
+          c.name.startsWith(parsed.name) ||
+          qualifiedName(c).startsWith(parsed.name),
       )
       .map(({ c, shown }) => ({
         value: `/${shown}${c.args?.length ? ' ' : ''}`,

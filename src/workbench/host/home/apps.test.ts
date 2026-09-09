@@ -13,7 +13,7 @@ const manifest = (id: string, launcher?: Manifest['launcher']): Manifest => ({
   title: id,
   description: '',
   contractVersion: CONTRACT_VERSION,
-  document: { route: '/' },
+  modules: ['route'],
   launcher,
 });
 

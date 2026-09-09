@@ -1,8 +1,10 @@
 import { z } from 'zod';
 
 // The manifest: what the host learns about a plugin before loading any of
-// its code. Served by the registry, validated here. Bump CONTRACT_VERSION
-// when a change would make an older plugin misbehave under a newer host.
+// its code. The author writes `plugin.config.ts`; the build adds
+// `contractVersion` and `modules` and serves the result as manifest.json.
+// Bump CONTRACT_VERSION when a change would make an older plugin misbehave
+// under a newer host.
 
 export const CONTRACT_VERSION = 1;
 
@@ -44,63 +46,47 @@ export type CommandCall = z.infer<typeof CommandCallSchema>;
 // reads well there and never change once published.
 export const PluginIdSchema = z.string().regex(/^[a-z][a-z0-9-]{1,40}$/);
 
-export const ManifestSchema = z.object({
+// The five modules a bundle can hold, each fetched at its own moment.
+export const MODULES = ['background', 'route', 'pane', 'commands', 'prompt'] as const;
+export const ModuleSchema = z.enum(MODULES);
+export type Module = z.infer<typeof ModuleSchema>;
+
+// What the author writes.
+export const PluginConfigSchema = z.object({
   id: PluginIdSchema,
   title: z.string().min(1),
   description: z.string().optional(),
-  contractVersion: z.literal(CONTRACT_VERSION),
   // A name from the host's icon table; unknown names fall back to a pin.
   icon: z.string().optional(),
   // A name from the host's colour table, tinting this plugin's icon
   // wherever it appears. Unknown or absent draws in the surrounding ink.
   color: z.string().optional(),
-  navigator: z
-    .object({
-      // `content`: the sidebar block hugs its content instead of taking a
-      // share of the stack's height — for toolbars and status panels.
-      fit: z.literal('content').optional(),
-    })
-    .optional(),
-  document: z
-    .object({
-      // Path under /p/<id>, TanStack style: `/arc/$slug`. `/` for a document
-      // with no params (an app that is one page).
-      route: z.string().regex(/^\/([A-Za-z0-9_$-]+(\/[A-Za-z0-9_$-]+)*)?$/),
-    })
-    .optional(),
   commands: z.array(SlashCommandSchema).optional(),
   // Buttons in the sidebar's Shortcuts block.
   shortcuts: z.array(CommandCallSchema).optional(),
   // The button on Browse. Without one the plugin is not listed there.
   launcher: CommandCallSchema.optional(),
-  // Set when the module exports `prompt`; lets the catalog offer the plugin
-  // as an assistant before its code has loaded.
-  promptHandler: z.boolean().optional(),
-  // Where the code is. Absent for plugins bundled with the host.
-  entry: z
-    .object({
-      // Module Federation remote entry, resolved against the registry origin.
-      url: z.string(),
-      // Exposed module name, e.g. './plugin'.
-      module: z.string(),
-      // A second exposed module, default-exporting the plugin's Matcher.
-      // Separate from `module` because matching runs on every keystroke and
-      // cannot wait for a UI bundle: the host fetches this one eagerly, so it
-      // holds a matcher and nothing else. Absent means the plugin makes no
-      // offers, which is the normal answer.
-      matcher: z.string().optional(),
-      // A third exposed module, exporting `related`. Separate from `module`
-      // for the matcher's reason inverted: this one does I/O and is slow, so
-      // it is fetched only when the pane has terms to ask about rather than
-      // eagerly or with the UI bundle.
-      related: z.string().optional(),
-    })
-    .optional(),
+});
+export type PluginConfig = z.infer<typeof PluginConfigSchema>;
+
+// What the host reads: the config plus what the build knows.
+export const ManifestSchema = PluginConfigSchema.extend({
+  contractVersion: z.literal(CONTRACT_VERSION),
+  // Which modules the bundle exposes — exactly the files vite.config.ts
+  // named. The host fetches nothing the list omits and offers only what a
+  // listed module backs.
+  modules: z.array(ModuleSchema),
 });
 export type Manifest = z.infer<typeof ManifestSchema>;
 
 export function parseManifest(raw: unknown): Manifest {
   return ManifestSchema.parse(raw);
+}
+
+// `plugin.config.ts` default-exports this. Identity at runtime; the type is
+// the point, and the build reads the object.
+export function definePluginManifest(config: PluginConfig): PluginConfig {
+  return config;
 }
 
 // "plugin:name" as written in a CommandCall or typed after the slash; a bare

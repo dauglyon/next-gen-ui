@@ -128,30 +128,38 @@ describe('Workbench', () => {
   it('runs a plugin command from the prompt bar, loading the plugin on demand', async () => {
     const user = userEvent.setup();
     const services = mount();
-    expect(services.source.loaded('jobs')).toBeUndefined();
+    expect(services.source.loaded('jobs', 'commands')).toBeUndefined();
     await user.type(screen.getByRole('combobox', { name: 'Prompt' }), '/cancel 12{Enter}');
     await openJob(user, /assemble reads/i);
-    expect(await screen.findByText('cancelled')).toBeInTheDocument();
+    const page = await screen.findByRole('tabpanel');
+    expect(await within(page).findByText('cancelled')).toBeInTheDocument();
   });
 
   it('completes a command name, then opens a page cold with /open', async () => {
     const user = userEvent.setup();
     const services = mount();
     const box = screen.getByRole('combobox', { name: 'Prompt' });
+    // Three plugins declare `open`, so the bare name is contested and the
+    // bar offers each in full.
     await user.type(box, '/op');
     const options = await screen.findAllByRole('option');
     expect(options.map((o) => o.textContent)).toEqual(
-      expect.arrayContaining([expect.stringContaining('/open <plugin> [path]')]),
+      expect.arrayContaining([
+        expect.stringContaining('/workbench:open <plugin> [path]'),
+        expect.stringContaining('/jobs:open <id>'),
+      ]),
     );
+    await user.clear(box);
+    await user.type(box, '/workbench:op');
     await user.keyboard('{Tab}');
-    expect(box).toHaveValue('/open ');
+    expect(box).toHaveValue('/workbench:open ');
     // Not pinned, so nothing of it has loaded yet.
-    expect(services.source.loaded('catalog')).toBeUndefined();
+    expect(services.source.anyLoaded('catalog')).toBe(false);
     await user.type(box, 'catalog{Enter}');
     expect(await screen.findByRole('tab', { name: /settings/i })).toBeInTheDocument();
     // Its own content, not just a tab: the panel loaded and rendered.
     expect(await screen.findByRole('heading', { name: 'Installed' })).toBeInTheDocument();
-    expect(services.source.loaded('catalog')).toBeDefined();
+    expect(services.source.anyLoaded('catalog')).toBe(true);
   });
 
   it('sends free text to the assistant and lands it in an arc', async () => {
@@ -201,10 +209,8 @@ describe('Workbench', () => {
     expect(services.store.get().sidebar.pinned).toContain('catalog');
   });
 
-  it('shows a loaded plugin status item', async () => {
-    const user = userEvent.setup();
+  it('shows a status item from a background module fetched at startup', async () => {
     mount();
-    await openJob(user, /assemble reads/i);
     expect(await screen.findByText(/1 running/)).toBeInTheDocument();
   });
 });

@@ -1,46 +1,53 @@
-export {
-  PanelContext,
-  usePanel,
-  usePanelPath,
-  usePanelTitle,
-  usePanelBreadcrumbs,
-  usePanelTerms,
-} from './panel';
+export { PanelContext, usePanel, usePanelTitle, usePanelBreadcrumbs, usePanelTerms } from './panel';
 export type { Crumb, PanelHandle, PanelKind } from './panel';
 export { HostContext, useHost } from './host';
-export type { PluginHost, PluginCart } from './host';
+export type { PluginHost } from './host';
 export {
   CONTRACT_VERSION,
+  MODULES,
   ManifestSchema,
+  PluginConfigSchema,
   SlashCommandSchema,
   CommandCallSchema,
   ArgDeclSchema,
   PluginIdSchema,
+  ModuleSchema,
   parseManifest,
+  definePluginManifest,
   qualifyCommand,
 } from './contract';
-export type { Manifest, SlashCommand, CommandCall, ArgDecl } from './contract';
-export { definePlugin } from './plugin';
 export type {
-  PluginModule,
+  Manifest,
+  PluginConfig,
+  SlashCommand,
+  CommandCall,
+  ArgDecl,
+  Module,
+} from './contract';
+export { defineBackground, defineRoute, definePane, defineCommands, definePrompt } from './modules';
+export type {
+  Background,
+  Route,
+  Pane,
+  Commands,
+  Prompt,
+  Modules,
+  Mount,
+  Cleanup,
+  Query,
+  Recommendation,
   StatusItem,
-  PromptHandler,
-  PromptRequest,
-  PromptContext,
-  PromptDestinationOption,
-  Offer,
-  Matcher,
+  Destination,
   CommandValues,
   CommandContext,
   CommandHandler,
-} from './plugin';
+} from './modules';
+export { fromReact } from './fromReact';
 export { AppFrame } from './AppFrame';
 export type { AppFrameProps } from './AppFrame';
 export { FrameLayerContext, useFrameLayer } from './frames';
 export type { FrameLayer, FrameSpec } from './frames';
 export { useCart } from './cart';
+export type { Cart, CartItem } from './cart';
 export { CartButton } from './CartButton';
 export type { CartButtonProps } from './CartButton';
-export type { CartAddition, CartHandle, CartItem } from './cart';
-
-export * from './related';

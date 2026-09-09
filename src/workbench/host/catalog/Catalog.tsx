@@ -16,7 +16,7 @@ export function CatalogDocument() {
   useSyncExternalStore(source.subscribe, source.version, source.version);
   const current = useSyncExternalStore(settings.subscribe, settings.get, settings.get);
   const manifests = source.manifests().filter((m) => m.id !== 'catalog');
-  const assistants = manifests.filter((m) => m.promptHandler);
+  const assistants = manifests.filter((m) => m.modules.includes('prompt'));
 
   return (
     <div className={styles.root}>
@@ -28,7 +28,7 @@ export function CatalogDocument() {
           {manifests.map((m) => {
             const Icon = iconFor(m.icon, m.color);
             const pinned = layout.sidebar.pinned.includes(m.id);
-            const loaded = !!source.loaded(m.id);
+            const loaded = source.anyLoaded(m.id);
             return (
               <li key={m.id} className={styles.row}>
                 <span className={styles.rowIcon} aria-hidden="true">
@@ -38,7 +38,7 @@ export function CatalogDocument() {
                   <span className="body">{m.title}</span>
                   {loaded && <Chip color="green" label="loaded" />}
                 </span>
-                {m.navigator && (
+                {source.has(m.id, 'pane') && (
                   <span className={styles.rowControls}>
                     <span className="caption">Pinned</span>
                     <Switch

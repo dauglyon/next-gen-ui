@@ -5,7 +5,7 @@ import type { PluginId } from '../core';
 import {
   CART_STORAGE_KEY,
   createCartStore,
-  createRelatedStore,
+  createQueryStore,
   createTermStore,
   createWorkbenchStore,
   defaultLayout,
@@ -22,15 +22,11 @@ import { fallbackTitle } from '../react/context';
 import { createPreviewHandle, createPromptHandle } from '../react/services';
 import type { InstalledPlugin } from './installed';
 import { createHostIndex } from './installed';
-import { catalog } from './catalog';
-import { docs } from './docs';
-import { home } from './home';
-import { shortcutsPlugin } from './shortcuts';
-import { relatedPlugin } from './related';
 import { openPane, openRoute } from './open';
+import { hostPlugins } from './pages';
+import { createQueryRunner } from './query/runner';
 import { createSettingsStore } from './settings';
-import { createRelatedRunner } from './related/runner';
-import type { RelatedRunner } from './related/runner';
+import { createStatusStore } from './status';
 
 export const LAYOUT_STORAGE_KEY = 'workbench.layout.v2';
 
@@ -44,7 +40,7 @@ export interface CreateWorkbenchOptions {
   // null for tests and for a browser with storage disabled.
   storage: Storage | null;
   defaultPinned?: PluginId[];
-  // The plugin whose prompt handler answers the bar until the user picks.
+  // The plugin whose prompt module answers the bar until the user picks.
   defaultAssistant?: PluginId | null;
 }
 
@@ -64,14 +60,7 @@ export function createWorkbench({
   const preview = createPreviewHandle();
   const focusIntentRef: WorkbenchServices['focusIntentRef'] = { current: 'command' };
   const navIntentRef: WorkbenchServices['navIntentRef'] = { current: 'push' };
-  const source = createHostIndex([
-    ...installed,
-    catalog,
-    docs,
-    shortcutsPlugin,
-    relatedPlugin,
-    home,
-  ]);
+  const source = createHostIndex([...installed, ...hostPlugins(() => services)]);
   const settings = createSettingsStore(storage, { assistant: defaultAssistant });
   for (const key of RETIRED_STORAGE_KEYS) {
     try {
@@ -103,15 +92,16 @@ export function createWorkbench({
     if (result.changed) announcer.announce(result.announcement);
     return result.changed;
   };
-  const related = createRelatedStore();
+  const query = createQueryStore();
   const terms = createTermStore();
+  const status = createStatusStore(source);
   const services: WorkbenchServices = {
     store,
     cart,
-    related,
+    query,
+    queryRunner: createQueryRunner(source, query),
     terms,
-    // Set below: the runner needs `source`, which the services object holds.
-    relatedRunner: undefined as unknown as RelatedRunner,
+    status,
     registry,
     runs,
     toasts,
@@ -136,12 +126,18 @@ export function createWorkbench({
   registry.register(openCommand(services));
   source.registerCommands(registry, (plugin) => pluginHostFor(services, plugin));
 
+  // status() is asked at startup — once each background module arrives —
+  // and after every command; the answer shows until the next ask.
+  source.subscribe(() => status.refresh());
+  registry.onRun(() => status.refresh());
+  status.refresh();
+
   // A saved layout may pin a plugin that has since stopped being a sidebar
   // panel — the catalog did. Installed and pane-less means the block could
   // only ever render as a ghost, so the pin goes; an uninstalled plugin
   // keeps its place, because reinstalling should restore it.
   for (const plugin of store.get().sidebar.pinned) {
-    if (source.manifest(plugin) && !source.panel(`${plugin}/pane`)) {
+    if (source.manifest(plugin) && !source.has(plugin, 'pane')) {
       store.dispatch({ type: 'unpin', plugin });
     }
   }
@@ -176,7 +172,6 @@ export function createWorkbench({
       }
     });
   }
-  services.relatedRunner = createRelatedRunner(services.source, cart, related);
   return services;
 }
 
@@ -186,7 +181,7 @@ export function createWorkbench({
 function openCommand(services: WorkbenchServices): Command {
   const { source, announcer } = services;
   const openable = () =>
-    source.manifests().filter((m) => source.panel(`${m.id}/route`) || source.panel(`${m.id}/pane`));
+    source.manifests().filter((m) => source.has(m.id, 'route') || source.has(m.id, 'pane'));
   return {
     name: 'open',
     title: 'Open a plugin panel',
@@ -205,8 +200,8 @@ function openCommand(services: WorkbenchServices): Command {
     ],
     run: async ({ plugin, path }) => {
       const id = String(plugin);
-      const hasRoute = source.panel(`${id}/route`);
-      const hasPane = source.panel(`${id}/pane`);
+      const hasRoute = source.has(id, 'route');
+      const hasPane = source.has(id, 'pane');
       if (hasRoute && (path !== undefined || !hasPane)) {
         await openRoute(services, id, path === undefined ? '/' : String(path));
       } else if (hasPane) {

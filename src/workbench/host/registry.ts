@@ -1,12 +1,18 @@
 import { loadRemote, registerRemotes } from '@module-federation/runtime';
-import type { Manifest, Matcher, PluginModule, RelatedModule } from '../../plugins/sdk';
+import type { Manifest, Module, Modules } from '../../plugins/sdk';
 import { ManifestSchema } from '../../plugins/sdk';
-import type { InstalledPlugin } from './installed';
+import type { InstalledPlugin, ModuleLoaders } from './installed';
 
 // The registry: GET <base>/plugins → Manifest[]. Same origin, so a remote
 // entry it names is covered by `script-src 'self'`; in the container nginx
 // proxies the path, in dev a Vite middleware serves the local manifests.
 export const REGISTRY_BASE = '/plugin-registry';
+
+// Where a plugin's service is mounted. The manifest does not say where the
+// code is: the service serves its manifest at <base>/<id>/manifest.json and
+// its bundle under <base>/<id>/plugin/, and the host derives both from the
+// id.
+export const SERVICES_BASE = '/services';
 
 export async function fetchRegistry(
   base: string = REGISTRY_BASE,
@@ -25,75 +31,38 @@ export async function fetchRegistry(
   return manifests;
 }
 
-// A registry manifest becomes an installed plugin whose code arrives over
-// Module Federation on first use.
-//
-// Registered once per id, and re-registered only if the entry URL actually
-// changes. Calling `registerRemotes` again for a remote already registered
-// warns — "overriding it may cause unexpected errors" — and every plugin
-// printed that on load, because each of `load`, `loadMatch` and `loadRelated`
-// registered before fetching and the guard passed `force` instead of
-// returning.
+// A registry manifest becomes an installed plugin whose modules arrive over
+// Module Federation, each on first use. Registered once per id, and
+// re-registered only if the entry URL changes: `registerRemotes` warns when
+// asked to override a remote it already has.
 const registered = new Map<string, string>();
 
-export function remotePlugin(manifest: Manifest, base: string = REGISTRY_BASE): InstalledPlugin {
-  const entry = manifest.entry;
-  if (!entry) throw new Error(`manifest ${manifest.id} has no entry`);
-  const url =
-    entry.url.startsWith('/') || /^https?:/.test(entry.url) ? entry.url : `${base}/${entry.url}`;
-
+export function remotePlugin(manifest: Manifest, base: string = SERVICES_BASE): InstalledPlugin {
+  const entry = `${base}/${manifest.id}/plugin/remoteEntry.js`;
   const register = () => {
     const already = registered.get(manifest.id);
-    if (already === url) return;
-    registerRemotes([{ name: manifest.id, entry: url }], { force: already !== undefined });
-    registered.set(manifest.id, url);
+    if (already === entry) return;
+    registerRemotes([{ name: manifest.id, entry }], { force: already !== undefined });
+    registered.set(manifest.id, entry);
   };
-  const exposed = (name: string) => `${manifest.id}/${name.replace(/^\.\//, '')}`;
-
-  return {
-    manifest,
-    load: async () => {
+  const loader =
+    <K extends Module>(kind: K) =>
+    async (): Promise<Modules[K]> => {
       register();
-      const mod = await loadRemote<{ default?: PluginModule } | PluginModule>(
-        exposed(entry.module),
-      );
-      const module =
-        mod && 'default' in mod && mod.default ? mod.default : (mod as PluginModule | null);
-      if (!module) throw new Error(`plugin ${manifest.id} exposed nothing at ${entry.module}`);
-      return module;
-    },
-    // Declared separately from the UI module so it can be fetched on its own:
-    // a matcher runs on every keystroke and must not wait for a panel bundle.
-    // Nothing here is lazy — the host calls this at startup.
-    loadMatch: entry.matcher
-      ? async () => {
-          register();
-          const mod = await loadRemote<{ default?: Matcher } | Matcher>(exposed(entry.matcher!));
-          const match =
-            typeof mod === 'function' ? mod : mod && 'default' in mod ? mod.default : undefined;
-          if (typeof match !== 'function') {
-            throw new Error(`plugin ${manifest.id} exposed no matcher at ${entry.matcher}`);
-          }
-          return match;
-        }
-      : undefined,
-    // Fetched on first need rather than at startup: unlike a matcher this does
-    // I/O, and a session that never opens the Related pane never loads it.
-    loadRelated: entry.related
-      ? async () => {
-          register();
-          const mod = await loadRemote<Partial<RelatedModule>>(exposed(entry.related!));
-          if (typeof mod?.related !== 'function') {
-            throw new Error(`plugin ${manifest.id} exposed no related() at ${entry.related}`);
-          }
-          return { related: mod.related };
-        }
-      : undefined,
-  };
+      const mod = await loadRemote<{ default?: Modules[K] } | null>(`${manifest.id}/${kind}`);
+      const value = mod && 'default' in mod ? mod.default : undefined;
+      if (!value) throw new Error(`plugin ${manifest.id} exposed nothing at ./${kind}`);
+      return value;
+    };
+  const modules: ModuleLoaders = {};
+  for (const kind of manifest.modules) {
+    (modules as Record<Module, () => Promise<unknown>>)[kind] = loader(kind);
+  }
+  return { manifest, modules };
 }
 
-// Bundled plugins win over registry entries with the same id; a registry
-// manifest without an entry has no code to load and is skipped.
+// Bundled plugins win over registry entries with the same id, which is what
+// stops a registry from replacing first-party code.
 export function mergeInstalled(
   local: InstalledPlugin[],
   remote: Manifest[],
@@ -103,10 +72,6 @@ export function mergeInstalled(
   const extra: InstalledPlugin[] = [];
   for (const manifest of remote) {
     if (ids.has(manifest.id)) continue;
-    if (!manifest.entry) {
-      console.warn(`plugin registry: ${manifest.id} has no entry and is not bundled; skipped`);
-      continue;
-    }
     ids.add(manifest.id);
     extra.push(remotePlugin(manifest, base));
   }

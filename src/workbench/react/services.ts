@@ -1,11 +1,17 @@
 import type { ToastManager } from '@kbase/design-system';
-import type { RelatedStore, TermStore } from '../core';
-import type { RelatedRunner } from '../host/related/runner';
-import type { CartStore, PluginId, WorkbenchStore } from '../core';
+import type {
+  CartStore,
+  Operation,
+  PluginId,
+  QueryStore,
+  TermStore,
+  WorkbenchStore,
+} from '../core';
 import type { CommandRegistry, RunStore } from '../commands';
-import type { Operation } from '../core';
 import type { HostIndex } from '../host/installed';
+import type { QueryRunner } from '../host/query/runner';
 import type { SettingsStore } from '../host/settings';
+import type { StatusStore } from '../host/status';
 import type { Announcer } from './announcer';
 import type { TitleStore } from './titles';
 import type { CrumbStore } from './crumbs';
@@ -28,10 +34,10 @@ export function createPromptHandle(): PromptHandle {
   };
 }
 
-// Which unpinned plugin's navigator is being looked at. Ephemeral, so it
-// is not in the layout; a service rather than one component's state
-// because anything may offer a preview — the sidebar's More menu, and
-// Home — while only the sidebar shows one.
+// Which unpinned plugin's pane is being looked at. Ephemeral, so it is not
+// in the layout; a service rather than one component's state because
+// anything may offer a preview — the sidebar's More menu, and Home — while
+// only the sidebar shows one.
 export interface PreviewHandle {
   get: () => PluginId | null;
   set: (plugin: PluginId | null) => void;
@@ -62,11 +68,13 @@ export interface WorkbenchServices {
   // Things the user has set aside. Host-owned: items come from plugins and are
   // consumed by assistants, and neither can hold state the other reaches.
   cart: CartStore;
-  // What other plugins have to say about the front tab and the cart.
-  related: RelatedStore;
+  // What every plugin's recommend() said about each source of terms.
+  query: QueryStore;
+  queryRunner: QueryRunner;
   // What each open panel says it is about.
   terms: TermStore;
-  relatedRunner: RelatedRunner;
+  // What each plugin's status() last said.
+  status: StatusStore;
   registry: CommandRegistry;
   // Which commands are in flight, so the control that ran one shows busy.
   runs: RunStore;
@@ -82,7 +90,7 @@ export interface WorkbenchServices {
   announcer: Announcer;
   // The prompt bar registers itself here on mount so commands can focus it.
   prompt: PromptHandle;
-  // The unpinned navigator the sidebar is previewing, if any.
+  // The unpinned pane the sidebar is previewing, if any.
   preview: PreviewHandle;
   // Set to 'user' by pointer/focus handlers right before they dispatch a
   // focus change, so the DOM-focus sync leaves the user's caret alone.

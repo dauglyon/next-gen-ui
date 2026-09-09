@@ -1,6 +1,6 @@
 import type { GroupId, Layout, Panel, PanelId } from './layout';
 import { paneId } from './layout';
-import { groupOf } from './tree';
+import { groupOf, groups } from './tree';
 
 // Where a panel is shown. A panel in the flat map is either a tab in the
 // main tree, the pane block of a pinned plugin in the sidebar, or nowhere
@@ -27,4 +27,16 @@ export function sidebarPanels(layout: Layout): Panel[] {
     const panel = layout.panels[paneId(plugin)];
     return panel && !groupOf(layout.main, panel.id) ? [panel] : [];
   });
+}
+
+// The panel at the front of the main area: the focused group's active tab if
+// focus is in the main area, otherwise the first group's — what a reader
+// would call "the page I am on". Never `layout.focus` on its own: focus
+// follows the pointer into the sidebar, and a click in a pane must not make
+// the workbench about the pane.
+export function frontPanel(layout: Layout): Panel | null {
+  const focused = layout.focus ? groupOf(layout.main, layout.focus) : undefined;
+  const group = focused ?? groups(layout.main).find((g) => g.tabs.length > 0);
+  const id = group?.active ?? group?.tabs[0];
+  return id ? (layout.panels[id] ?? null) : null;
 }

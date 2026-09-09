@@ -28,13 +28,13 @@ export async function openRoute(
     announcer.announce(`No plugin is installed as “${plugin}”.`);
     return undefined;
   }
-  if (!source.panel(`${plugin}/route`)) {
+  if (!source.has(plugin, 'route')) {
     announcer.announce(`${manifest.title} has no pages.`);
     return undefined;
   }
-  let normalize = (p: string) => p;
+  let normalize: (p: string) => string;
   try {
-    normalize = (await source.load(plugin)).normalize ?? normalize;
+    normalize = (await source.module(plugin, 'route')).normalize;
   } catch (err) {
     announcer.announce(`${manifest.title} failed to load: ${message(err)}`);
     return undefined;
@@ -57,7 +57,7 @@ export async function openRoute(
 // A plugin's sidebar block: focused where it is pinned, opened as a tab
 // otherwise.
 export function openPane(services: WorkbenchServices, plugin: PluginId): boolean {
-  if (!services.source.panel(`${plugin}/pane`)) {
+  if (!services.source.has(plugin, 'pane')) {
     services.announcer.announce(
       `${services.source.manifest(plugin)?.title ?? plugin} has no pane.`,
     );

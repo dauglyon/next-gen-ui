@@ -32,7 +32,7 @@ export function HomeDocument() {
     .manifests()
     .filter((m) => m.id !== 'home' && m.id !== 'catalog' && m.id !== 'docs' && matches(m));
   const apps = listed.filter(isApp);
-  const panels = listed.filter((m) => m.navigator);
+  const panels = listed.filter((m) => source.has(m.id, 'pane'));
 
   const openApp = (m: Manifest) =>
     void run(qualifyCommand(m.launcher!.command, m.id), m.launcher!.args);

@@ -2,7 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { CONTRACT_VERSION } from '../../plugins/sdk';
 import type { Manifest } from '../../plugins/sdk';
 import { localPlugins } from '../../plugins/local';
-import { fetchRegistry, mergeInstalled } from './registry';
+import { fetchRegistry, mergeInstalled, remotePlugin } from './registry';
+
+const loadRemote = vi.fn();
+const registerRemotes = vi.fn();
+vi.mock('@module-federation/runtime', () => ({
+  registerRemotes: (...args: unknown[]) => registerRemotes(...args),
+  loadRemote: (...args: unknown[]) => loadRemote(...args),
+}));
 
 const ok = (body: unknown) =>
   vi.fn(async () => new Response(JSON.stringify(body), { status: 200 })) as unknown as typeof fetch;
@@ -11,8 +18,7 @@ const remote: Manifest = {
   id: 'commons',
   title: 'Commons',
   contractVersion: CONTRACT_VERSION,
-  navigator: {},
-  entry: { url: 'commons/remoteEntry.js', module: './plugin' },
+  modules: ['route', 'background'],
 };
 
 describe('fetchRegistry', () => {
@@ -31,12 +37,7 @@ describe('fetchRegistry', () => {
 
 describe('mergeInstalled', () => {
   it('keeps bundled plugins over same-id registry entries and adds the rest', () => {
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const merged = mergeInstalled(localPlugins, [
-      { ...remote, id: 'jobs' },
-      remote,
-      { id: 'no-code', title: 'x', contractVersion: CONTRACT_VERSION },
-    ]);
+    const merged = mergeInstalled(localPlugins, [{ ...remote, id: 'jobs' }, remote]);
     expect(merged.map((p) => p.manifest.id)).toEqual([
       ...localPlugins.map((p) => p.manifest.id),
       'commons',
@@ -44,5 +45,25 @@ describe('mergeInstalled', () => {
     expect(merged.find((p) => p.manifest.id === 'jobs')).toBe(
       localPlugins.find((p) => p.manifest.id === 'jobs'),
     );
+  });
+});
+
+describe('remotePlugin', () => {
+  it('finds the bundle at the conventional path and loads one module at a time', async () => {
+    loadRemote.mockReset();
+    registerRemotes.mockReset();
+    const route = { mount: () => {}, normalize: (p: string) => p };
+    loadRemote.mockImplementation(async (name: string) => {
+      if (name === 'commons/route') return { default: route };
+      throw new Error(`unexpected load of ${name}`);
+    });
+    const plugin = remotePlugin(remote);
+    expect(Object.keys(plugin.modules)).toEqual(['route', 'background']);
+    await expect(plugin.modules.route!()).resolves.toBe(route);
+    expect(registerRemotes).toHaveBeenCalledWith(
+      [{ name: 'commons', entry: '/services/commons/plugin/remoteEntry.js' }],
+      { force: false },
+    );
+    expect(loadRemote).toHaveBeenCalledTimes(1);
   });
 });

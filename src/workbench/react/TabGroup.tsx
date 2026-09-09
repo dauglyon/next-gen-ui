@@ -120,7 +120,7 @@ export function TabGroup({ group }: { group: Group }) {
                 }
               }}
             >
-              {panel && <PanelHost panel={panel} focused={layout.focus === id} />}
+              {panel && <PanelHost panel={panel} />}
             </div>
           );
         })}
