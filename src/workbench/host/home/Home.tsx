@@ -53,8 +53,6 @@ export function HomeDocument() {
 
   return (
     <div className={styles.root}>
-      <Tour onFocusPrompt={() => promptBar.focus()} />
-
       <div className={styles.find}>
         <SearchBar
           className={styles.search}
@@ -83,26 +81,20 @@ export function HomeDocument() {
         // already is does not describe what it is.
         note={(m) => (layout.sidebar.pinned.includes(m.id) ? 'In the sidebar' : undefined)}
       />
+
+      <Tour onFocusPrompt={() => promptBar.focus()} />
     </div>
   );
 }
 
 // The prototype's own instructions, for someone who has never seen it and does
 // not know the vocabulary: no manifests, navigators or documents, and nothing
-// named after the code.
+// named after the code. It follows the lists, which are what the page is for.
 //
-// One journey rather than a list of features. The four steps are the path a
-// first visit takes — ask, open, collect, send — and each is a headline a
-// reader can skim with a sentence under it they can skip. What used to be
-// steps four to seven were not part of that path; they are things the
-// workbench can do, and they sit after it as such.
-//
-// The subject is the shell's architecture, not the platform it serves and not
-// the plugins it hosts. Four mechanisms, one per step: text offered to every
-// plugin rather than routed by the host, code fetched at runtime from a
-// manifest, a cart the host owns so plugins need not know each other, and an
-// assistant that is itself a plugin the prompt is routed to. Function Junction
-// is the thing to press, never the thing being described.
+// A walkthrough, not an explanation: each step says what to do and what will
+// happen, and the reason is one clause at most. The four steps are the path a
+// first visit takes — ask, open, collect, send. What the workbench can also
+// do sits after them, in the same voice.
 function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
   return (
     <section className={styles.tour} aria-labelledby="home-tour">
@@ -121,10 +113,9 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
           <div className={styles.stepBody}>
             <h3 className={styles.stepTitle}>Type what you are after</h3>
             <p className={styles.stepText}>
-              Put <Key>P0AEX9</Key> in the box at the bottom. The workbench does not know what that
-              is. It hands the text to every installed plugin and lists the ones that answered —
-              here, Function Junction offering a dossier on it. Recognising an identifier is the
-              plugin's job; routing you to whoever claims it is the shell's.{' '}
+              Type <Key>P0AEX9</Key> into the box at the bottom. A short list appears above it:
+              Function Junction is offering you a dossier on that protein. Every installed plugin
+              saw what you typed, and the ones that recognised it answered.{' '}
               <button type="button" className={styles.tourLink} onClick={onFocusPrompt}>
                 Put the cursor there
               </button>
@@ -139,10 +130,8 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
           <div className={styles.stepBody}>
             <h3 className={styles.stepTitle}>Take the offer</h3>
             <p className={styles.stepText}>
-              Until you press it, the workbench holds only that plugin's manifest: a name, an icon,
-              a route, and an address to fetch the code from. Pressing it loads the code at runtime
-              and gives it a tab on the protein you typed. Nothing of it was compiled in, so it
-              ships on its own and the shell needs no release to carry a new one.
+              Press it. The dossier opens as a tab in the middle. Function Junction was not here a
+              moment ago: its code was fetched from its own server when you asked for it.
             </p>
           </div>
         </li>
@@ -154,10 +143,9 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
           <div className={styles.stepBody}>
             <h3 className={styles.stepTitle}>Add what matters to the cart</h3>
             <p className={styles.stepText}>
-              On that page, press Add — on the report or on any single line. The cart belongs to the
-              shell, so anything can fill it and anything can read it, and an item carries the data
-              itself rather than a handle to it. That is what lets it outlive the panel it came from
-              and be read by a plugin that knows nothing of the one that added it.
+              On the dossier, press Add on the report, or on any single line of it. It lands in the
+              cart at the bottom. The cart is the workbench&apos;s own, so anything you open can put
+              things in it and anything you send to can read them.
             </p>
           </div>
         </li>
@@ -169,9 +157,8 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
           <div className={styles.stepBody}>
             <h3 className={styles.stepTitle}>Send it with a question</h3>
             <p className={styles.stepText}>
-              Press Enter and the shell routes the text, and the cart with it, to whichever plugin
-              is set as the assistant. It is a plugin like the rest — it declares that it handles
-              prompts, and the workbench hands it what you typed and what you collected.
+              Type a question and press Enter. What you typed goes to the assistant, KOROS, with the
+              cart attached, and its answer opens as a tab.
             </p>
           </div>
         </li>
@@ -181,20 +168,20 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
         <h3 className={styles.tourMoreTitle}>Then, whenever</h3>
         <ul className={styles.tourMoreList}>
           <li>
-            <b>Rearrange.</b> Drag a panel from the left column into the middle for a tab of its
-            own, or drop a tab near another panel&apos;s edge for two things side by side.
+            <b>Rearrange.</b> Drag a panel from the left column into the middle to give it a tab, or
+            drop a tab beside another one for the two side by side.
           </li>
           <li>
-            <b>Peek.</b> More, at the foot of the left column, shows a tool in a dashed frame. Drag
-            the frame in to keep it; leave it and it goes on reload.
+            <b>Peek.</b> Press More at the foot of the left column to look at a panel you have not
+            pinned. Drag its dashed frame in to keep it; leave it and it is gone on reload.
           </li>
           <li>
-            <b>Settings.</b> Which tools sit in the left column, and which assistant gets your text
-            when you press Enter without choosing a row.
+            <b>Settings.</b> Choose which panels sit in the left column, and which assistant gets
+            your text when you press Enter.
           </li>
           <li>
-            <b>Reload.</b> Everything returns where you left it, down to what you were reading.
-            Workbench → Lock layout stops things moving by accident.
+            <b>Reload.</b> Everything comes back where you left it, down to what you were reading.
+            Workbench → Lock layout keeps things from moving by accident.
           </li>
         </ul>
       </div>

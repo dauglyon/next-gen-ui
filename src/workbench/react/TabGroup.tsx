@@ -1,5 +1,5 @@
 import type { KeyboardEvent, MouseEvent } from 'react';
-import { X } from '@phosphor-icons/react';
+import { House, X } from '@phosphor-icons/react';
 import { Button, ContextMenu, EmptyState, Tabs } from '@kbase/design-system';
 import type { Group, Panel, PanelId, Side } from '../core';
 import { openRoute } from '../host/open';
@@ -55,6 +55,7 @@ export function TabGroup({ group }: { group: Group }) {
                 variant="outline"
                 onClick={() => void openRoute(services, 'home', '/')}
               >
+                <House size={14} aria-hidden="true" />
                 Browse
               </Button>
             }
