@@ -53,8 +53,18 @@ describe('the query runner', () => {
     const [answer] = store.get('typing').answers;
     expect(answer.plugin).toBe('fj');
     expect(answer.commands.map((c) => c.label)).toEqual(['Dossier for P0AEX9']);
-    expect(answer.cartItems.map((i) => i.id)).toEqual(['fj:taxon:83333']);
+    // What is typed is answered with commands only; items are never asked for.
+    expect(answer.cartItems).toEqual([]);
     expect(store.get('typing').loading).toBe(false);
+  });
+
+  it('asks for items on the sources the Related pane reads', async () => {
+    const store = createQueryStore();
+    const runner = createQueryRunner(index({ fj }), store);
+    runner.set('page', { terms: ['uniprot:P0AEX9'], label: 'P0AEX9' });
+    await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    const [answer] = store.get('page').answers;
+    expect(answer.cartItems.map((i) => i.id)).toEqual(['fj:taxon:83333']);
   });
 
   it('never sends a plugin the terms of its own front tab', async () => {

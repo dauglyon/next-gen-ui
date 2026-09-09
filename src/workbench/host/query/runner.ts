@@ -151,9 +151,12 @@ export function createQueryRunner(index: HostIndex, store: QueryStore): QueryRun
             return [] as T[];
           }
         };
+        // What is typed is answered with commands only: the prompt bar shows
+        // them, and the Related pane, which shows items, does not read this
+        // source. A plugin's item lookup is often a query to the lakehouse.
         const [commands, cartItems] = await Promise.all([
           call(recommend.commands),
-          call(recommend.cartItems),
+          source === 'typing' ? [] : call(recommend.cartItems),
         ]);
         if (controller.signal.aborted) return;
         pending.delete(plugin);
