@@ -25,7 +25,8 @@ function serviceProxies(spec: string | undefined) {
     .map((pair) => {
       const at = pair.indexOf('=');
       if (at < 1) throw new Error(`VITE_DEV_SERVICE_PROXY entry is not <prefix>=<origin>: ${pair}`);
-      return [pair.slice(0, at), { target: pair.slice(at + 1), changeOrigin: false }] as const;
+      // `ws`: a plugin that iframes its own app (Solara, Jupyter) needs its websocket through too.
+      return [pair.slice(0, at), { target: pair.slice(at + 1), changeOrigin: false, ws: true }] as const;
     });
   return Object.fromEntries(entries);
 }
