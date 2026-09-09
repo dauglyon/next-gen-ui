@@ -30,6 +30,13 @@ const FROM: Record<QuerySource, (label: string) => string> = {
   cart: (label) => `the cart (${label})`,
 };
 
+// The short form, for the line on the row itself.
+const SOURCE_OF: Record<QuerySource, (label: string) => string> = {
+  typing: (label) => `"${label}"`,
+  page: (label) => label || 'the open page',
+  cart: () => 'the cart',
+};
+
 // A view transition carries rows that enter and leave; names must be CSS
 // identifiers, and item ids are not.
 const transitionName = (id: string) => `related-${id.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
@@ -136,10 +143,24 @@ function RelatedRow({ row }: { row: Recommendation }) {
         `${index.manifest(o.plugin)?.title ?? o.plugin} from ${FROM[o.source](query.get(o.source).label)}`,
     )
     .join('; ');
+  // Why the row is here, on the row: who offered it, answering what. Two
+  // offers read "genKnown, for P0AEX9 and the cart".
+  const why = (() => {
+    const byPlugin = new Map<string, string[]>();
+    for (const o of row.offeredBy) {
+      const name = index.manifest(o.plugin)?.title ?? o.plugin;
+      byPlugin.set(name, [
+        ...(byPlugin.get(name) ?? []),
+        SOURCE_OF[o.source](query.get(o.source).label),
+      ]);
+    }
+    return [...byPlugin].map(([name, fors]) => `${name}, for ${fors.join(' and ')}`).join('; ');
+  })();
   const label = (
     <span className={styles.relatedLabel}>
       <span className={styles.relatedName}>{item.subject ?? item.name}</span>
       {item.summary && <span className={styles.relatedDetail}>{item.summary}</span>}
+      <span className={styles.relatedWhy}>{why}</span>
     </span>
   );
   const mark = (
