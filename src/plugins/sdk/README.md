@@ -24,7 +24,7 @@ export default defineConfig({
 ```
 
 The build exposes each named file as a federation module and writes `manifest.json` beside
-`remoteEntry.js`: the config plus `contractVersion` and `modules`. The service serves
+`remoteEntry.js`: the config plus `sdkVersion` and `modules`. The service serves
 `manifest.json` and everything in `dist/` under `/services/<id>/` and `/services/<id>/plugin/`.
 
 Each module default-exports one `define*` call: `defineBackground`, `defineRoute`, `definePane`,

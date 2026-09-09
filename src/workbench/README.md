@@ -189,7 +189,7 @@ individually with a console warning; one bad manifest does not take the list dow
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | `id`                                    | plugin id; federation remote name; URL segment; service mount                                                                              |
 | `title`, `description`, `icon`, `color` | catalog, sidebar icon (both are names from `host/icons.ts`; an unknown icon falls back to a pin, an unknown colour to the surrounding ink) |
-| `contractVersion`                       | must be one of `ACCEPTED_CONTRACT_VERSIONS`; written by the build from the SDK it ran with                                                 |
+| `sdkVersion`                            | must be one of `ACCEPTED_SDK_VERSIONS`; written by the build from the SDK package version it ran with                                       |
 | `modules`                               | which of `background`, `route`, `pane`, `commands`, `prompt` the bundle exposes; written by the build from what `vite.config.ts` named     |
 | `commands[]`                            | `{ name, title, description?, args[], icon? }`; registered as `<id>:<name>` before code loads                                              |
 | `shortcuts[]`, `launcher`               | `CommandCall`s: buttons on the Shortcuts block and on Browse                                                                               |

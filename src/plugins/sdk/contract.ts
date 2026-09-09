@@ -1,16 +1,15 @@
 import { z } from 'zod';
+import { version as SDK_VERSION } from './package.json';
 
 // The manifest: what the host learns about a plugin before loading any of
 // its code. The author writes `plugin.config.ts`; the build adds
-// `contractVersion` and `modules` and serves the result as manifest.json.
+// `sdkVersion` and `modules` and serves the result as manifest.json.
 
-// Bumped when a change would make an older plugin misbehave under a newer
-// host. The host accepts every version it has ever shipped and adapts to
-// each, so a plugin built against an old one keeps working; the set starts
-// at 2 because 1 was the single-module contract no shipped plugin is left
-// on.
-export const CONTRACT_VERSION = 2;
-export const ACCEPTED_CONTRACT_VERSIONS: readonly number[] = [2];
+// The SDK versions whose plugins this host loads. A manifest built with
+// another is skipped at registry time, so a contract change ships as a new
+// SDK version and the host lists the ones it still understands.
+export { SDK_VERSION };
+export const ACCEPTED_SDK_VERSIONS: readonly string[] = [SDK_VERSION];
 
 const NAME = /^[a-z][a-z0-9-]*$/;
 
@@ -75,12 +74,9 @@ export type PluginConfig = z.infer<typeof PluginConfigSchema>;
 
 // What the host reads: the config plus what the build knows.
 export const ManifestSchema = PluginConfigSchema.extend({
-  contractVersion: z
-    .number()
-    .int()
-    .refine((v) => ACCEPTED_CONTRACT_VERSIONS.includes(v), {
-      message: `contractVersion must be one of ${ACCEPTED_CONTRACT_VERSIONS.join(', ')}`,
-    }),
+  sdkVersion: z.string().refine((v) => ACCEPTED_SDK_VERSIONS.includes(v), {
+    message: `sdkVersion must be one of ${ACCEPTED_SDK_VERSIONS.join(', ')}`,
+  }),
   // Which modules the bundle exposes — exactly the files vite.config.ts
   // named. The host fetches nothing the list omits and offers only what a
   // listed module backs.
@@ -99,12 +95,12 @@ export function definePluginManifest(config: PluginConfig): PluginConfig {
 }
 
 // The manifest the build writes, and the one the host computes for a
-// bundled plugin: the config, this SDK's contract version, and the modules
-// that were named — in the contract's order, whatever order they came in.
+// bundled plugin: the config, this SDK's version, and the modules that were
+// named — in the contract's order, whatever order they came in.
 export function manifestFor(config: PluginConfig, modules: readonly Module[]): Manifest {
   return {
     ...PluginConfigSchema.parse(config),
-    contractVersion: CONTRACT_VERSION,
+    sdkVersion: SDK_VERSION,
     modules: MODULES.filter((m) => modules.includes(m)),
   };
 }

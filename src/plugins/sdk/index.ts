@@ -3,8 +3,8 @@ export type { Crumb, PanelHandle, PanelKind } from './panel';
 export { HostContext, useHost } from './host';
 export type { PluginHost } from './host';
 export {
-  CONTRACT_VERSION,
-  ACCEPTED_CONTRACT_VERSIONS,
+  SDK_VERSION,
+  ACCEPTED_SDK_VERSIONS,
   MODULES,
   manifestFor,
   ManifestSchema,

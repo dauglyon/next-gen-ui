@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CONTRACT_VERSION, ManifestSchema, manifestFor } from './contract';
+import { SDK_VERSION, ManifestSchema, manifestFor } from './contract';
 
 // What the build writes beside remoteEntry.js, and what localPlugin computes
 // for a bundled plugin: the same function.
@@ -8,7 +8,7 @@ describe('manifestFor', () => {
 
   it('stamps the contract version and lists the named modules in contract order', () => {
     const manifest = manifestFor(config, ['commands', 'route']);
-    expect(manifest.contractVersion).toBe(CONTRACT_VERSION);
+    expect(manifest.sdkVersion).toBe(SDK_VERSION);
     expect(manifest.modules).toEqual(['route', 'commands']);
     expect(ManifestSchema.safeParse(manifest).success).toBe(true);
   });

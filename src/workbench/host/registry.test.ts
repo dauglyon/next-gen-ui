@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { CONTRACT_VERSION } from '../../plugins/sdk';
+import { SDK_VERSION } from '../../plugins/sdk';
 import type { Manifest } from '../../plugins/sdk';
 import { localPlugins } from '../../plugins/local';
 import { fetchRegistry, mergeInstalled, remotePlugin } from './registry';
@@ -23,7 +23,7 @@ const ok = (body: unknown) =>
 const remote: Manifest = {
   id: 'commons',
   title: 'Commons',
-  contractVersion: CONTRACT_VERSION,
+  sdkVersion: SDK_VERSION,
   modules: ['route', 'background'],
 };
 

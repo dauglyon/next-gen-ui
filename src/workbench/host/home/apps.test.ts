@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Manifest } from '../../../plugins/sdk';
-import { CONTRACT_VERSION } from '../../../plugins/sdk';
+import { SDK_VERSION } from '../../../plugins/sdk';
 import { isApp } from './apps';
 
 // Which installed plugins the launcher can offer as an app: those whose
@@ -12,7 +12,7 @@ const manifest = (id: string, launcher?: Manifest['launcher']): Manifest => ({
   id,
   title: id,
   description: '',
-  contractVersion: CONTRACT_VERSION,
+  sdkVersion: SDK_VERSION,
   modules: ['route'],
   launcher,
 });
