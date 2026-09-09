@@ -234,6 +234,7 @@ export function pluginHostFor(services: WorkbenchServices, plugin: PluginId): Pl
         const own = services.cart.items().find((i) => i.id === id && i.plugin === plugin);
         if (own) services.cart.remove(id);
       },
+      items: () => services.cart.items().filter((i) => i.plugin === plugin),
       has: (id) => services.cart.items().some((i) => i.id === id && i.plugin === plugin),
       count: () => services.cart.items().filter((i) => i.plugin === plugin).length,
       subscribe: (listener) => services.cart.subscribe(listener),

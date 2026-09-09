@@ -559,6 +559,7 @@ interface PanelHandle {
 interface Cart {
   add: (item: CartItem) => void; // same id replaces
   remove: (id: string) => void;  // this plugin's items only
+  items: () => readonly CartItem[]; // this plugin's items only
   has: (id: string) => boolean;  // this plugin's items only
   count: () => number;           // this plugin's items only
   subscribe: (listener: () => void) => Cleanup;

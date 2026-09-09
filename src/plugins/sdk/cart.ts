@@ -67,7 +67,9 @@ export interface Cart {
   // Same id replaces.
   add: (item: CartItem) => void;
   remove: (id: string) => void;
-  // This plugin's ids only.
+  // This plugin's items only: what it added, as the host holds them, so a
+  // page can rebuild its own controls after a reload.
+  items: () => readonly CartItem[];
   has: (id: string) => boolean;
   count: () => number;
   subscribe: (listener: () => void) => () => void;
@@ -86,11 +88,12 @@ export function useCart(): Cart {
   );
   const add = useCallback((item: CartItem) => cart?.add(item), [cart]);
   const remove = useCallback((id: string) => cart?.remove(id), [cart]);
+  const items = useCallback(() => cart?.items() ?? [], [cart]);
   const has = useCallback((id: string) => cart?.has(id) ?? false, [cart]);
   const count = useCallback(() => cart?.count() ?? 0, [cart]);
   const subscribe = useCallback(
     (listener: () => void) => cart?.subscribe(listener) ?? (() => {}),
     [cart],
   );
-  return { add, remove, has, count, subscribe };
+  return { add, remove, items, has, count, subscribe };
 }
