@@ -21,9 +21,9 @@ export function DocsDocument() {
         <header className={styles.head} id="top">
           <h1 className="h2">Plugin developer documentation</h1>
           <p className={styles.lede}>
-            A plugin is one config file and up to five source files, built by one Vite preset into a
+            A plugin is one config file and up to five entry points, built by one Vite preset into a
             bundle that the plugin's own service serves. The workbench lists the plugin from the
-            config alone and fetches each source file the first time it is needed.
+            config alone and fetches each entry point the first time it is needed.
           </p>
         </header>
 
@@ -334,15 +334,15 @@ function definePluginManifest(m: Manifest): Manifest;`}</Sig>
           <Entry id="r-vite" name="vite.config.ts" when="Read by the build.">
             <Sig>{`function pluginFederation(options: {
   config: Manifest;              // plugin.config.ts's default export
-  background?: string;           // one source file per module, exposed under the module's name
+  background?: string;           // the entry point for each module, exposed under the module's name
   route?: string;
   pane?: string;
   commands?: string;
   prompt?: string;
 }): VitePlugin[];`}</Sig>
             <p className={styles.para}>
-              <Code>manifest.modules</Code> is the list of names given here; a file not named is not
-              part of the plugin. The output is <Code>manifest.json</Code>,{' '}
+              <Code>manifest.modules</Code> is the list of names given here; a file not named here
+              is not a module, whatever it exports. The output is <Code>manifest.json</Code>,{' '}
               <Code>remoteEntry.js</Code>, <Code>mf-manifest.json</Code> and the chunks. Of the
               workbench's singletons — <Code>react</Code>, <Code>react-dom</Code>, <Code>zod</Code>,{' '}
               <Code>@kbase/plugin-sdk</Code>, <Code>@kbase/design-system</Code>,{' '}
