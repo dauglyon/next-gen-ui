@@ -1,14 +1,7 @@
+/* The tree's rows ellipsise; the pane must not widen to their words. */
 .pane {
-  display: grid;
-  gap: var(--s-3);
-  padding: var(--s-2) var(--s-3);
-  /* The tree's rows ellipsise; the grid must not widen to their words. */
   min-inline-size: 0;
   overflow: hidden;
-}
-
-.pane > * {
-  min-inline-size: 0;
 }
 
 .stage {
@@ -91,11 +84,6 @@
   margin: 0;
   padding: 0;
   list-style: none;
-}
-
-.ask {
-  display: grid;
-  gap: var(--s-4);
 }
 
 .askRow {

@@ -8,5 +8,4 @@ export default definePluginManifest({
   icon: 'ChatCircleDots',
   color: 'blue',
   commands: [{ name: 'new-question', title: 'New question', icon: 'Plus' }],
-  shortcuts: [{ label: 'New question', command: 'new-question' }],
 });

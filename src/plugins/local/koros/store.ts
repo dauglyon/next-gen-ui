@@ -99,15 +99,6 @@ function arc(a: Omit<Arc, 'needsYou' | 'working' | 'turns'> & { needsYou?: boole
 // Slugs are lowercase, so case never splits one arc into two panels.
 export const slugOf = (path: string) => path.split(/[?#]/)[0].slice(1).toLowerCase();
 
-// What the New question page opens with. One page is reused for every open,
-// so the prefill travels here rather than on the path; `id` tells the page
-// a new one arrived.
-export interface Draft {
-  id: number;
-  project?: string;
-  question?: string;
-}
-
 // KIND*AI's rule: the arc is named from its question unless the user names it.
 const slugify = (text: string) =>
   text
@@ -118,7 +109,6 @@ const slugify = (text: string) =>
     .replace(/-$/, '');
 
 let currentArc: string | null = 'nitro';
-let draft: Draft = { id: 0 };
 let version = 0;
 const listeners = new Set<() => void>();
 const notify = () => {
@@ -139,27 +129,27 @@ export const koros = {
   project: (id: string) => projects.find((p) => p.id === id),
   arc: (slug: string) => arcs.get(slug),
   current: () => currentArc,
-  setCurrent(slug: string) {
+  // The arc free text goes to; null means the next message is a new question.
+  setCurrent(slug: string | null) {
     if (currentArc === slug) return;
     currentArc = slug;
-    notify();
-  },
-  draft: () => draft,
-  propose(next: Omit<Draft, 'id'>) {
-    draft = { ...next, id: draft.id + 1 };
     notify();
   },
   working: () => [...arcs.values()].filter((a) => a.working).length,
   needingYou: () => [...arcs.values()].filter((a) => a.needsYou).length,
   // Where the next free-text message lands, for the prompt bar: the current
-  // arc's session, else a new question; every arc is offered as a switch target.
+  // arc's session, else a new question. Both are switch targets, so the
+  // composer is KIND*AI's New question box and its session composer in one.
   destination() {
     const arc = currentArc ? arcs.get(currentArc) : undefined;
     return {
       label: arc ? arc.title : 'A new question',
-      path: arc ? `/${arc.slug}` : '/new',
-      options: [...arcs.values()].map((a) => ({ key: a.slug, label: a.title })),
-      select: (key: string) => koros.setCurrent(key),
+      path: arc ? `/${arc.slug}` : undefined,
+      options: [
+        { key: '', label: 'A new question' },
+        ...[...arcs.values()].map((a) => ({ key: a.slug, label: a.title })),
+      ],
+      select: (key: string) => koros.setCurrent(key || null),
     };
   },
   // Start an arc for a question. Filed under a project if one is named;
