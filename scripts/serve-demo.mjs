@@ -18,7 +18,8 @@
 
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { createServer } from 'node:http';
+import { createServer, request as httpRequest } from 'node:http';
+import { connect as netConnect } from 'node:net';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -83,25 +84,28 @@ async function registry() {
   return served.filter(Boolean);
 }
 
-createServer(async (req, res) => {
+const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://127.0.0.1:${PORT}`);
 
   // A plugin's own backend, same-origin so `script-src 'self'` still covers
   // its remote entry.
-  const prefix = Object.keys(proxies).find((p) => url.pathname.startsWith(p));
+  const prefix = prefixOf(url.pathname);
   if (prefix) {
-    const target = proxies[prefix] + url.pathname + url.search;
-    try {
-      const answer = await fetch(target, {
-        method: req.method,
-        headers: { accept: req.headers.accept ?? '*/*' },
-      });
-      res.writeHead(answer.status, { 'content-type': answer.headers.get('content-type') ?? 'application/octet-stream' });
-      res.end(Buffer.from(await answer.arrayBuffer()));
-    } catch (error) {
+    // Streamed with every header, both ways: a framed app sets cookies and
+    // reads x-forwarded-proto, and a fetch-and-buffer relay drops both.
+    const t = new URL(proxies[prefix]);
+    const up = httpRequest(
+      { host: t.hostname, port: t.port || 80, method: req.method, path: req.url, headers: req.headers },
+      (answer) => {
+        res.writeHead(answer.statusCode ?? 502, answer.headers);
+        answer.pipe(res);
+      },
+    );
+    up.on('error', (error) => {
       res.writeHead(502, { 'content-type': 'text/plain' });
       res.end(`upstream ${proxies[prefix]}: ${error.message}`);
-    }
+    });
+    req.pipe(up);
     return;
   }
 
@@ -121,7 +125,28 @@ createServer(async (req, res) => {
     'cache-control': path.includes('/assets/') ? 'public, max-age=31536000, immutable' : 'no-cache',
   });
   createReadStream(path).pipe(res);
-}).listen(PORT, () => {
+});
+
+const prefixOf = (pathname) => Object.keys(proxies).find((p) => pathname.startsWith(p));
+
+// A framed app (Solara, Jupyter) opens a websocket under its own prefix; the
+// upgrade is handed to the backend as raw bytes and the two sockets are tied.
+server.on('upgrade', (req, socket, head) => {
+  const prefix = prefixOf(new URL(req.url, `http://127.0.0.1:${PORT}`).pathname);
+  if (!prefix) return socket.destroy();
+  const t = new URL(proxies[prefix]);
+  const up = netConnect(Number(t.port) || 80, t.hostname, () => {
+    let raw = `${req.method} ${req.url} HTTP/1.1\r\n`;
+    for (let i = 0; i < req.rawHeaders.length; i += 2) raw += `${req.rawHeaders[i]}: ${req.rawHeaders[i + 1]}\r\n`;
+    up.write(raw + '\r\n');
+    if (head.length) up.write(head);
+    socket.pipe(up).pipe(socket);
+  });
+  up.on('error', () => socket.destroy());
+  socket.on('error', () => up.destroy());
+});
+
+server.listen(PORT, () => {
   console.log(`serving dist on http://127.0.0.1:${PORT}`);
   console.log('proxying', Object.entries(proxies).map(([p, o]) => `${p} → ${o}`).join(', ') || '(nothing)');
 });
