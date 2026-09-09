@@ -11,14 +11,17 @@ import { useRun, useServices } from '../../react/context';
 import styles from '../../react/Workbench.module.css';
 
 // What the rest of the workbench has about what is being typed, what is on
-// screen, and what is in the cart: every plugin's `recommend.cartItems`, as
-// one list with the recommendation as the unit.
+// screen, and what is in the cart: every plugin's `recommend.cartItems`, with
+// the recommendation as the unit.
 //
-// The list holds still. A row keeps its place from the moment it appears
-// until nothing offers it any more; a new answer adds rows at the end and
-// takes rows away, and never re-sorts. Who offers a row, and from which
-// source, is on the row rather than around it. What is still being asked is
-// one line under the rows, never a row.
+// Three groups in a fixed order, one per source, each headed by what it was
+// answered for: the open page's label, the typed text, the cart. A group
+// exists while it has rows or an answer on the way, and never moves. Inside
+// a group the rows hold still: a row keeps its place from the moment it
+// appears until nothing offers it any more; a new answer adds rows at the
+// end and takes rows away, and never re-sorts. The plugin is the mark on the
+// row. What is still being asked is one line under the group's rows, never
+// a row.
 //
 // A row is a link and an offer. Pressing it opens the item's `source` in the
 // answering plugin; the `+` puts the item in the cart. An item already in the
@@ -30,11 +33,11 @@ const FROM: Record<QuerySource, (label: string) => string> = {
   cart: (label) => `the cart (${label})`,
 };
 
-// The short form, for the line on the row itself.
-const SOURCE_OF: Record<QuerySource, (label: string) => string> = {
-  typing: (label) => `"${label}"`,
-  page: (label) => label || 'the open page',
-  cart: () => 'the cart',
+// The group heading: what the rows under it were answered for.
+const HEADING: Record<QuerySource, (label: string) => string> = {
+  typing: (label) => `Typing: ${label}`,
+  page: (label) => label || 'Open page',
+  cart: () => 'Cart',
 };
 
 // A view transition carries rows that enter and leave; names must be CSS
@@ -71,7 +74,15 @@ export function RelatedNavigator() {
   }, [query]);
 
   const shown = rows.filter((r) => !cart.has(r.id) && !query.dismissed(r.id));
-  const asking = new Set(QUERY_SOURCES.flatMap((source) => query.get(source).pending));
+  // A row sits in the group of its first offer; the count on the row says
+  // when others offer it too.
+  const groups = QUERY_SOURCES.map((source) => ({
+    source,
+    label: HEADING[source](query.get(source).label),
+    rows: shown.filter((r) => r.offeredBy[0].source === source),
+    pending: query.get(source).pending,
+  })).filter((g) => g.rows.length > 0 || g.pending.length > 0);
+  const asking = new Set(groups.flatMap((g) => g.pending));
 
   // The sidebar draws this block's header whether or not there is anything in
   // it, so the body has to account for itself.
@@ -100,12 +111,17 @@ export function RelatedNavigator() {
 
   return (
     <div className={styles.related}>
-      <ul className={styles.relatedList}>
-        {shown.map((row) => (
-          <RelatedRow key={row.id} row={row} />
-        ))}
-      </ul>
-      {asking.size > 0 && <Activity plugins={[...asking]} />}
+      {groups.map((g) => (
+        <div key={g.source} className={styles.relatedSection}>
+          <p className={styles.relatedFrom}>{g.label}</p>
+          <ul className={styles.relatedList}>
+            {g.rows.map((row) => (
+              <RelatedRow key={row.id} row={row} />
+            ))}
+          </ul>
+          {g.pending.length > 0 && <Activity plugins={g.pending} />}
+        </div>
+      ))}
     </div>
   );
 }
@@ -143,24 +159,10 @@ function RelatedRow({ row }: { row: Recommendation }) {
         `${index.manifest(o.plugin)?.title ?? o.plugin} from ${FROM[o.source](query.get(o.source).label)}`,
     )
     .join('; ');
-  // Why the row is here, on the row: who offered it, answering what. Two
-  // offers read "genKnown, for P0AEX9 and the cart".
-  const why = (() => {
-    const byPlugin = new Map<string, string[]>();
-    for (const o of row.offeredBy) {
-      const name = index.manifest(o.plugin)?.title ?? o.plugin;
-      byPlugin.set(name, [
-        ...(byPlugin.get(name) ?? []),
-        SOURCE_OF[o.source](query.get(o.source).label),
-      ]);
-    }
-    return [...byPlugin].map(([name, fors]) => `${name}, for ${fors.join(' and ')}`).join('; ');
-  })();
   const label = (
     <span className={styles.relatedLabel}>
       <span className={styles.relatedName}>{item.subject ?? item.name}</span>
       {item.summary && <span className={styles.relatedDetail}>{item.summary}</span>}
-      <span className={styles.relatedWhy}>{why}</span>
     </span>
   );
   const mark = (

@@ -1474,10 +1474,3 @@
   font-size: var(--fs-2);
   color: var(--c-ink3);
 }
-
-/* Why the row is here: the plugin and what it answered to. */
-.relatedWhy {
-  display: block;
-  font-size: var(--fs-1);
-  color: var(--c-ink3);
-}
