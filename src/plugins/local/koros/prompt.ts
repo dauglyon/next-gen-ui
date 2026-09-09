@@ -13,7 +13,6 @@ export default definePrompt({
       text ?? '',
       attachments.map((item) => ({
         id: item.id,
-        kind: item.kind,
         name: item.name,
         subject: item.subject,
         path: item.source?.path,

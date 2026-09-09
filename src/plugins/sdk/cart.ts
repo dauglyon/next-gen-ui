@@ -13,11 +13,6 @@ import { HostContext } from './host';
 //            item: `function-junction:protein:P0AEX9`, not a counter. Re-adding
 //            replaces, which is how a plugin refreshes a stale payload.
 //
-//   kind     Your word for the sort of thing — `protein`, `genome`, `table`.
-//            Yours, deliberately: there is no registry of kinds and no
-//            agreement between plugins about them. A consumer reads it as a
-//            label from you, not as a member of a set it can enumerate.
-//
 //   name     What the user would call it, not an accession, if you have both.
 //            It is what the tray's tooltip shows; the tile itself shows the
 //            summary, and wears your plugin's logo rather than a mark of its
@@ -53,7 +48,6 @@ import { HostContext } from './host';
 
 export interface CartItem {
   id: string;
-  kind: string;
   name: string;
   subject?: string;
   summary?: string;

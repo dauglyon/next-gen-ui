@@ -7,7 +7,6 @@
 // itself stays in the cart item the handler was given.
 export interface Attached {
   id: string;
-  kind: string;
   name: string;
   subject?: string;
   path?: string;

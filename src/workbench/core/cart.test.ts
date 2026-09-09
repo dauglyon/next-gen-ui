@@ -5,7 +5,6 @@ import type { CartItem } from './cart';
 const item = (id: string, over: Partial<CartItem> = {}): CartItem => ({
   id,
   plugin: 'function-junction',
-  kind: 'protein',
   name: id,
   addedAt: 1,
   ...over,
@@ -46,7 +45,7 @@ describe('the cart', () => {
   // cart: a session restore is exactly when a person has least patience for
   // losing what they collected.
   it('keeps the readable items when one is corrupt', () => {
-    const raw = JSON.stringify([item('good'), { id: 'bad', kind: 'protein' }, item('also-good')]);
+    const raw = JSON.stringify([item('good'), { id: 'bad' }, item('also-good')]);
     expect(readCart(raw).map((i) => i.id)).toEqual(['good', 'also-good']);
   });
 

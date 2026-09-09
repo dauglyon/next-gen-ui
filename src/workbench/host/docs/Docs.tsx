@@ -241,7 +241,6 @@ export default defineBackground({
       const rows = await Promise.all(idsIn(terms).map((id) => fetchSummary(id, signal)));
       return rows.map((row) => ({
         id: \`function-junction:protein:\${row.id}\`,
-        kind: 'protein',
         name: row.name,
         subject: row.id,
         summary: row.verdict,
@@ -437,7 +436,6 @@ function definePluginManifest(m: Manifest): Manifest;`}</Sig>
             >
               <Sig>{`interface CartItem {
   id: string;                    // unique across plugins; prefix with the plugin id
-  kind: string;                  // protein | taxon | job | …
   name: string;
   subject?: string;              // the identifier the item is about
   summary?: string;              // one line

@@ -114,8 +114,8 @@ export function CartTray() {
                   </Tooltip.Popup>
                 </Tooltip.Root>
                 <span className={styles.cartText}>
-                  <span className={styles.cartSubject}>{item.subject ?? item.kind}</span>
-                  <span className={styles.cartSummary}>{item.summary ?? item.name}</span>
+                  <span className={styles.cartSubject}>{item.subject ?? item.name}</span>
+                  {item.summary && <span className={styles.cartSummary}>{item.summary}</span>}
                 </span>
                 <span className={styles.srOnly}>{`Open ${item.name}`}</span>
               </button>
@@ -168,7 +168,7 @@ function Preview({ item, plugin }: { item: CartItem; plugin?: string }) {
     <>
       <Dialog.Title className={styles.cartPreviewTitle}>{item.name}</Dialog.Title>
       <Dialog.Description className={styles.cartPreviewMeta}>
-        {[item.kind, item.subject, plugin].filter(Boolean).join(' · ')}
+        {[item.subject, plugin].filter(Boolean).join(' · ')}
       </Dialog.Description>
       {item.summary && <p className={styles.cartPreviewSummary}>{item.summary}</p>}
 

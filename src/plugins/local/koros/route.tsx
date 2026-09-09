@@ -55,7 +55,7 @@ function ArcPage() {
               >
                 {q.attached.map((a) => (
                   <li key={a.id}>
-                    <Chip color="neutral" label={`${a.subject ?? a.name} · ${a.kind}`} />
+                    <Chip color="neutral" label={a.subject ?? a.name} />
                   </li>
                 ))}
               </ul>

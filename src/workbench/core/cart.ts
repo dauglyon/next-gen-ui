@@ -28,10 +28,6 @@ export const CartItemSchema = z.object({
   // The plugin that added it. Its manifest supplies the icon and colour if the
   // item names none, so items from one tool look like each other.
   plugin: z.string().min(1),
-  // What sort of thing this is, in the adding plugin's own words: `protein`,
-  // `genome`, `table`, `figure`. Free text by design — the host neither
-  // supplies a vocabulary nor checks against one.
-  kind: z.string().min(1),
   // What a person calls it.
   name: z.string().min(1),
   // What the item is *about*, if that is a different thing from the item: the

@@ -11,7 +11,6 @@ function mount(
   items: {
     id: string;
     plugin: string;
-    kind: string;
     name: string;
     subject?: string;
     summary?: string;
@@ -41,7 +40,6 @@ describe('the cart tray', () => {
       {
         id: 'a',
         plugin: 'data',
-        kind: 'dataset',
         name: 'Rhodobacter reads',
         subject: 'GCF_000012905.2',
         summary: '4.2 GB',
@@ -61,9 +59,9 @@ describe('the cart tray', () => {
 
   it('gives two items from one plugin the same mark', () => {
     mount([
-      { id: 'a', plugin: 'data', kind: 'dataset', name: 'one' },
-      { id: 'b', plugin: 'data', kind: 'dataset', name: 'two' },
-      { id: 'c', plugin: 'jobs', kind: 'run', name: 'three' },
+      { id: 'a', plugin: 'data', name: 'one' },
+      { id: 'b', plugin: 'data', name: 'two' },
+      { id: 'c', plugin: 'jobs', name: 'three' },
     ]);
     const marks = screen
       .getAllByRole('listitem')
@@ -72,13 +70,13 @@ describe('the cart tray', () => {
     expect(marks[0]).not.toBe(marks[2]);
   });
 
-  it('falls back to the kind when an item is about nothing but itself', () => {
-    mount([{ id: 'a', plugin: 'data', kind: 'dataset', name: 'one', summary: '4.2 GB' }]);
-    expect(screen.getByText('dataset')).toBeInTheDocument();
+  it('leads with the name when an item is about nothing but itself', () => {
+    mount([{ id: 'a', plugin: 'data', name: 'one', summary: '4.2 GB' }]);
+    expect(screen.getByText('one')).toBeInTheDocument();
   });
 
   it('scrolls sideways rather than growing the composer', () => {
-    mount([{ id: 'a', plugin: 'data', kind: 'dataset', name: 'one' }]);
+    mount([{ id: 'a', plugin: 'data', name: 'one' }]);
     const row = screen.getByRole('list', { name: 'Cart, 1 items' });
     expect(getComputedStyle(row).flexWrap).not.toBe('wrap');
   });
@@ -89,7 +87,6 @@ describe('the cart tray', () => {
       {
         id: 'a',
         plugin: 'data',
-        kind: 'dataset',
         name: 'one',
         summary: '4.2 GB',
         content: { contigs: 41 },
@@ -110,8 +107,8 @@ describe('the cart tray', () => {
   it('empties only after the removal is confirmed', async () => {
     const user = userEvent.setup();
     const services = mount([
-      { id: 'a', plugin: 'data', kind: 'dataset', name: 'one' },
-      { id: 'b', plugin: 'jobs', kind: 'run', name: 'two' },
+      { id: 'a', plugin: 'data', name: 'one' },
+      { id: 'b', plugin: 'jobs', name: 'two' },
     ]);
     await user.click(screen.getByRole('button', { name: 'Remove all' }));
     expect(services.cart.items()).toHaveLength(2);
@@ -126,7 +123,7 @@ describe('the cart tray', () => {
 
   it('takes an item out when its remove control is pressed', async () => {
     const user = userEvent.setup();
-    const services = mount([{ id: 'a', plugin: 'data', kind: 'dataset', name: 'one' }]);
+    const services = mount([{ id: 'a', plugin: 'data', name: 'one' }]);
     await user.click(screen.getByRole('button', { name: 'Remove one from the cart' }));
     expect(services.cart.items()).toHaveLength(0);
   });
@@ -149,7 +146,7 @@ describe('the cart tray', () => {
     expect(container.querySelector('[class*="attachments"]')).toBeNull();
 
     act(() =>
-      services.cart.add({ id: 'a', plugin: 'data', kind: 'dataset', name: 'one', addedAt: 1 }),
+      services.cart.add({ id: 'a', plugin: 'data', name: 'one', addedAt: 1 }),
     );
     expect(container.querySelector('[class*="cartRow"]')).not.toBeNull();
     expect(container.querySelector('[class*="attachments"]')).not.toBeNull();
