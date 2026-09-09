@@ -3,40 +3,42 @@ import { X } from '@phosphor-icons/react';
 import { Loader, Tooltip } from '@kbase/design-system';
 import { CartButton, qualifyCommand, usePanelTitle } from '../../../plugins/sdk';
 import type { QuerySource, Recommendation } from '../../core';
-import { QUERY_SOURCES, mergeRecommendations } from '../../core';
+import { mergeRecommendations } from '../../core';
 import { openRoute } from '../open';
 import { PluginMark } from '../PluginMark';
 import { useRun, useServices } from '../../react/context';
 import styles from '../../react/Workbench.module.css';
 
-// What the rest of the workbench has about what is being typed, what is on
-// screen, and what is in the cart: every plugin's `recommend.cartItems`, with
-// the recommendation as the unit.
+// What the rest of the workbench has about what is on screen and what is in
+// the cart: every plugin's `recommend.cartItems`, with the recommendation as
+// the unit. What is being typed is not here: its answers are the prompt
+// bar's offers.
 //
-// Three groups in a fixed order, one per source, each headed by what it was
-// answered for: the open page's label, the typed text, the cart. A group
-// exists while it has rows or an answer on the way, and never moves. Inside
-// a group the rows hold still: a row keeps its place from the moment it
-// appears until nothing offers it any more; a new answer adds rows at the
-// end and takes rows away, and never re-sorts. The plugin is the mark on the
-// row. What is still being asked is one line under the group's rows, never
-// a row. Rows enter and leave without animation: a view transition here
-// snapshots the whole document, and iPhone Safari drew a blank frame at
-// each snapshot, so a keystroke read as the page flashing.
+// Two groups in a fixed order, one per source, each headed by what it was
+// answered for: the open page's label, the cart. A group exists while it
+// has rows or an answer on the way, and never moves. Inside a group the
+// rows hold still: a row keeps its place from the moment it appears until
+// nothing offers it any more; a new answer adds rows at the end and takes
+// rows away, and never re-sorts. The plugin is the mark on the row. What is
+// still being asked is one line under the group's rows, never a row. Rows
+// enter and leave without animation: a view transition here snapshots the
+// whole document, and iPhone Safari drew a blank frame at each snapshot.
 //
 // A row is a link and an offer. Pressing it opens the item's `source` in the
 // answering plugin; the `+` puts the item in the cart. An item already in the
 // cart is not shown: the reader has it.
 
-const FROM: Record<QuerySource, (label: string) => string> = {
-  typing: (label) => `what you typed (${label})`,
+// The sources this pane reads, in group order.
+const SOURCES = ['page', 'cart'] as const satisfies readonly QuerySource[];
+type RelatedSource = (typeof SOURCES)[number];
+
+const FROM: Record<RelatedSource, (label: string) => string> = {
   page: (label) => `the open page (${label})`,
   cart: (label) => `the cart (${label})`,
 };
 
 // The group heading: what the rows under it were answered for.
-const HEADING: Record<QuerySource, (label: string) => string> = {
-  typing: (label) => `Typing: ${label}`,
+const HEADING: Record<RelatedSource, (label: string) => string> = {
   page: (label) => label || 'Open page',
   cart: () => 'Cart',
 };
@@ -57,7 +59,7 @@ export function RelatedNavigator() {
     const update = () => {
       const next = mergeRecommendations(
         current.current,
-        QUERY_SOURCES.map((source) => ({ source, state: query.get(source) })),
+        SOURCES.map((source) => ({ source, state: query.get(source) })),
       );
       current.current = next;
       setRows(next);
@@ -70,7 +72,7 @@ export function RelatedNavigator() {
   // A row sits in the group of its first offer; the count on the row says
   // when others offer it too. A source is asking from the moment it is set,
   // before the settle names who is being asked.
-  const groups = QUERY_SOURCES.map((source) => {
+  const groups = SOURCES.map((source) => {
     const state = query.get(source);
     return {
       source,
@@ -111,7 +113,7 @@ export function RelatedNavigator() {
       <div className={styles.relatedEmpty}>
         {settledEmpty && (
           <p className={styles.relatedQuiet}>
-            Nothing related yet. Open a page, type into the prompt bar, or add to the cart.
+            Nothing related yet. Open a page or add to the cart.
           </p>
         )}
       </div>
@@ -177,7 +179,7 @@ function RelatedRow({ row }: { row: Recommendation }) {
   const provenance = row.offeredBy
     .map(
       (o) =>
-        `${index.manifest(o.plugin)?.title ?? o.plugin} from ${FROM[o.source](query.get(o.source).label)}`,
+        `${index.manifest(o.plugin)?.title ?? o.plugin} from ${FROM[o.source as RelatedSource](query.get(o.source).label)}`,
     )
     .join('; ');
   const label = (
