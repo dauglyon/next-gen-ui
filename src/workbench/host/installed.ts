@@ -139,11 +139,14 @@ export function createHostIndex(installed: InstalledPlugin[]): HostIndex {
   // One lazy component per declared panel. React.lazy wants a default
   // export, so the plugin module is reshaped in the loader.
   for (const { manifest } of installed) {
-    for (const kind of ['navigator', 'document'] as const) {
-      if (!manifest[kind]) continue;
+    for (const [kind, declared, exported] of [
+      ['pane', manifest.navigator, 'navigator'],
+      ['route', manifest.document, 'document'],
+    ] as const) {
+      if (!declared) continue;
       const component = lazy(async () => {
         const module = await load(manifest.id);
-        const Component = module[kind];
+        const Component = module[exported];
         if (!Component) {
           throw new Error(`plugin ${manifest.id} declares a ${kind} but its module exports none`);
         }

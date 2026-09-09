@@ -5,7 +5,7 @@ import { jobStore } from './store';
 // part of the label because which run you meant is usually decided by
 // whether it is still going.
 
-const offer = (id: string, label: string): Offer => ({ label, action: { id } });
+const offer = (id: string, label: string): Offer => ({ label, path: `/${id}` });
 
 export const match: Matcher = (text) => {
   const q = text.trim();

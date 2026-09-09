@@ -15,6 +15,9 @@ export type Operation =
   | { type: 'open'; panel: Panel; target?: MainTarget }
   | { type: 'close'; panel: PanelId }
   | { type: 'focus'; panel: PanelId }
+  // A route panel showing a different path. `replace` is for the browser
+  // history the URL sync writes, not for the layout.
+  | { type: 'setPath'; panel: PanelId; path: string; replace?: boolean }
   | { type: 'move'; panel: PanelId; to: Target }
   | { type: 'resize'; split: SplitId; sizes: number[] }
   | { type: 'pin'; plugin: PluginId; index?: number }

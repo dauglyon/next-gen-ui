@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { createWorkbenchStore, defaultLayout, groups, makePanel } from '../core';
+import { createWorkbenchStore, defaultLayout, groups, makeRoute } from '../core';
 import { createCommandRegistry } from './registry';
 import { workbenchCommands } from './workbench-commands';
 
-const arc = makePanel('koros', 'document', { slug: 'nitro' });
-const job = makePanel('jobs', 'document', { id: '12' });
+const arc = makeRoute('koros', '/nitro', 'a');
+const job = makeRoute('jobs', '/12', 'b');
 
 function setup() {
   const store = createWorkbenchStore({ initial: defaultLayout({ pinned: ['koros'] }) });
@@ -25,7 +25,7 @@ describe('workbench commands', () => {
   it('close removes the focused panel and announces it', async () => {
     const { store, registry, announced } = setup();
     await registry.run('close', {});
-    expect(Object.keys(store.get().panels)).toEqual(['koros/navigator', arc.id]);
+    expect(Object.keys(store.get().panels)).toEqual(['koros/pane', arc.id]);
     expect(announced).toEqual([`Closed ${job.id}`]);
   });
 

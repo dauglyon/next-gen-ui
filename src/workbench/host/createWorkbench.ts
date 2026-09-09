@@ -11,7 +11,6 @@ import {
   defaultLayout,
   deserialize,
   introduce,
-  makePanel,
   readCart,
   serialize,
 } from '../core';
@@ -28,7 +27,7 @@ import { docs } from './docs';
 import { home } from './home';
 import { shortcutsPlugin } from './shortcuts';
 import { relatedPlugin } from './related';
-import { routeParams } from './routes';
+import { openPane, openRoute } from './open';
 import { createSettingsStore } from './settings';
 import { createRelatedRunner } from './related/runner';
 import type { RelatedRunner } from './related/runner';
@@ -64,6 +63,7 @@ export function createWorkbench({
   const prompt = createPromptHandle();
   const preview = createPreviewHandle();
   const focusIntentRef: WorkbenchServices['focusIntentRef'] = { current: 'command' };
+  const navIntentRef: WorkbenchServices['navIntentRef'] = { current: 'push' };
   const source = createHostIndex([
     ...installed,
     catalog,
@@ -123,6 +123,7 @@ export function createWorkbench({
     prompt,
     preview,
     focusIntentRef,
+    navIntentRef,
     dispatch,
   };
 
@@ -136,11 +137,11 @@ export function createWorkbench({
   source.registerCommands(registry, (plugin) => pluginHostFor(services, plugin));
 
   // A saved layout may pin a plugin that has since stopped being a sidebar
-  // panel — the catalog did. Installed and navigator-less means the block
-  // could only ever render as a ghost, so the pin goes; an uninstalled
-  // plugin keeps its place, because reinstalling should restore it.
+  // panel — the catalog did. Installed and pane-less means the block could
+  // only ever render as a ghost, so the pin goes; an uninstalled plugin
+  // keeps its place, because reinstalling should restore it.
   for (const plugin of store.get().sidebar.pinned) {
-    if (source.manifest(plugin) && !source.panel(`${plugin}/navigator`)) {
+    if (source.manifest(plugin) && !source.panel(`${plugin}/pane`)) {
       store.dispatch({ type: 'unpin', plugin });
     }
   }
@@ -179,13 +180,13 @@ export function createWorkbench({
   return services;
 }
 
-// `/open <plugin> [value]`: a navigator plugin's navigator, an app's single
-// page, or a document whose route has one param filled by `value`. Works
-// from the manifest alone, so it completes and runs before any plugin code
-// has loaded.
+// `/open <plugin> [path]`: the plugin's page at a path (its root when none
+// is given), or its pane when it has no pages. Works from the manifest
+// alone, so it completes before any plugin code has loaded.
 function openCommand(services: WorkbenchServices): Command {
-  const { source, dispatch, announcer } = services;
-  const openable = () => source.manifests().filter((m) => m.navigator || m.document);
+  const { source, announcer } = services;
+  const openable = () =>
+    source.manifests().filter((m) => source.panel(`${m.id}/route`) || source.panel(`${m.id}/pane`));
   return {
     name: 'open',
     title: 'Open a plugin panel',
@@ -200,25 +201,19 @@ function openCommand(services: WorkbenchServices): Command {
             .map((m) => m.id)
             .filter((id) => id.startsWith(prefix)),
       },
-      { name: 'value', type: 'string', description: 'the document route param' },
+      { name: 'path', type: 'string', description: "the plugin's own path" },
     ],
-    run: ({ plugin, value }) => {
-      const manifest = source.manifest(String(plugin));
-      if (!manifest || !(manifest.navigator || manifest.document)) {
-        announcer.announce(`Nothing to open for ${String(plugin)}`);
-        return;
+    run: async ({ plugin, path }) => {
+      const id = String(plugin);
+      const hasRoute = source.panel(`${id}/route`);
+      const hasPane = source.panel(`${id}/pane`);
+      if (hasRoute && (path !== undefined || !hasPane)) {
+        await openRoute(services, id, path === undefined ? '/' : String(path));
+      } else if (hasPane) {
+        openPane(services, id);
+      } else {
+        announcer.announce(`Nothing to open for ${id}`);
       }
-      const params = manifest.document ? routeParams(manifest.document.route) : [];
-      if (manifest.document && (value !== undefined || !manifest.navigator)) {
-        if (params.length > 1 || (params.length === 1 && value === undefined)) {
-          announcer.announce(`/open ${manifest.id} needs ${params.join(', ')}`);
-          return;
-        }
-        const filled = params.length === 1 ? { [params[0]]: String(value) } : {};
-        dispatch({ type: 'open', panel: makePanel(manifest.id, 'document', filled) });
-        return;
-      }
-      dispatch({ type: 'open', panel: makePanel(manifest.id, 'navigator') });
     },
   };
 }
@@ -226,8 +221,7 @@ function openCommand(services: WorkbenchServices): Command {
 // What a plugin's code may do to the workbench, scoped to that plugin.
 export function pluginHostFor(services: WorkbenchServices, plugin: PluginId): PluginHost {
   return {
-    openDocument: (params) =>
-      void services.dispatch({ type: 'open', panel: makePanel(plugin, 'document', params) }),
+    openRoute: (path, options) => void openRoute(services, plugin, path, options),
     // A bare name is this plugin's own command; another plugin's is named in
     // full. The caller is recorded so a handler can tell a keystroke from a
     // neighbour acting for someone.

@@ -66,13 +66,12 @@ export function useBusy(name: string): boolean {
 }
 
 // The placeholder shown before a panel supplies its own title: the plugin's
-// title, then the panel's params in declaration order.
+// title, then the path when there is one worth showing.
 export function fallbackTitle(services: WorkbenchServices, panel: Panel | undefined, id: PanelId) {
   if (!panel) return id;
   const plugin = services.source.plugins().find((p) => p.id === panel.plugin);
   const base = plugin?.title ?? panel.plugin;
-  const values = Object.values(panel.params);
-  return values.length ? `${base}: ${values.join(' ')}` : base;
+  return panel.path && panel.path !== '/' ? `${base}: ${panel.path}` : base;
 }
 
 export function useCrumbs(id: PanelId): Crumb[] {

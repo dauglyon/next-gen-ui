@@ -16,73 +16,91 @@ function mountAt(path: string) {
   queryClient.setQueryData(['auth', 'me'], { user: 'tester', display: 'Tester' });
   queryClient.setQueryData(['auth', 'tokenInfo'], { id: 'session-1', user: 'tester', mfa: 'Used' });
   const workbench = testWorkbench();
+  const history = createMemoryHistory({ initialEntries: [path] });
   const router = createRouter({
     routeTree,
     context: { queryClient, workbench },
-    history: createMemoryHistory({ initialEntries: [path] }),
+    history,
   });
   render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
     </QueryClientProvider>,
   );
-  return { router, workbench };
+  return { router, history, workbench };
 }
 
 const pathname = (router: ReturnType<typeof mountAt>['router']) => router.state.location.pathname;
+const routePanels = (workbench: ReturnType<typeof mountAt>['workbench']) =>
+  Object.values(workbench.store.get().panels).filter((p) => p.kind === 'route');
 
 describe('workbench deep links', () => {
-  it('opens the linked document and keeps the URL', async () => {
-    const { router } = mountAt('/p/koros/arc/nitro');
+  it('opens the linked page and keeps the URL', async () => {
+    const { router } = mountAt('/p/koros/nitro');
     expect(await screen.findByRole('tab', { name: /arc: nitrogenase/i })).toHaveAttribute(
       'aria-selected',
       'true',
     );
-    expect(pathname(router)).toBe('/p/koros/arc/nitro');
+    expect(pathname(router)).toBe('/p/koros/nitro');
   });
 
-  it('focuses an already-open document instead of duplicating it', async () => {
-    const { router, workbench } = mountAt('/p/koros/arc/nitro');
+  it('focuses a panel already showing the page, as the plugin normalizes it', async () => {
+    const { router, workbench } = mountAt('/p/koros/nitro');
     await screen.findByRole('tab', { name: /arc: nitrogenase/i });
-    await router.navigate({ to: '/p/$pluginId/$', params: { pluginId: 'jobs', _splat: 'job/12' } });
+    await router.navigate({ href: '/p/jobs/12' });
     await screen.findByRole('tab', { name: /job 12/i });
-    await router.navigate({
-      to: '/p/$pluginId/$',
-      params: { pluginId: 'koros', _splat: 'arc/nitro' },
-    });
-    await waitFor(() => expect(workbench.store.get().focus).toBe('koros/document?slug=nitro'));
+    // A different spelling of the same arc: koros lowercases.
+    await router.navigate({ href: '/p/koros/NITRO' });
+    await waitFor(() =>
+      expect(workbench.store.get().panels[workbench.store.get().focus!]).toMatchObject({
+        plugin: 'koros',
+        path: '/nitro',
+      }),
+    );
     expect(screen.getAllByRole('tab')).toHaveLength(2);
   });
 
-  it('writes the URL when a document opens or gains focus, and clears it on close', async () => {
+  it('writes the URL when a page opens or gains focus, and clears it on close', async () => {
     const user = userEvent.setup();
     const { router } = mountAt('/workbench');
     const sidebar = await screen.findByRole('region', { name: 'Sidebar' });
     await user.click(await within(sidebar).findByRole('button', { name: /assemble reads/i }));
-    await waitFor(() => expect(pathname(router)).toBe('/p/jobs/job/12'));
+    await waitFor(() => expect(pathname(router)).toBe('/p/jobs/12'));
     // Same sidebar node: the shell must not remount when the URL changes.
     expect(sidebar.isConnected).toBe(true);
     await user.click(await within(sidebar).findByRole('button', { name: /nifh search/i }));
-    await waitFor(() => expect(pathname(router)).toBe('/p/jobs/job/20'));
+    await waitFor(() => expect(pathname(router)).toBe('/p/jobs/20'));
     await user.click(screen.getByRole('tab', { name: /job 12/i }));
-    await waitFor(() => expect(pathname(router)).toBe('/p/jobs/job/12'));
+    await waitFor(() => expect(pathname(router)).toBe('/p/jobs/12'));
     await user.keyboard('{Alt>}{Shift>}W{/Shift}{/Alt}');
-    await waitFor(() => expect(pathname(router)).toBe('/p/jobs/job/20'));
+    await waitFor(() => expect(pathname(router)).toBe('/p/jobs/20'));
     await user.keyboard('{Alt>}{Shift>}W{/Shift}{/Alt}');
     await waitFor(() => expect(pathname(router)).toBe('/workbench'));
   });
 
-  it('links to an app page with an empty route', async () => {
+  it('Back returns the same panel to its earlier path instead of opening another', async () => {
+    const { router, history, workbench } = mountAt('/p/koros/nitro');
+    await screen.findByRole('tab', { name: /arc: nitrogenase/i });
+    const [panel] = routePanels(workbench);
+    workbench.dispatch({ type: 'setPath', panel: panel.id, path: '/soil' });
+    await waitFor(() => expect(pathname(router)).toBe('/p/koros/soil'));
+    history.back();
+    await waitFor(() => expect(pathname(router)).toBe('/p/koros/nitro'));
+    await waitFor(() => expect(workbench.store.get().panels[panel.id].path).toBe('/nitro'));
+    expect(routePanels(workbench)).toHaveLength(1);
+  });
+
+  it('links to a page at the plugin root', async () => {
     const { router } = mountAt('/p/catalog');
     expect(await screen.findByRole('tab', { name: /settings/i })).toBeInTheDocument();
     expect(pathname(router)).toBe('/p/catalog');
   });
 
-  it('a link to nothing announces why and lands on the workbench', async () => {
-    const { router } = mountAt('/p/jobs/arc/12');
+  it('a link to a plugin without pages announces why and lands on the workbench', async () => {
+    const { router } = mountAt('/p/shortcuts/anything');
     await waitFor(() => expect(pathname(router)).toBe('/workbench'));
     expect(
       await screen.findByRole('status', { name: 'Workbench announcements' }),
-    ).toHaveTextContent(/jobs has no page at/i);
+    ).toHaveTextContent(/has no pages/i);
   });
 });

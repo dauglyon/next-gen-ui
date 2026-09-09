@@ -46,7 +46,7 @@ const openJob = async (user: ReturnType<typeof userEvent.setup>, name: RegExp) =
 };
 
 describe('Workbench', () => {
-  it('shows the pinned navigators and opens a document from one', async () => {
+  it('shows the pinned panes and opens a page from one', async () => {
     const user = userEvent.setup();
     mount();
     const sidebar = screen.getByRole('region', { name: 'Sidebar' });
@@ -61,10 +61,10 @@ describe('Workbench', () => {
       'true',
     );
     expect(screen.getByRole('heading', { name: /assemble reads/i })).toBeInTheDocument();
-    expect(status()).toHaveTextContent('Opened Jobs: 12');
+    expect(status()).toHaveTextContent('Opened Jobs: /12');
   });
 
-  it('opening the same document again focuses it instead of duplicating', async () => {
+  it('opening the same page again focuses it instead of duplicating', async () => {
     const user = userEvent.setup();
     mount();
     await openJob(user, /assemble reads/i);
@@ -104,7 +104,9 @@ describe('Workbench', () => {
     const storage = memoryStorage();
     const first = mount(storage);
     await openJob(user, /nifh search/i);
-    expect(Object.keys(first.store.get().panels)).toContain('jobs/document?id=20');
+    expect(Object.values(first.store.get().panels)).toContainEqual(
+      expect.objectContaining({ plugin: 'jobs', kind: 'route', path: '/20' }),
+    );
 
     document.body.innerHTML = '';
     mount(storage);
@@ -132,14 +134,14 @@ describe('Workbench', () => {
     expect(await screen.findByText('cancelled')).toBeInTheDocument();
   });
 
-  it('completes a command name, then opens a document cold with /open', async () => {
+  it('completes a command name, then opens a page cold with /open', async () => {
     const user = userEvent.setup();
     const services = mount();
     const box = screen.getByRole('combobox', { name: 'Prompt' });
     await user.type(box, '/op');
     const options = await screen.findAllByRole('option');
     expect(options.map((o) => o.textContent)).toEqual(
-      expect.arrayContaining([expect.stringContaining('/open <plugin> [value]')]),
+      expect.arrayContaining([expect.stringContaining('/open <plugin> [path]')]),
     );
     await user.keyboard('{Tab}');
     expect(box).toHaveValue('/open ');

@@ -1,33 +1,37 @@
-import { createContext, useContext, useEffect } from 'react';
+import { createContext, useContext, useEffect, useSyncExternalStore } from 'react';
 
-// What a panel component can learn about itself. The host provides this
-// context; a plugin reads it with `usePanel`. Types here mirror the core's
-// on purpose: the SDK is a leaf and imports nothing from the workbench.
+// What a panel can learn about itself and ask of its own tab. The host
+// provides this context; a plugin reads it with `usePanel`. Types here
+// mirror the core's on purpose: the SDK is a leaf and imports nothing from
+// the workbench.
 
-export type PanelKind = 'navigator' | 'document';
+export type PanelKind = 'route' | 'pane';
 
 // One step of a panel's trail: where this level is, in the plugin's own
-// words, and how to get back to it. `action` is the same shape a prompt
-// bar offer carries, so a crumb click and a suggestion open alike; a
-// crumb that only names a level leaves it out.
+// words, and the path that gets back to it. A crumb that only names a
+// level leaves the path out.
 export interface Crumb {
   label: string;
-  action?: PanelParams;
+  path?: string;
   // A mark beside the label, by name from the host's icon set. A plugin naming
   // itself as the root of its own trail wants its own mark there, and the
   // manifest's `icon` is the name to give.
   icon?: string;
 }
-export type PanelParams = Record<string, string>;
 
 export interface PanelHandle {
+  // Opaque; stable while the panel lives, whatever its path becomes.
   id: string;
   plugin: string;
   kind: PanelKind;
-  params: PanelParams;
+  // Everything under /p/<plugin>, query string included; '' for a pane.
+  path: string;
   focused: boolean;
+  // Changes this panel's path in place and pushes a history entry, or
+  // replaces the current one.
+  navigate: (path: string, options?: { replace?: boolean }) => void;
   // The tab or block title. Until a panel sets one, the host shows a
-  // placeholder built from the plugin's title and the panel's params.
+  // placeholder built from the plugin's title and the panel's path.
   setTitle: (title: string) => void;
   // The trail shown above this panel. Declaring none means no row. The
   // host also borrows from it to tell two same-titled tabs apart.
@@ -35,6 +39,9 @@ export interface PanelHandle {
   // What this panel is about, as namespaced terms — `uniprot:P0AEX9`,
   // `taxon:562`. The host asks other plugins what they have about them.
   setTerms: (terms: string[]) => void;
+  // Fires when the path or focus changes. For a mount that is not React;
+  // `usePanel` re-renders on the same changes.
+  subscribe: (listener: () => void) => () => void;
 }
 
 export const PanelContext = createContext<PanelHandle | null>(null);
@@ -65,4 +72,10 @@ export function usePanelBreadcrumbs(crumbs: Crumb[]): void {
   // identity changes on every pass while its content rarely does.
   const key = JSON.stringify(crumbs);
   useEffect(() => setCrumbs(JSON.parse(key) as Crumb[]), [setCrumbs, key]);
+}
+
+// The panel's path as React state: re-renders the caller when it changes.
+export function usePanelPath(): string {
+  const handle = usePanel();
+  return useSyncExternalStore(handle.subscribe, () => handle.path);
 }

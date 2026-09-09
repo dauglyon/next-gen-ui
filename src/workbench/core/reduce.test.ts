@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Layout } from './layout';
-import { defaultLayout, makePanel } from './layout';
+import { defaultLayout, makePane, makeRoute } from './layout';
 import type { Operation } from './operations';
 import { placementOf, sidebarPanels } from './placement';
 import { reduce } from './reduce';
@@ -19,12 +19,12 @@ function run(start: Layout, ...ops: Operation[]): Layout {
   return end;
 }
 
-const arc = makePanel('koros', 'document', { slug: 'nitro' });
-const job = makePanel('jobs', 'document', { id: '12' });
-const jobsNav = makePanel('jobs', 'navigator');
+const arc = makeRoute('koros', '/nitro', 'a');
+const job = makeRoute('jobs', '/12', 'b');
+const jobsNav = makePane('jobs');
 
 describe('open', () => {
-  it('adds a document to the root group and focuses it', () => {
+  it('adds a route to the root group and focuses it', () => {
     const l = run(defaultLayout(), { type: 'open', panel: arc });
     expect(placementOf(l, arc.id)).toEqual({ zone: 'main', group: 'root', active: true });
     expect(l.focus).toBe(arc.id);
@@ -51,7 +51,7 @@ describe('open', () => {
     expect(groups(l.main).map((g) => g.tabs)).toEqual([[arc.id], [job.id]]);
   });
 
-  it('a pinned plugin navigator opens into the sidebar, unfolded', () => {
+  it('a pinned plugin pane opens into the sidebar, unfolded', () => {
     const start = run(defaultLayout({ pinned: ['jobs'] }), {
       type: 'fold',
       panel: jobsNav.id,
@@ -62,7 +62,7 @@ describe('open', () => {
     expect(l.focus).toBe(jobsNav.id);
   });
 
-  it('an unpinned plugin navigator opens as a main-area tab', () => {
+  it('an unpinned plugin pane opens as a main-area tab', () => {
     const l = run(defaultLayout(), { type: 'open', panel: jobsNav });
     expect(placementOf(l, jobsNav.id).zone).toBe('main');
   });
@@ -94,7 +94,7 @@ describe('close', () => {
     expect(l.focus).toBeNull();
   });
 
-  it('closing a pinned navigator from the main area returns it to the sidebar', () => {
+  it('closing a pinned pane from the main area returns it to the sidebar', () => {
     const l = run(
       defaultLayout({ pinned: ['jobs'] }),
       { type: 'move', panel: jobsNav.id, to: { group: 'root' } },
@@ -103,7 +103,7 @@ describe('close', () => {
     expect(placementOf(l, jobsNav.id)).toEqual({ zone: 'sidebar', folded: false });
   });
 
-  it('is a no-op for a navigator sitting in the sidebar', () => {
+  it('is a no-op for a pane sitting in the sidebar', () => {
     const start = defaultLayout({ pinned: ['jobs'] });
     expect(reduce(start, { type: 'close', panel: jobsNav.id })).toBe(start);
   });
@@ -111,7 +111,7 @@ describe('close', () => {
 
 describe('move', () => {
   it('reorders within a group using the pre-removal index', () => {
-    const c = makePanel('jobs', 'document', { id: '3' });
+    const c = makeRoute('jobs', '/3', 'c');
     const l = run(
       defaultLayout(),
       { type: 'open', panel: arc },
@@ -122,7 +122,7 @@ describe('move', () => {
     expect(groups(l.main)[0].tabs).toEqual([job.id, arc.id, c.id]);
   });
 
-  it('a navigator dragged to the main area leaves the sidebar but keeps its pin', () => {
+  it('a pane dragged to the main area leaves the sidebar but keeps its pin', () => {
     const l = run(defaultLayout({ pinned: ['jobs', 'data'] }), {
       type: 'move',
       panel: jobsNav.id,
@@ -132,7 +132,7 @@ describe('move', () => {
     expect(l.sidebar.pinned).toEqual(['jobs', 'data']);
   });
 
-  it('moving a navigator to the sidebar pins its plugin', () => {
+  it('moving a pane to the sidebar pins its plugin', () => {
     const l = run(
       defaultLayout(),
       { type: 'open', panel: jobsNav },
@@ -142,14 +142,14 @@ describe('move', () => {
     expect(placementOf(l, jobsNav.id).zone).toBe('sidebar');
   });
 
-  it('refuses to put a document in the sidebar', () => {
+  it('refuses to put a route in the sidebar', () => {
     const start = run(defaultLayout(), { type: 'open', panel: arc });
     expect(reduce(start, { type: 'move', panel: arc.id, to: { zone: 'sidebar' } })).toBe(start);
   });
 
   it('reorders pins with a pre-removal sidebar index', () => {
     const start = defaultLayout({ pinned: ['koros', 'data', 'jobs'] });
-    const dataNav = makePanel('data', 'navigator');
+    const dataNav = makePane('data');
     const l = run(start, { type: 'move', panel: dataNav.id, to: { zone: 'sidebar', index: 0 } });
     expect(l.sidebar.pinned).toEqual(['data', 'koros', 'jobs']);
     // Downward past itself: index given before removal, like a tab move.
@@ -159,7 +159,7 @@ describe('move', () => {
 
   it('a reorder to the same place is not a change', () => {
     const start = defaultLayout({ pinned: ['koros', 'data'] });
-    const korosNav = makePanel('koros', 'navigator');
+    const korosNav = makePane('koros');
     const focused = reduce(start, { type: 'focus', panel: korosNav.id });
     expect(
       reduce(focused, { type: 'move', panel: korosNav.id, to: { zone: 'sidebar', index: 0 } }),
@@ -168,7 +168,7 @@ describe('move', () => {
 });
 
 describe('pin and fold', () => {
-  it('pin inserts at the index and creates the navigator panel', () => {
+  it('pin inserts at the index and creates the pane panel', () => {
     const l = run(defaultLayout({ pinned: ['koros', 'data'] }), {
       type: 'pin',
       plugin: 'jobs',
@@ -178,7 +178,7 @@ describe('pin and fold', () => {
     expect(jobsNav.id in l.panels).toBe(true);
   });
 
-  it('unpin drops the navigator unless it lives in the main area', () => {
+  it('unpin drops the pane unless it lives in the main area', () => {
     const inSidebar = run(defaultLayout({ pinned: ['jobs'] }), { type: 'unpin', plugin: 'jobs' });
     expect(jobsNav.id in inSidebar.panels).toBe(false);
 
@@ -190,7 +190,7 @@ describe('pin and fold', () => {
     expect(placementOf(inMain, jobsNav.id).zone).toBe('main');
   });
 
-  it('fold only applies to sidebar navigators', () => {
+  it('fold only applies to sidebar panes', () => {
     const start = run(defaultLayout(), { type: 'open', panel: arc });
     expect(reduce(start, { type: 'fold', panel: arc.id, folded: true })).toBe(start);
   });

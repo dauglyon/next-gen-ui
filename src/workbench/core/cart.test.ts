@@ -34,12 +34,12 @@ describe('the cart', () => {
     const full = item('P0AEX9', {
       content: { spread: 'universal', phyla: 8 },
       context: { measuredOver: '8 phyla', reach: 'direct' },
-      source: { params: { q: 'P0AEX9' } },
+      source: { path: '/P0AEX9' },
     });
     const back = readCart(JSON.stringify([full]));
     expect(back[0].content).toEqual({ spread: 'universal', phyla: 8 });
     expect(back[0].context).toEqual({ measuredOver: '8 phyla', reach: 'direct' });
-    expect(back[0].source?.params).toEqual({ q: 'P0AEX9' });
+    expect(back[0].source?.path).toBe('/P0AEX9');
   });
 
   // One item written by an older build should cost the user that item, not the

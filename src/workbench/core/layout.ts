@@ -8,14 +8,20 @@ export type PanelId = string;
 export type GroupId = string;
 export type SplitId = string;
 
-export const PanelKindSchema = z.enum(['navigator', 'document']);
+// A route is a plugin's page at a path; a pane is its sidebar block.
+export const PanelKindSchema = z.enum(['route', 'pane']);
 export type PanelKind = z.infer<typeof PanelKindSchema>;
 
+// A panel's identity is its id, which is opaque and stable while the panel
+// lives; the path is what it is showing and changes as the user navigates
+// inside it. The host never parses a path — which paths are the same page
+// is the plugin's `normalize` to say, and the host asks at open time.
 export const PanelSchema = z.object({
   id: z.string().min(1),
   plugin: z.string().min(1),
   kind: PanelKindSchema,
-  params: z.record(z.string(), z.string()),
+  // Everything under /p/<plugin>, query string included. '' for a pane.
+  path: z.string(),
 });
 export type Panel = z.infer<typeof PanelSchema>;
 
@@ -78,32 +84,24 @@ export const LayoutSchema = z.object({
 });
 export type Layout = z.infer<typeof LayoutSchema>;
 
-// A panel is identified by (type, params). The id is the type plus the
-// params as a sorted query string, so two opens of the same resource meet
-// at the same id without a lookup table.
 export function panelType(plugin: PluginId, kind: PanelKind): string {
   return `${plugin}/${kind}`;
 }
 
-export function panelId(
-  plugin: PluginId,
-  kind: PanelKind,
-  params: Record<string, string> = {},
-): PanelId {
-  const type = panelType(plugin, kind);
-  const keys = Object.keys(params).sort();
-  if (keys.length === 0) return type;
-  const query = new URLSearchParams();
-  for (const key of keys) query.append(key, params[key]);
-  return `${type}?${query.toString()}`;
+// One pane per plugin, so its id is fixed: pinning and unpinning meet the
+// same panel without a lookup table.
+export function paneId(plugin: PluginId): PanelId {
+  return panelType(plugin, 'pane');
 }
 
-export function makePanel(
-  plugin: PluginId,
-  kind: PanelKind,
-  params: Record<string, string> = {},
-): Panel {
-  return { id: panelId(plugin, kind, params), plugin, kind, params: { ...params } };
+export function makePane(plugin: PluginId): Panel {
+  return { id: paneId(plugin), plugin, kind: 'pane', path: '' };
+}
+
+// A route panel's id is minted when it opens; `key` is unique per open and
+// the caller supplies it, so the core stays deterministic under test.
+export function makeRoute(plugin: PluginId, path: string, key: string): Panel {
+  return { id: `${panelType(plugin, 'route')}#${key}`, plugin, kind: 'route', path };
 }
 
 export const DEFAULT_SIDEBAR_WIDTH = 280;
@@ -123,7 +121,7 @@ export function defaultLayout({
 }: DefaultLayoutOptions = {}): Layout {
   const panels: Record<PanelId, Panel> = {};
   for (const plugin of pinned) {
-    const panel = makePanel(plugin, 'navigator');
+    const panel = makePane(plugin);
     panels[panel.id] = panel;
   }
   return {

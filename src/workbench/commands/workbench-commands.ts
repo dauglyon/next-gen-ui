@@ -126,7 +126,7 @@ export function workbenchCommands({
       ...base,
       name: 'fold',
       title: 'Fold or unfold the focused sidebar panel',
-      when: (ctx) => ctx.focusKind === 'navigator',
+      when: (ctx) => ctx.focusKind === 'pane',
       run: () => {
         const layout = store.get();
         const focus = focusedPanel(layout);

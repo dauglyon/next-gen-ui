@@ -6,7 +6,7 @@ import { datasets } from './data';
 // in front of it, so it answers by name: nothing is offered that is not
 // there to open.
 
-const offer = (ref: string, label: string): Offer => ({ label, action: { ref } });
+const offer = (ref: string, label: string): Offer => ({ label, path: `/${ref}` });
 
 // A workspace UPA reaching through the KBase 1.0 bridge. Offered even
 // when the object is not in the fixtures, because the bridge is what

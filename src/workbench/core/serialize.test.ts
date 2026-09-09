@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultLayout, makePanel } from './layout';
+import { defaultLayout, makeRoute } from './layout';
 import { reduce } from './reduce';
 import { deserialize, introduce, serialize } from './serialize';
 import type { Layout } from './layout';
@@ -10,7 +10,7 @@ describe('deserialize', () => {
   it('round-trips a layout', () => {
     const layout = reduce(defaultLayout({ pinned: ['jobs'] }), {
       type: 'open',
-      panel: makePanel('koros', 'document', { slug: 'x' }),
+      panel: makeRoute('koros', '/x', 'k'),
     });
     expect(deserialize(serialize(layout), fallback)).toEqual(layout);
   });
@@ -23,7 +23,7 @@ describe('deserialize', () => {
       'a tab without a panel',
       JSON.stringify({
         ...defaultLayout(),
-        main: { kind: 'group', id: 'root', tabs: ['ghost/document'], active: 'ghost/document' },
+        main: { kind: 'group', id: 'root', tabs: ['ghost/route#1'], active: 'ghost/route#1' },
       }),
     ],
   ])('falls back to the default on %s', (_label, text) => {

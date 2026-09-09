@@ -43,7 +43,7 @@ import { HostContext } from './host';
 //            that decides whether an assistant's answer is any good, and it is
 //            the one most often left empty.
 //
-//   source   Params that reopen your document on this thing. The pointer half:
+//   source   The path that reopens your route on this thing. The pointer half:
 //            it is what lets a user get back to it and lets you refresh it.
 //
 // Send both halves. A pointer alone makes every consumer re-fetch and strands
@@ -62,7 +62,7 @@ export interface CartAddition {
   // what lets a second plugin say something about an item without knowing
   // anything about the plugin that added it.
   terms?: string[];
-  source?: { params?: Record<string, string>; href?: string };
+  source?: { path?: string; href?: string };
   content?: unknown;
   context?: Record<string, unknown>;
 }

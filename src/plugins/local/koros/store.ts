@@ -11,7 +11,7 @@ export interface Attached {
   kind: string;
   name: string;
   subject?: string;
-  params?: Record<string, string>;
+  path?: string;
 }
 
 export interface Question {

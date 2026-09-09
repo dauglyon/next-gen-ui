@@ -6,7 +6,7 @@ const item = (plugin: string, id: string): RelatedItem => ({
   key: keyOf(plugin, id),
   plugin,
   context: 'view',
-  proposal: { id, label: id, params: { q: id } },
+  proposal: { id, label: id, path: `/${id}` },
 });
 
 describe('terms across the two contexts', () => {

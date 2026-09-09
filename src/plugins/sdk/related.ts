@@ -42,10 +42,9 @@ export interface Proposal {
   // What this is, in the answering plugin's words.
   label: string;
   detail?: string;
-  // The document to open, in the answering plugin's own parameters — the same
-  // shape a matcher's `Offer.action` carries. This is the whole proposal: a
-  // place to go.
-  params: Record<string, string>;
+  // The answering plugin's route to open — the same thing a matcher's
+  // `Offer.path` carries. This is the whole proposal: a place to go.
+  path: string;
   // Optional, for a plugin that can also hand the workbench something to
   // carry. Built from what the plugin already has; the host will not wait on
   // a fetch for it. Omit it and the row only opens the page.

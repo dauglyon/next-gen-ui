@@ -55,10 +55,10 @@ export interface PromptDestinationOption {
 // what submitting would create ("A new arc"). Only the assistant knows
 // this; the host shows it above the prompt bar. With `options` and
 // `select` the host offers switching the destination before sending;
-// with `documentParams` it offers opening the destination's document.
+// with `path` it offers opening the destination's page.
 export interface PromptContext {
   label: string;
-  documentParams?: Record<string, string>;
+  path?: string;
   options?: PromptDestinationOption[];
   select?: (key: string) => void;
 }
@@ -69,10 +69,9 @@ export interface Offer {
   // P0A7B8", not "UniProt accession". What was recognised is the
   // plugin's reasoning; what happens is the user's question.
   label: string;
-  // What the plugin is being asked to do. Opaque to the host, which only
-  // carries it: it becomes the document's params, and the plugin reads
-  // it back through usePanel(). One input may offer several actions.
-  action: Record<string, string>;
+  // The plugin's own route to open. Opaque to the host, which only
+  // carries it. One input may offer several paths.
+  path: string;
 }
 
 // Plugins volunteer: only the plugin knows what "mine" looks like, so the
@@ -84,6 +83,9 @@ export type Matcher = (text: string) => Offer[];
 export interface PluginModule {
   navigator?: ComponentType;
   document?: ComponentType;
+  // Two paths are the same page when this maps them to one string; the
+  // host opens and deduplicates on what it returns. Identity when absent.
+  normalize?: (path: string) => string;
   commands?: Record<string, CommandHandler>;
   prompt?: PromptHandler;
   // A hook, so counts can be live. Called by the host once the module has

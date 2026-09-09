@@ -8,8 +8,8 @@ export type {
   PanelSource,
   PluginInfo,
 } from './installed';
-export { matchRoute, buildPath, routeParams } from './routes';
-export { resolveDeepLink } from './resolve';
+export { openRoute, openPane } from './open';
+export type { OpenRouteOptions } from './open';
 export {
   fetchRegistry,
   loadInstalled,
@@ -17,7 +17,6 @@ export {
   remotePlugin,
   REGISTRY_BASE,
 } from './registry';
-export type { Resolution } from './resolve';
 export { createSettingsStore, SETTINGS_STORAGE_KEY } from './settings';
 export type { Settings, SettingsStore } from './settings';
 export { iconFor, ICONS } from './icons';

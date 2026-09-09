@@ -5,14 +5,14 @@ import type { IconProps } from '@phosphor-icons/react';
 import { Menu, PromptInput, cx } from '@kbase/design-system';
 import type { Manifest, PromptContext } from '../../plugins/sdk';
 import { qualifyCommand } from '../../plugins/sdk';
-import { makePanel } from '../core';
 import type { Suggestion } from '../commands';
 import { complete, parse, qualifiedName, resolve, usage } from '../commands';
 import { pluginHostFor } from '../host/createWorkbench';
+import { openPane, openRoute } from '../host/open';
 import { iconFor } from '../host/icons';
 import { PluginMark } from '../host/PluginMark';
 import { CartTray } from './CartTray';
-import { useDispatch, useLayout, useRun, useServices } from './context';
+import { useLayout, useRun, useServices } from './context';
 import { focusPanelElement } from './useFocusSync';
 import styles from './Workbench.module.css';
 
@@ -36,7 +36,7 @@ export function PromptBar() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const services = useServices();
-  const { registry, announcer, prompt, settings, source, dispatch, preview, cart } = services;
+  const { registry, announcer, prompt, settings, source, preview, cart } = services;
   const layout = useLayout();
   const run = useRun();
   const wrapper = useRef<HTMLDivElement>(null);
@@ -126,11 +126,7 @@ export function PromptBar() {
         label: offer.label,
         detail: title,
         icon: iconFor(source.manifest(plugin)?.icon, source.manifest(plugin)?.color),
-        run: () =>
-          void dispatch({
-            type: 'open',
-            panel: makePanel(plugin, 'document', offer.action),
-          }),
+        run: () => void openRoute(services, plugin, offer.path),
       }));
 
   // Row zero is what Enter will do. Nothing is guessed: the assistant
@@ -195,10 +191,7 @@ export function PromptBar() {
         label: `Show ${m.title}`,
         detail: pinned ? 'In the sidebar' : m.description,
         icon: iconFor(m.icon, m.color),
-        run: () =>
-          pinned
-            ? void dispatch({ type: 'open', panel: makePanel(m.id, 'navigator') })
-            : preview.set(m.id),
+        run: () => (pinned ? void openPane(services, m.id) : preview.set(m.id)),
       };
     });
 
@@ -449,9 +442,9 @@ function AssistantContext({
   usePromptContext: () => PromptContext | null;
 }) {
   const context = usePromptContext();
-  const dispatch = useDispatch();
+  const services = useServices();
   if (!context) return null;
-  const { label, documentParams, options, select } = context;
+  const { label, path, options, select } = context;
   const switchable = !!options?.length && !!select;
   return (
     <>
@@ -482,14 +475,12 @@ function AssistantContext({
       ) : (
         <span className={styles.promptDestination}>{label}</span>
       )}
-      {documentParams && (
+      {path !== undefined && (
         <button
           type="button"
           className={cx(styles.promptTarget, styles.promptJump)}
           aria-label={`Go to ${label}`}
-          onClick={() =>
-            dispatch({ type: 'open', panel: makePanel(assistant, 'document', documentParams) })
-          }
+          onClick={() => void openRoute(services, assistant, path)}
         >
           <ArrowUpRight size={13} aria-hidden="true" />
         </button>

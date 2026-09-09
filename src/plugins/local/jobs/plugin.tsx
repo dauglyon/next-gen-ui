@@ -14,6 +14,9 @@ const COLORS: Record<JobStatus, ChipColor> = {
   failed: 'red',
 };
 
+// The job named by a path: `/12`, with any query or fragment dropped.
+const idOf = (path: string) => path.split(/[?#]/)[0].slice(1);
+
 function useJobs() {
   return useSyncExternalStore(jobStore.subscribe, jobStore.version, jobStore.version);
 }
@@ -36,7 +39,7 @@ function JobsNavigator() {
         <li key={job.id}>
           <button
             type="button"
-            onClick={() => host.openDocument({ id: job.id })}
+            onClick={() => host.openRoute(`/${job.id}`)}
             style={{
               width: '100%',
               display: 'flex',
@@ -68,15 +71,16 @@ function JobsNavigator() {
 }
 
 function JobDocument() {
-  const { params } = usePanel();
+  const { path } = usePanel();
   useJobs();
   const host = useHost();
-  const job = jobStore.get(params.id);
-  usePanelTitle(job ? `Job ${job.id}: ${job.name}` : `Job ${params.id}`);
+  const id = idOf(path);
+  const job = jobStore.get(id);
+  usePanelTitle(job ? `Job ${job.id}: ${job.name}` : `Job ${id}`);
   if (!job) {
     return (
       <div style={{ padding: 'var(--s-5)' }}>
-        <p className="body">No job has the id {params.id}.</p>
+        <p className="body">No job has the id {id}.</p>
       </div>
     );
   }
@@ -114,6 +118,7 @@ function useStatus(): StatusItem[] {
 export default definePlugin({
   navigator: JobsNavigator,
   document: JobDocument,
+  normalize: idOf,
   useStatus,
   commands: {
     cancel: ({ id }) => {

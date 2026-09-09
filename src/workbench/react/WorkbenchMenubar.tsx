@@ -92,7 +92,7 @@ export function WorkbenchMenubar() {
                 {label}
               </Menu.Item>
             ))}
-            {focused?.kind === 'navigator' && group && (
+            {focused?.kind === 'pane' && group && (
               <>
                 <Menu.Separator />
                 <Menu.Item
@@ -111,7 +111,7 @@ export function WorkbenchMenubar() {
           <Menu.Popup>
             {source
               .plugins()
-              .filter((p) => source.panel(`${p.id}/navigator`))
+              .filter((p) => source.panel(`${p.id}/pane`))
               .map((p) => {
                 const pinned = layout.sidebar.pinned.includes(p.id);
                 return (

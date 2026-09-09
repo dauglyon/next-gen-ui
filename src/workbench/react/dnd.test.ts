@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { dropOperation } from './dnd';
 
-const doc = { panel: 'koros/document?slug=x', kind: 'document' as const };
-const nav = { panel: 'jobs/navigator', kind: 'navigator' as const };
+const doc = { panel: 'koros/route#x', kind: 'route' as const };
+const nav = { panel: 'jobs/pane', kind: 'pane' as const };
 
 describe('dropOperation', () => {
   it('drops on a tab insert before it', () => {
@@ -21,7 +21,7 @@ describe('dropOperation', () => {
     });
   });
 
-  it('only navigators may land in the sidebar', () => {
+  it('only panes may land in the sidebar', () => {
     expect(dropOperation(doc, { type: 'sidebar' })).toBeNull();
     expect(dropOperation(nav, { type: 'sidebar' })).toEqual({
       type: 'move',
@@ -30,7 +30,7 @@ describe('dropOperation', () => {
     });
   });
 
-  it('drops on a block insert at its pin slot, navigators only', () => {
+  it('drops on a block insert at its pin slot, panes only', () => {
     expect(dropOperation(doc, { type: 'pin', index: 1 })).toBeNull();
     expect(dropOperation(nav, { type: 'pin', index: 1 })).toEqual({
       type: 'move',

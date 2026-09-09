@@ -18,13 +18,10 @@ import { keyOf, split } from '../../core';
 export const SETTLE_MS = 250;
 
 export interface RelatedInput {
-  view: { plugin: string; subject: string; terms: string[]; params: Record<string, string> } | null;
+  view: { plugin: string; subject: string; terms: string[] } | null;
   cart: { count: number; terms: string[] };
   // Cart item ids, so something already carried is not proposed again.
   held: string[];
-  // `plugin params` for every document open in the main area, so a page
-  // already on screen is not proposed either.
-  open: string[];
 }
 
 export interface RelatedRunner {
@@ -96,7 +93,7 @@ export function createRelatedRunner(
       // own proposals.
       const seen = new Set<string>();
       return answered.flat().filter((item) => {
-        const target = `${item.plugin} ${JSON.stringify(item.proposal.params)}`;
+        const target = `${item.plugin} ${item.proposal.path}`;
         if (seen.has(target)) return false;
         seen.add(target);
         return true;
@@ -111,23 +108,14 @@ export function createRelatedRunner(
 
     for (const item of [...viewItems, ...cartItems]) answers.set(item.key, item);
 
-    // A proposal is a thing to go and get. Something already in the cart, or
-    // already open in a tab, is neither: the reader has it. Both are dropped
-    // outright rather than shown as a link with the `+` removed — a pane of
-    // rows for things you already have is a pane you learn to skip.
-    //
-    // The cart is compared on the id the item would be added under — the
-    // plugin's own, stamped the same way `accept` will stamp it. Tabs are
-    // compared on plugin and params, which is what a panel's identity is.
+    // A proposal is a thing to go and get. Something already in the cart is
+    // not: the reader has it. Dropped outright rather than shown as a link
+    // with the `+` removed — a pane of rows for things you already have is a
+    // pane you learn to skip. Compared on the id the item would be added
+    // under — the plugin's own, stamped the same way `accept` will stamp it.
     const held = new Set(input.held);
-    const open = new Set(input.open);
     const fresh = (items: RelatedItem[]) =>
-      items.filter(
-        (i) =>
-          !store.dismissed(i.key) &&
-          !open.has(`${i.plugin} ${JSON.stringify(i.proposal.params)}`) &&
-          !held.has(itemIdOf(i)),
-      );
+      items.filter((i) => !store.dismissed(i.key) && !held.has(itemIdOf(i)));
 
     const sections: RelatedSection[] = [];
     if (input.view) {

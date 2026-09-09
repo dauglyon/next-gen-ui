@@ -45,11 +45,11 @@ export const CartItemSchema = z.object({
   // workbench asks with them; it never interprets them.
   terms: z.array(z.string()).optional(),
 
-  // POINTER — how to get back to it. `params` opens the plugin's document; the
+  // POINTER — how to get back to it. `path` is the plugin's own route; the
   // href is for anything outside the workbench.
   source: z
     .object({
-      params: z.record(z.string(), z.string()).optional(),
+      path: z.string().optional(),
       href: z.string().optional(),
     })
     .optional(),

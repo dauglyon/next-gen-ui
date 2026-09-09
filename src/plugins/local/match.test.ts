@@ -13,21 +13,21 @@ describe('local matchers', () => {
     }
   });
 
-  it('offer an action the plugin can read back as params', () => {
+  it("offer a path under the plugin's own root", () => {
     for (const [name, match] of Object.entries(matchers)) {
       for (const offer of match('genome')) {
         expect(offer.label, name).toBeTruthy();
-        expect(Object.keys(offer.action).length, name).toBeGreaterThan(0);
+        expect(offer.path.startsWith('/'), name).toBe(true);
       }
     }
   });
 
   it('answers from an inventory where the plugin has one', () => {
-    expect(data('nifh')[0].action).toEqual({ ref: 'nifh-hits' });
-    expect(data('74501/3/1')[0].action).toEqual({ ref: '74501/3/1' });
+    expect(data('nifh')[0].path).toBe('/nifh-hits');
+    expect(data('74501/3/1')[0].path).toBe('/74501/3/1');
     // A UPA the fixtures do not hold still reaches the KBase 1.0 bridge.
-    expect(data('1/2/3')[0].action).toEqual({ ref: '1/2/3' });
-    expect(jobs('job 12')[0].action).toEqual({ id: '12' });
+    expect(data('1/2/3')[0].path).toBe('/1/2/3');
+    expect(jobs('job 12')[0].path).toBe('/12');
     // A number that names no job is not a job.
     expect(jobs('999')).toEqual([]);
   });

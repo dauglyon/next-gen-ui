@@ -2,6 +2,10 @@ import { Chip, Table, Tbody, Td, Th, Thead, Tr, Tree } from '@kbase/design-syste
 import { definePlugin, useHost, usePanel, usePanelTitle } from '@kbase/plugin-sdk';
 import { dataset, datasets } from './data';
 
+// The ref named by a path. A workspace ref has slashes of its own —
+// `/74501/3/1` — so the whole remainder is the ref, not its first segment.
+const refOf = (path: string) => decodeURIComponent(path.split(/[?#]/)[0].slice(1));
+
 function DataHomeNavigator() {
   usePanelTitle('Data home');
   const host = useHost();
@@ -43,20 +47,21 @@ function DataHomeNavigator() {
       items={items}
       defaultExpanded={['arcs', 'uploads', 'kbase-1', 'fixtures']}
       onSelect={(id) => {
-        if (id.startsWith('ref:')) host.openDocument({ ref: id.slice(4) });
+        if (id.startsWith('ref:')) host.openRoute(`/${id.slice(4)}`);
       }}
     />
   );
 }
 
 function DatasetDocument() {
-  const { params } = usePanel();
-  const d = dataset(params.ref);
-  usePanelTitle(d ? d.name : params.ref);
+  const { path } = usePanel();
+  const ref = refOf(path);
+  const d = dataset(ref);
+  usePanelTitle(d ? d.name : ref);
   if (!d) {
     return (
       <div style={{ padding: 'var(--s-5)' }}>
-        <p className="body">No dataset has the ref “{params.ref}”.</p>
+        <p className="body">No dataset has the ref “{ref}”.</p>
       </div>
     );
   }
@@ -99,4 +104,8 @@ function DatasetDocument() {
   );
 }
 
-export default definePlugin({ navigator: DataHomeNavigator, document: DatasetDocument });
+export default definePlugin({
+  navigator: DataHomeNavigator,
+  document: DatasetDocument,
+  normalize: refOf,
+});

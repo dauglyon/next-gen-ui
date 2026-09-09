@@ -32,7 +32,7 @@ beforeEach(() => {
 describe('a remote plugin’s matcher', () => {
   it('is offered once it loads, and the index reports a new version', async () => {
     const match: Matcher = (text) =>
-      text === 'P0AEX9' ? [{ label: `Dossier for ${text}`, action: { q: text } }] : [];
+      text === 'P0AEX9' ? [{ label: `Dossier for ${text}`, path: `/${text}` }] : [];
     const plugin: InstalledPlugin = {
       manifest: manifest('fj', './match'),
       load: never,
@@ -47,7 +47,7 @@ describe('a remote plugin’s matcher', () => {
     await settle();
     expect(index.version()).toBeGreaterThan(before);
     expect(index.offers('P0AEX9')).toEqual([
-      { plugin: 'fj', title: 'fj', offer: { label: 'Dossier for P0AEX9', action: { q: 'P0AEX9' } } },
+      { plugin: 'fj', title: 'fj', offer: { label: 'Dossier for P0AEX9', path: '/P0AEX9' } },
     ]);
   });
 
@@ -72,7 +72,7 @@ describe('a remote plugin’s matcher', () => {
       {
         manifest: manifest('fine'),
         load: never,
-        match: () => [{ label: 'still here', action: {} }],
+        match: () => [{ label: 'still here', path: '/' }],
       },
     ]);
 
@@ -85,9 +85,7 @@ describe('a remote plugin’s matcher', () => {
   // index only asks a plugin that offered a way to fetch.
   it('is not fetched for a plugin that already has one', async () => {
     const loadMatch = vi.fn();
-    createHostIndex([
-      { manifest: manifest('local'), load: never, match: () => [], loadMatch },
-    ]);
+    createHostIndex([{ manifest: manifest('local'), load: never, match: () => [], loadMatch }]);
     await settle();
     expect(loadMatch).not.toHaveBeenCalled();
   });
@@ -96,7 +94,7 @@ describe('a remote plugin’s matcher', () => {
 describe('remotePlugin', () => {
   it('loads the matcher module by itself, without the UI module', async () => {
     const { remotePlugin } = await import('./registry');
-    const match: Matcher = () => [{ label: 'hit', action: {} }];
+    const match: Matcher = () => [{ label: 'hit', path: '/' }];
     loadRemote.mockImplementation(async (name: string) => {
       if (name === 'fj/match') return { default: match };
       throw new Error(`unexpected load of ${name}`);

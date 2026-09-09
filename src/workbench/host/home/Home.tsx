@@ -3,9 +3,9 @@ import { Button, Chip, SearchBar } from '@kbase/design-system';
 import { Code, Gear } from '@phosphor-icons/react';
 import type { Manifest } from '../../../plugins/sdk';
 import { qualifyCommand, usePanelTitle } from '../../../plugins/sdk';
-import { makePanel } from '../../core';
-import { useDispatch, useLayout, useRun, useServices } from '../../react/context';
+import { useLayout, useRun, useServices } from '../../react/context';
 import { iconFor } from '../icons';
+import { openPane, openRoute } from '../open';
 import { isApp } from './apps';
 import styles from './Home.module.css';
 
@@ -15,9 +15,9 @@ import styles from './Home.module.css';
 // known in advance.
 export function HomeDocument() {
   usePanelTitle('Home');
-  const { source, preview, prompt: promptBar } = useServices();
+  const services = useServices();
+  const { source, preview, prompt: promptBar } = services;
   const layout = useLayout();
-  const dispatch = useDispatch();
   const run = useRun();
   const [query, setQuery] = useState('');
   useSyncExternalStore(source.subscribe, source.version, source.version);
@@ -39,20 +39,16 @@ export function HomeDocument() {
   // Settings is installed like anything else, but it is not listed here: it is
   // the host's own page rather than something a user chose to install, and a
   // reader looking for it is looking for a link, not a search result.
-  const openSettings = () =>
-    dispatch({ type: 'open', panel: makePanel('catalog', 'document', {}) });
+  const openSettings = () => void openRoute(services, 'catalog', '/');
   // Beside Settings for the same reason: the host's own pages, reached by a
   // link rather than found in a search over what is installed.
-  const openDocs = () => dispatch({ type: 'open', panel: makePanel('docs', 'document', {}) });
-  // Show where it lives, never pin: a pinned plugin's navigator is
-  // focused in its sidebar block, an unpinned one is previewed the way
-  // the sidebar's More menu previews it. Pinning is the catalog's job.
+  const openDocs = () => void openRoute(services, 'docs', '/');
+  // Show where it lives, never pin: a pinned plugin's pane is focused in
+  // its sidebar block, an unpinned one is previewed the way the sidebar's
+  // More menu previews it. Pinning is the catalog's job.
   const showPanel = (m: Manifest) => {
-    if (layout.sidebar.pinned.includes(m.id)) {
-      dispatch({ type: 'open', panel: makePanel(m.id, 'navigator') });
-    } else {
-      preview.set(m.id);
-    }
+    if (layout.sidebar.pinned.includes(m.id)) openPane(services, m.id);
+    else preview.set(m.id);
   };
 
   return (

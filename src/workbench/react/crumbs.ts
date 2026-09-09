@@ -16,9 +16,7 @@ const NONE: Crumb[] = [];
 
 const same = (a: Crumb[], b: Crumb[]) =>
   a.length === b.length &&
-  a.every(
-    (c, i) => c.label === b[i].label && JSON.stringify(c.action) === JSON.stringify(b[i].action),
-  );
+  a.every((c, i) => c.label === b[i].label && c.path === b[i].path && c.icon === b[i].icon);
 
 export function createCrumbStore(): CrumbStore {
   const trails = new Map<PanelId, Crumb[]>();

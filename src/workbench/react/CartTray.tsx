@@ -196,12 +196,9 @@ function Preview({ item, plugin }: { item: CartItem; plugin?: string }) {
         </section>
       )}
 
-      {item.source?.params && (
+      {item.source?.path && (
         <p className={styles.cartPreviewSource}>
-          Reopens with{' '}
-          {Object.entries(item.source.params).map(([k, v]) => (
-            <code key={k} className={styles.cartPreviewParam}>{`${k}=${v}`}</code>
-          ))}
+          Reopens at <code className={styles.cartPreviewParam}>{item.source.path}</code>
         </p>
       )}
       {item.source?.href && (

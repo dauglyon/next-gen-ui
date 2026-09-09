@@ -5,7 +5,7 @@ import type { RefObject } from 'react';
 import { CaretDown, DotsThree, PushPin, X } from '@phosphor-icons/react';
 import { Button, ContextMenu, Menu, NavIcon, Popover, Toolbar } from '@kbase/design-system';
 import type { Panel, PluginId } from '../core';
-import { groups, makePanel, sidebarPanels } from '../core';
+import { groups, makePane, sidebarPanels } from '../core';
 import type { PluginInfo } from '../host/installed';
 import { useDispatch, useLayout, useServices, useTitle } from './context';
 import { PanelHost } from './PanelHost';
@@ -26,7 +26,7 @@ export function Sidebar() {
   const { sidebar } = layout;
   const plugins = source.plugins();
   const infoOf = (id: PluginId) => plugins.find((p) => p.id === id);
-  const withNavigator = plugins.filter((p) => source.panel(`${p.id}/navigator`));
+  const withNavigator = plugins.filter((p) => source.panel(`${p.id}/pane`));
   const unpinned = withNavigator.filter((p) => !sidebar.pinned.includes(p.id));
   const blocks = sidebarPanels(layout);
   const dragging = useDragging();
@@ -35,7 +35,7 @@ export function Sidebar() {
   // an append, as before).
   const { dropRef, isOver } = useDropTarget(
     { type: 'pin', index: sidebar.pinned.length },
-    dragging?.kind !== 'navigator',
+    dragging?.kind !== 'pane',
   );
   const preview = useSyncExternalStore(
     previewHandle.subscribe,
@@ -158,13 +158,13 @@ function Block({ panel, info }: { panel: Panel; info: PluginInfo | undefined }) 
   const at = layout.sidebar.pinned.indexOf(panel.plugin);
   const { dragRef, dragHandlers, isDragging } = useDragPanel({
     panel: panel.id,
-    kind: 'navigator',
+    kind: 'pane',
   });
   // Dropping another navigator on this block inserts it at this pin slot.
   const dragging = useDragging();
   const { dropRef, isOver } = useDropTarget(
     { type: 'pin', index: at },
-    dragging?.kind !== 'navigator' || dragging?.panel === panel.id,
+    dragging?.kind !== 'pane' || dragging?.panel === panel.id,
   );
 
   return (
@@ -347,8 +347,8 @@ function PreviewBlock({
   const title = info?.title ?? plugin;
   const Icon = info?.icon ?? PushPin;
   const { dragRef, dragHandlers, isDragging } = useDragPanel({
-    panel: makePanel(plugin, 'navigator').id,
-    kind: 'navigator',
+    panel: makePane(plugin).id,
+    kind: 'pane',
     pins: plugin,
   });
   return (
@@ -388,7 +388,7 @@ function PreviewBlock({
         </Button>
       </div>
       <div className={styles.blockBody}>
-        <PanelHost panel={makePanel(plugin, 'navigator')} focused={false} />
+        <PanelHost panel={makePane(plugin)} focused={false} />
       </div>
     </section>
   );
@@ -443,7 +443,7 @@ function PreviewPopout({
             </Button>
           </div>
           <div className={styles.blockBody}>
-            <PanelHost panel={makePanel(plugin, 'navigator')} focused={false} />
+            <PanelHost panel={makePane(plugin)} focused={false} />
           </div>
         </div>
       </Popover.Popup>
@@ -462,7 +462,7 @@ function PopoutIcon({
   label: string;
   children: React.ReactNode;
 }) {
-  const panel = makePanel(plugin, 'navigator');
+  const panel = makePane(plugin);
   const width = useLayout().sidebar.width;
   // A content-fit navigator's flyout hugs its content too.
   const fit = useServices().source.manifest(plugin)?.navigator?.fit;

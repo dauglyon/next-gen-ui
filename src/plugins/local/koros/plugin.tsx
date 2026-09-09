@@ -4,6 +4,10 @@ import { definePlugin, useHost, usePanel, usePanelTitle } from '@kbase/plugin-sd
 import type { PromptContext, StatusItem } from '@kbase/plugin-sdk';
 import { koros } from './store';
 
+// The arc named by a path: `/nitro`, with any query or fragment dropped.
+// Slugs are lowercase, so case never splits one arc into two panels.
+const slugOf = (path: string) => path.split(/[?#]/)[0].slice(1).toLowerCase();
+
 function useKoros() {
   return useSyncExternalStore(koros.subscribe, koros.version, koros.version);
 }
@@ -30,18 +34,19 @@ function ProjectsNavigator() {
       selected={koros.current() ? `arc:${koros.current()}` : undefined}
       defaultExpanded={items.map((i) => i.id)}
       onSelect={(id) => {
-        if (id.startsWith('arc:')) host.openDocument({ slug: id.slice(4) });
+        if (id.startsWith('arc:')) host.openRoute(`/${id.slice(4)}`);
       }}
     />
   );
 }
 
 function ArcDocument() {
-  const { params, focused } = usePanel();
+  const { path, focused } = usePanel();
   useKoros();
-  const arc = koros.arc(params.slug);
+  const slugAsked = slugOf(path);
+  const arc = koros.arc(slugAsked);
   const slug = arc?.slug;
-  usePanelTitle(arc ? `Arc: ${arc.title}` : `Arc: ${params.slug}`);
+  usePanelTitle(arc ? `Arc: ${arc.title}` : `Arc: ${slugAsked}`);
   // An effect, not a render-time call: setCurrent notifies subscribers in
   // other components (the prompt bar's destination row), which React
   // forbids during render.
@@ -51,7 +56,7 @@ function ArcDocument() {
   if (!arc) {
     return (
       <div style={{ padding: 'var(--s-5)' }}>
-        <p className="body">No arc is called “{params.slug}”.</p>
+        <p className="body">No arc is called “{slugAsked}”.</p>
       </div>
     );
   }
@@ -72,7 +77,7 @@ function ArcDocument() {
             </p>
             {/* What was in the cart when this was asked, on the question it
                 was asked with. Labels rather than links: an item's pointer
-                names another plugin's document, and the SDK's `openDocument`
+                names another plugin's page, and the SDK's `openRoute`
                 opens only the calling plugin's own. Reopening the source needs
                 a cross-plugin open the host does not offer yet. */}
             {q.attached.length > 0 && (
@@ -117,7 +122,7 @@ function usePromptContext(): PromptContext | null {
   const arc = slug ? koros.arc(slug) : undefined;
   return {
     label: arc ? arc.title : 'A new arc',
-    documentParams: arc ? { slug: arc.slug } : undefined,
+    path: arc ? `/${arc.slug}` : undefined,
     options: koros
       .projects()
       .flatMap((p) => koros.arcsOf(p.id))
@@ -129,12 +134,13 @@ function usePromptContext(): PromptContext | null {
 export default definePlugin({
   navigator: ProjectsNavigator,
   document: ArcDocument,
+  normalize: (path) => slugOf(path),
   useStatus,
   usePromptContext,
   commands: {
     'new-question': (_args, { host }) => {
       const arc = koros.newArc();
-      host.openDocument({ slug: arc.slug });
+      host.openRoute(`/${arc.slug}`);
     },
   },
   // Free text lands in the current arc; with none, a new arc is started. The
@@ -152,9 +158,9 @@ export default definePlugin({
         kind: item.kind,
         name: item.name,
         subject: item.subject,
-        params: item.source?.params,
+        path: item.source?.path,
       })),
     );
-    host.openDocument({ slug });
+    host.openRoute(`/${slug}`);
   },
 });

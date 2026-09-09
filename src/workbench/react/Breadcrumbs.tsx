@@ -3,7 +3,6 @@ import type { CSSProperties } from 'react';
 import { CaretRight } from '@phosphor-icons/react';
 import { hueFor, iconFor } from '../host/icons';
 import type { PanelId } from '../core';
-import { makePanel } from '../core';
 import { useDispatch, useLayout, useServices } from './context';
 import styles from './Workbench.module.css';
 
@@ -57,16 +56,13 @@ export function Breadcrumbs({ panel }: { panel: PanelId }) {
         return (
           <span key={`${crumb.label}-${i}`} className={i === 0 ? styles.crumbFirst : styles.crumb}>
             {i > 0 && <CaretRight size={11} className={styles.crumbSep} aria-hidden="true" />}
-            {crumb.action && plugin && !last ? (
+            {crumb.path !== undefined && plugin && !last ? (
+              // A crumb is a level inside this panel, so pressing it moves
+              // this panel there rather than opening another.
               <button
                 type="button"
                 className={styles.crumbLink}
-                onClick={() =>
-                  dispatch({
-                    type: 'open',
-                    panel: makePanel(plugin, 'document', crumb.action ?? {}),
-                  })
-                }
+                onClick={() => dispatch({ type: 'setPath', panel, path: crumb.path! })}
               >
                 {body}
               </button>

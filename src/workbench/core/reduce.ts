@@ -1,7 +1,7 @@
 import type { GroupId, Layout, PanelId } from './layout';
-import { makePanel } from './layout';
+import { makePane, paneId } from './layout';
 import type { Operation, MainTarget } from './operations';
-import { navigatorId, placementOf } from './placement';
+import { placementOf } from './placement';
 import {
   activateTab,
   groupOf,
@@ -42,6 +42,8 @@ export function reduce(layout: Layout, op: Operation, ctx: ReduceContext = defau
       return close(layout, op.panel);
     case 'focus':
       return focus(layout, op.panel);
+    case 'setPath':
+      return setPath(layout, op.panel, op.path);
     case 'move':
       return move(layout, op, ctx);
     case 'resize':
@@ -109,8 +111,8 @@ function open(
   if (existing.zone !== 'none') return focus(layout, panel.id);
 
   const panels = { ...layout.panels, [panel.id]: panel };
-  // A navigator whose plugin is pinned opens into its sidebar block.
-  if (panel.kind === 'navigator' && !op.target && layout.sidebar.pinned.includes(panel.plugin)) {
+  // A pane whose plugin is pinned opens into its sidebar block.
+  if (panel.kind === 'pane' && !op.target && layout.sidebar.pinned.includes(panel.plugin)) {
     return focus({ ...layout, panels }, panel.id);
   }
   return {
@@ -125,13 +127,12 @@ function close(layout: Layout, id: PanelId): Layout {
   const panel = layout.panels[id];
   if (!panel) return layout;
   const placement = placementOf(layout, id);
-  // A sidebar navigator is folded or unpinned, never closed.
+  // A sidebar pane is folded or unpinned, never closed.
   if (placement.zone === 'sidebar') return layout;
 
   const main = normalize(removeTab(layout.main, id), layout.main.id);
   const panels = { ...layout.panels };
-  const keepsSidebarSeat =
-    panel.kind === 'navigator' && layout.sidebar.pinned.includes(panel.plugin);
+  const keepsSidebarSeat = panel.kind === 'pane' && layout.sidebar.pinned.includes(panel.plugin);
   if (!keepsSidebarSeat) delete panels[id];
 
   let focus = layout.focus;
@@ -162,6 +163,12 @@ function focus(layout: Layout, id: PanelId): Layout {
   return next;
 }
 
+function setPath(layout: Layout, id: PanelId, path: string): Layout {
+  const panel = layout.panels[id];
+  if (!panel || panel.kind !== 'route' || panel.path === path) return layout;
+  return { ...layout, panels: { ...layout.panels, [id]: { ...panel, path } } };
+}
+
 function move(
   layout: Layout,
   op: Extract<Operation, { type: 'move' }>,
@@ -170,7 +177,7 @@ function move(
   const panel = layout.panels[op.panel];
   if (!panel) return layout;
   if ('zone' in op.to) {
-    if (panel.kind !== 'navigator') return layout;
+    if (panel.kind !== 'pane') return layout;
     const removed = removeTab(layout.main, panel.id);
     // normalize rebuilds the tree, so skip it when nothing was removed —
     // a pure pin reorder must compare reference-equal below.
@@ -195,14 +202,14 @@ function pin(layout: Layout, plugin: string, index?: number): Layout {
   const pinned = layout.sidebar.pinned.filter((p) => p !== plugin);
   const at = index === undefined ? pinned.length : Math.max(0, Math.min(index, pinned.length));
   pinned.splice(at, 0, plugin);
-  const nav = makePanel(plugin, 'navigator');
-  const panels = layout.panels[nav.id] ? layout.panels : { ...layout.panels, [nav.id]: nav };
+  const pane = makePane(plugin);
+  const panels = layout.panels[pane.id] ? layout.panels : { ...layout.panels, [pane.id]: pane };
   return { ...layout, panels, sidebar: { ...layout.sidebar, pinned } };
 }
 
 function unpin(layout: Layout, plugin: string): Layout {
   if (!layout.sidebar.pinned.includes(plugin)) return layout;
-  const nav = navigatorId(plugin);
+  const nav = paneId(plugin);
   const panels = { ...layout.panels };
   if (!groupOf(layout.main, nav)) delete panels[nav];
   const sizes = { ...layout.sidebar.sizes };

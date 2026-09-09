@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { defaultLayout, makePanel } from './layout';
+import { defaultLayout, makeRoute } from './layout';
 import { createWorkbenchStore } from './store';
 
-const arc = makePanel('koros', 'document', { slug: 'nitro' });
-const job = makePanel('jobs', 'document', { id: '12' });
+const arc = makeRoute('koros', '/nitro', 'a');
+const job = makeRoute('jobs', '/12', 'b');
 
 describe('store in use mode', () => {
   it('snapshots structural operations and undoes them one at a time', () => {
@@ -37,7 +37,7 @@ describe('store in use mode', () => {
   it('hands the panel record to the title lookup on open and on close', () => {
     const store = createWorkbenchStore({
       initial: defaultLayout(),
-      title: (_id, panel) => panel?.params.slug ?? 'gone',
+      title: (_id, panel) => panel?.path.slice(1) ?? 'gone',
     });
     expect(store.dispatch({ type: 'open', panel: arc }).announcement).toBe('Opened nitro');
     expect(store.dispatch({ type: 'close', panel: arc.id }).announcement).toBe('Closed nitro');

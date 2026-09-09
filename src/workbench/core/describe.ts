@@ -29,6 +29,8 @@ export function describe(op: Operation, before: Layout, after: Layout, titleOf: 
       return `Closed ${title(op.panel)}`;
     case 'focus':
       return `${title(op.panel)} focused`;
+    case 'setPath':
+      return `${title(op.panel)} moved to ${op.path}`;
     case 'move': {
       const name = title(op.panel);
       if ('zone' in op.to) return `Moved ${name} to the sidebar`;

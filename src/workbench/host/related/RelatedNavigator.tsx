@@ -2,11 +2,12 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { X } from '@phosphor-icons/react';
 import { EmptyState, Loader, Tooltip } from '@kbase/design-system';
 import { CartButton } from '../../../plugins/sdk';
-import { groupOf, groups, makePanel } from '../../core';
+import { groupOf, groups } from '../../core';
 import { itemIdOf } from './runner';
 import type { RelatedItem, RelatedSection } from '../../core';
+import { openRoute } from '../open';
 import { PluginMark } from '../PluginMark';
-import { useDispatch, useLayout, useServices } from '../../react/context';
+import { useLayout, useServices } from '../../react/context';
 import styles from '../../react/Workbench.module.css';
 
 // What the rest of the workbench is about, given what is on screen and what is
@@ -26,7 +27,7 @@ import styles from '../../react/Workbench.module.css';
 // show a row, because a proposal carries no payload.
 
 export function RelatedNavigator() {
-  const { related, relatedRunner, cart, terms: termStore } = useServices();
+  const { related, relatedRunner, cart, terms: termStore, titles } = useServices();
   const layout = useLayout();
   useSyncExternalStore(related.subscribe, related.version, related.version);
   useSyncExternalStore(cart.subscribe, cart.version, cart.version);
@@ -44,7 +45,6 @@ export function RelatedNavigator() {
   const cartTerms = [...items].reverse().flatMap((i) => i.terms ?? []);
 
   const viewKey = viewTerms.join(',');
-  const openKey = openTargets(layout).join('|');
   // The cart's identity, not its size: swapping one item for another leaves
   // the count alone, and a count is what this used to watch.
   const cartKey = items.map((i) => `${i.id}#${(i.terms ?? []).join('+')}`).join('|');
@@ -54,18 +54,18 @@ export function RelatedNavigator() {
         front && viewKey
           ? {
               plugin: front.plugin,
-              subject: subjectOf(front),
+              // The heading says what the view section was computed from:
+              // the panel's own title, which is the thing it is open on.
+              subject: titles.get(front.id) ?? front.path,
               terms: viewTerms,
-              params: front.params ?? {},
             }
           : null,
       cart: { count: items.length, terms: cartTerms },
       held: items.map((i) => i.id),
-      open: openTargets(layout),
     });
     // Values, not the arrays holding them.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [front?.plugin, front?.id, viewKey, cartKey, openKey]);
+  }, [front?.plugin, front?.id, viewKey, cartKey]);
 
   useEffect(() => () => relatedRunner.stop(), [relatedRunner]);
 
@@ -136,11 +136,10 @@ function Section({ section }: { section: RelatedSection }) {
 }
 
 function Row({ item, title }: { item: RelatedItem; title: string }) {
-  const { related, relatedRunner, source } = useServices();
-  const dispatch = useDispatch();
+  const services = useServices();
+  const { related, relatedRunner, source } = services;
   const manifest = source.manifest(item.plugin);
-  const open = () =>
-    dispatch({ type: 'open', panel: makePanel(item.plugin, 'document', item.proposal.params) });
+  const open = () => void openRoute(services, item.plugin, item.proposal.path);
 
   return (
     <li className={styles.relatedRow}>
@@ -190,17 +189,6 @@ function Row({ item, title }: { item: RelatedItem; title: string }) {
   );
 }
 
-// Every document open in the main area, as `plugin params` — a panel's
-// identity, which is what a proposal has to be compared against. Not only the
-// front tab: a page open in the tab behind is still a page the reader has.
-function openTargets(layout: ReturnType<typeof useLayout>): string[] {
-  return groups(layout.main)
-    .flatMap((g) => g.tabs)
-    .map((id) => layout.panels[id])
-    .filter(Boolean)
-    .map((p) => `${p.plugin} ${JSON.stringify(p.params ?? {})}`);
-}
-
 // The panel at the front of the main area.
 //
 // Never `layout.focus` on its own: focus follows the pointer into the sidebar,
@@ -213,10 +201,4 @@ function frontPanel(layout: ReturnType<typeof useLayout>) {
   const id = group?.active ?? group?.tabs[0];
   const panel = id ? layout.panels[id] : undefined;
   return panel && id ? { ...panel, id } : null;
-}
-
-// What the heading says the view section was computed from: the panel's first
-// parameter, which for a document is the thing it is open on.
-function subjectOf(panel: { params?: Record<string, string>; plugin: string }) {
-  return Object.values(panel.params ?? {})[0] ?? panel.plugin;
 }
