@@ -15,6 +15,20 @@
   white-space: nowrap;
 }
 
+/* A row's words: the arc's title, then its project when that is a different
+   thing. One line that ellipsises; the tree's rows are a fixed height. */
+.row {
+  display: block;
+  min-inline-size: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowProject {
+  font-size: var(--fs-3);
+}
+
 .page {
   display: grid;
   gap: var(--s-5);
