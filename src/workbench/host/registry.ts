@@ -4,8 +4,9 @@ import { ManifestSchema } from '../../plugins/sdk';
 import type { InstalledPlugin, ModuleLoaders } from './installed';
 
 // The registry: GET <base>/plugins → Manifest[]. Same origin, so a remote
-// entry it names is covered by `script-src 'self'`; in the container nginx
-// proxies the path, in dev a Vite middleware serves the local manifests.
+// entry it names is covered by `script-src 'self'`. In dev a Vite middleware
+// answers it from the proxied services; the built image serves nothing here,
+// so a deployment either fronts the path or runs the bundled plugins alone.
 export const REGISTRY_BASE = '/plugin-registry';
 
 // Where a plugin's service is mounted. The manifest does not say where the
@@ -20,6 +21,11 @@ export async function fetchRegistry(
 ): Promise<Manifest[]> {
   const res = await fetchImpl(`${base}/plugins`);
   if (!res.ok) throw new Error(`plugin registry answered ${res.status}`);
+  // The shell's own fallback page answers any path with HTML; that is a
+  // deployment with no registry, not a broken one.
+  if (!res.headers.get('content-type')?.includes('json')) {
+    throw new Error(`nothing answers ${base}/plugins as a registry`);
+  }
   const raw: unknown = await res.json();
   if (!Array.isArray(raw)) throw new Error('plugin registry did not return a list');
   const manifests: Manifest[] = [];

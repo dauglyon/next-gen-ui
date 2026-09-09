@@ -44,11 +44,11 @@ export default defineConfig(({ mode }) => {
         ? []
         : [federation({ name: 'host', remotes: {}, shared: SHARED_SINGLETONS, dts: false })]),
       {
-        // Dev stand-in for the registry: the manifests of the proxied
+        // The registry, in development: the manifests of the proxied
         // services. Bundled plugins are not listed — the host has them
         // already and would ignore a registry entry with the same id. The
-        // container proxies this path to the registry service instead
-        // (nginx.conf).
+        // built image answers nothing here; a deployment fronts the path or
+        // does without.
         name: 'local-plugin-registry',
         apply: 'serve' as const,
         configureServer(server) {
@@ -153,9 +153,9 @@ export default defineConfig(({ mode }) => {
       // matters because ci.kbase.us inspects it for policy decisions
       // and rejects (403) requests with the dev-server origin.
       proxy: {
-        // A plugin served by its own backend. In the container nginx proxies
-        // this prefix; in dev the dev server does, so a remote entry stays
-        // same-origin either way and `script-src 'self'` keeps covering it.
+        // A plugin served by its own backend, proxied by the dev server so
+        // its remote entry is same-origin and `script-src 'self'` covers it.
+        // The built image does not proxy this prefix; a deployment fronts it.
         // VITE_DEV_SERVICE_PROXY is `<prefix>=<origin>`, comma-separated.
         ...serviceProxies(env.VITE_DEV_SERVICE_PROXY),
         ...(env.VITE_DEV_AUTH_PROXY

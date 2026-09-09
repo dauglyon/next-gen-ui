@@ -12,7 +12,13 @@ vi.mock('@module-federation/runtime', () => ({
 }));
 
 const ok = (body: unknown) =>
-  vi.fn(async () => new Response(JSON.stringify(body), { status: 200 })) as unknown as typeof fetch;
+  vi.fn(
+    async () =>
+      new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+  ) as unknown as typeof fetch;
 
 const remote: Manifest = {
   id: 'commons',
@@ -32,6 +38,15 @@ describe('fetchRegistry', () => {
     const failing = vi.fn(async () => new Response('', { status: 502 })) as unknown as typeof fetch;
     await expect(fetchRegistry('/plugin-registry', failing)).rejects.toThrow(/502/);
     await expect(fetchRegistry('/plugin-registry', ok({}))).rejects.toThrow(/list/);
+  });
+
+  // The built image answers every unknown path with the shell's own page.
+  it('treats an HTML answer as no registry at all', async () => {
+    const page = vi.fn(
+      async () =>
+        new Response('<!doctype html>', { status: 200, headers: { 'Content-Type': 'text/html' } }),
+    ) as unknown as typeof fetch;
+    await expect(fetchRegistry('/plugin-registry', page)).rejects.toThrow(/nothing answers/);
   });
 });
 

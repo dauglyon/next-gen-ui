@@ -542,11 +542,12 @@ function CartButton(props: { item: CartItem; tooltip?: string }): JSX.Element;  
             The plugin's service serves those two paths, and the registry answers{' '}
             <Code>GET /plugin-registry/plugins</Code> with an array of every manifest it knows. Both
             are same-origin from the workbench, which is what lets <Code>script-src 'self'</Code>{' '}
-            cover the remote entry: in a container nginx proxies <Code>/plugin-registry/</Code> to{' '}
-            <Code>REGISTRY_UPSTREAM</Code> and <Code>/services/&lt;id&gt;/</Code> to the service,
-            and with <Code>REGISTRY_UPSTREAM</Code> unset the shell runs with its bundled plugins
-            only. In development <Code>VITE_DEV_SERVICE_PROXY=&lt;prefix&gt;=&lt;origin&gt;</Code>{' '}
-            does both jobs: the dev server forwards the prefix and, on each registry fetch, adds{' '}
+            cover the remote entry. The workbench's own image serves neither: whatever fronts it in
+            a deployment answers <Code>/plugin-registry/</Code> and{' '}
+            <Code>/services/&lt;id&gt;/</Code>, and where nothing does the shell runs with its
+            bundled plugins only. In development{' '}
+            <Code>VITE_DEV_SERVICE_PROXY=&lt;prefix&gt;=&lt;origin&gt;</Code> does both jobs: the
+            dev server forwards the prefix and, on each registry fetch, adds{' '}
             <Code>&lt;prefix&gt;/manifest.json</Code> to the list, so a plugin is listed while its
             server answers.
           </p>

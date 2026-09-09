@@ -163,21 +163,22 @@ This is what the host expects of a registry. The registry service itself is not 
 
 ### Endpoint
 
-`GET /plugin-registry/plugins` → `200` with a JSON array of manifests. The path is same-origin:
-in the container nginx proxies `/plugin-registry/` to `REGISTRY_UPSTREAM` (and answers `[]` when
-none is configured); in dev a Vite middleware fetches `<prefix>/manifest.json` from each service
-named in `VITE_DEV_SERVICE_PROXY` on every request, so a plugin is listed while its server
-answers. Same origin is what lets `script-src 'self'` cover remote entries. The host fetches once
-at startup; a non-2xx, a non-array, or a network failure logs a warning and the bundled plugins
-run alone.
+`GET /plugin-registry/plugins` → `200` with a JSON array of manifests. The path is same-origin,
+which is what lets `script-src 'self'` cover remote entries. In dev a Vite middleware answers it
+by fetching `<prefix>/manifest.json` from each service named in `VITE_DEV_SERVICE_PROXY` on every
+request, so a plugin is listed while its server answers. The built image answers nothing at the
+path — its fallback page comes back as HTML — so a deployment either fronts `/plugin-registry/`
+and `/services/` with something that does, or runs the bundled plugins alone. The host fetches
+once at startup; a non-2xx, a non-JSON, a non-array, or a network failure logs a warning and the
+bundled plugins run alone.
 
 ### Where the code is
 
 The manifest does not say. A plugin's service is mounted at `/services/<id>/`: it serves the
 built `manifest.json` there and the bundle under `/services/<id>/plugin/`, and the host fetches
 `<id>/<module>` from `/services/<id>/plugin/remoteEntry.js` for each module the manifest lists.
-In dev the Vite proxy maps the prefix to the service's origin. The container's nginx does not yet
-proxy `/services/` to anything; a deployment has to add that.
+In dev the Vite proxy maps the prefix to the service's origin; the built image does not proxy
+it, any more than it proxies the registry.
 
 ### Manifest fields the host reads
 
@@ -220,7 +221,7 @@ activity. Those need isolation the contract does not yet provide (see Deferred).
 
 Signing / subresource integrity of remote entries; per-plugin settings schemas; peer version
 ranges beyond the shared-singleton list; per-plugin permissions; presets and org/portal layout
-overrides; layout migrations past `version: 2`; the container's `/services/` proxy.
+overrides; layout migrations past `version: 2`; anything in the image about where plugins live.
 
 ## Verification
 
