@@ -85,9 +85,9 @@ npm run dev -- --port 8770`}</File>
 
         <Part id="manifest" title="The manifest">
           <p className={styles.para}>
-            <Code>plugin.config.ts</Code> is read by the build and served as{' '}
-            <Code>manifest.json</Code>. The workbench reads it at startup, before loading any
-            module.
+            The config is the file <Code>vite.config.ts</Code> passes as <Code>config</Code>. The
+            build serves it as <Code>manifest.json</Code>, and the workbench reads it at startup,
+            before loading any module.
           </p>
           <File
             name="plugin.config.ts"
@@ -108,9 +108,9 @@ npm run dev -- --port 8770`}</File>
           <p className={styles.para}>
             <Code>launcher</Code> adds a card to Browse that runs the command. <Code>commands</Code>{' '}
             declares slash commands. The prompt bar completes each one and validates its arguments
-            from this declaration; <Code>commands.ts</Code> must export a handler with the same
-            name. <Code>shortcuts</Code> adds buttons to the sidebar; each runs the command with the
-            given arguments.
+            from this declaration; the <Code>commands</Code> module must export a handler with the
+            same name. <Code>shortcuts</Code> adds buttons to the sidebar; each runs the command
+            with the given arguments.
           </p>
           <p className={styles.para}>
             <Code>id</Code> appears in URLs and saved layouts and must not change. A command's full
@@ -122,7 +122,7 @@ npm run dev -- --port 8770`}</File>
 
         <Part id="pages" title="Pages">
           <p className={styles.para}>
-            <Code>route.tsx</Code> exports the page. The workbench opens it in a tab at{' '}
+            The <Code>route</Code> module exports the page. The workbench opens it in a tab at{' '}
             <Code>/p/&lt;id&gt;&lt;path&gt;</Code>; <Code>usePanel().path</Code> is the part after{' '}
             <Code>/p/&lt;id&gt;</Code>, including the query string.
           </p>
@@ -151,8 +151,8 @@ export default defineRoute({
 
         <Part id="pane" title="Sidebar pane">
           <p className={styles.para}>
-            <Code>pane.tsx</Code> exports the sidebar block. A plugin with a pane can be pinned from
-            Settings.
+            The <Code>pane</Code> module exports the sidebar block. A plugin with one can be pinned
+            from Settings.
           </p>
           <File
             name="src/pane.tsx"
@@ -168,7 +168,8 @@ export default defineRoute({
 
         <Part id="background" title="Background">
           <p className={styles.para}>
-            <Code>background.ts</Code> is loaded at startup. It exports up to three functions.
+            The <Code>background</Code> module is loaded at startup. It exports up to three
+            functions.
           </p>
           <File
             name="src/background.ts"
@@ -235,8 +236,8 @@ export default defineBackground({
 
         <Part id="assistant" title="Assistant">
           <p className={styles.para}>
-            <Code>prompt.ts</Code> exports the assistant handler. Settings lists every plugin with a
-            prompt module, and the user picks one.
+            The <Code>prompt</Code> module exports the assistant handler. Settings lists every
+            plugin with a prompt module, and the user picks one.
           </p>
           <File name="src/prompt.ts" language="typescript">{`export default definePrompt({
   handle: async ({ text }, { host, attachments }) => {
@@ -262,7 +263,8 @@ export default defineBackground({
 
         <Part id="commands" title="Commands and the host">
           <p className={styles.para}>
-            <Code>commands.ts</Code> exports one handler per command declared in the manifest.
+            The <Code>commands</Code> module exports one handler per command declared in the
+            manifest.
           </p>
           <File name="src/commands.ts" language="typescript">{`export default defineCommands({
   open: ({ id }, { host }) => host.openRoute(\`/\${id}\`),
@@ -286,8 +288,8 @@ export default defineBackground({
         <Part id="reference" title="Reference">
           <Entry
             id="r-config"
-            name="plugin.config.ts"
-            when="Read by the build and served as manifest.json. Read by the workbench at startup."
+            name="config"
+            when="The object vite.config.ts passes as config. Served as manifest.json; read by the workbench at startup."
           >
             <Sig>{`interface Manifest {
   id: string;                    // /^[a-z][a-z0-9-]{1,40}$/
@@ -328,7 +330,7 @@ function definePluginManifest(m: Manifest): Manifest;`}</Sig>
 
           <Entry id="r-vite" name="vite.config.ts" when="Read by the build.">
             <Sig>{`function pluginFederation(options: {
-  config: Manifest;              // plugin.config.ts's default export
+  config: Manifest;              // the manifest, without the two fields the build writes
   background?: string;           // entry point for each module
   route?: string;
   pane?: string;
@@ -346,7 +348,7 @@ function definePluginManifest(m: Manifest): Manifest;`}</Sig>
 
           <Entry
             id="r-background"
-            name="background.ts"
+            name="background"
             when="Loaded at startup. Each member has its own schedule."
           >
             <Sig>{`function defineBackground(b: {
@@ -405,7 +407,7 @@ function definePluginManifest(m: Manifest): Manifest;`}</Sig>
 
           <Entry
             id="r-route"
-            name="route.tsx"
+            name="route"
             when="Loaded when a tab of this plugin first opens. mount is called once per tab."
           >
             <Sig>{`type Mount = (el: HTMLElement, ctx: { panel: PanelHandle; host: PluginHost }) => Cleanup | void;
@@ -422,7 +424,7 @@ function fromReact(Component: ComponentType): { mount: Mount };`}</Sig>
 
           <Entry
             id="r-pane"
-            name="pane.tsx"
+            name="pane"
             when="Loaded when the pane is first shown. mount is called each time it is shown."
           >
             <Sig>{`function definePane(p: {
@@ -433,7 +435,7 @@ function fromReact(Component: ComponentType): { mount: Mount };`}</Sig>
 
           <Entry
             id="r-commands"
-            name="commands.ts"
+            name="commands"
             when="Loaded the first time one of this plugin's commands runs."
           >
             <Sig>{`interface CommandContext { host: PluginHost; caller: string }   // the calling plugin's id, or 'user'
@@ -451,7 +453,7 @@ function defineCommands(
 
           <Entry
             id="r-prompt"
-            name="prompt.ts"
+            name="prompt"
             when="Loaded when Settings names this plugin as the assistant. handle is called when the user sends text that is not a slash command."
           >
             <Sig>{`interface Destination {
@@ -588,13 +590,13 @@ const SECTIONS: { id: string; label: string; children?: { id: string; label: str
     id: 'reference',
     label: 'Reference',
     children: [
-      { id: 'r-config', label: 'plugin.config.ts' },
+      { id: 'r-config', label: 'config' },
       { id: 'r-vite', label: 'vite.config.ts' },
-      { id: 'r-background', label: 'background.ts' },
-      { id: 'r-route', label: 'route.tsx' },
-      { id: 'r-pane', label: 'pane.tsx' },
-      { id: 'r-commands', label: 'commands.ts' },
-      { id: 'r-prompt', label: 'prompt.ts' },
+      { id: 'r-background', label: 'background' },
+      { id: 'r-route', label: 'route' },
+      { id: 'r-pane', label: 'pane' },
+      { id: 'r-commands', label: 'commands' },
+      { id: 'r-prompt', label: 'prompt' },
       { id: 'r-handles', label: 'Handles' },
     ],
   },
