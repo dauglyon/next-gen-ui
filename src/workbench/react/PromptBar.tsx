@@ -363,43 +363,35 @@ export function PromptBar() {
   const open = suggestions.length > 0;
   return (
     <div ref={wrapper} className={styles.promptBar}>
-      {/* Always in the tree, shown and hidden in place: mounting and
-          unmounting it restructured compositing above the page, and on
-          iPhone Safari the page blanked for a frame each time. */}
-      <ul
-        id={listId}
-        role="listbox"
-        aria-label="Completions"
-        className={styles.completions}
-        data-open={open || undefined}
-        aria-hidden={!open}
-      >
-        {suggestions.map((s, i) => (
-          <li
-            // By what the row says, so a suggestion that survives a
-            // keystroke keeps its element; the position breaks a tie
-            // between rows that say the same thing.
-            key={`${s.label}\u0000${s.detail ?? ''}\u0000${suggestions.findIndex((o) => o.label === s.label && o.detail === s.detail) === i ? '' : i}`}
-            id={`${listId}-${i}`}
-            role="option"
-            aria-selected={i === highlight}
-            className={styles.completion}
-            data-highlighted={i === highlight || undefined}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              accept(s);
-            }}
-          >
-            <span className={styles.completionIcon} aria-hidden="true">
-              {s.icon ? <s.icon size={14} /> : null}
-            </span>
-            <span className={s.mono ? styles.completionLabel : styles.completionText}>
-              {s.label}
-            </span>
-            {s.detail && <span className="caption">{s.detail}</span>}
-          </li>
-        ))}
-      </ul>
+      {open && (
+        <ul id={listId} role="listbox" aria-label="Completions" className={styles.completions}>
+          {suggestions.map((s, i) => (
+            <li
+              // By what the row says, so a suggestion that survives a
+              // keystroke keeps its element; the position breaks a tie
+              // between rows that say the same thing.
+              key={`${s.label}\u0000${s.detail ?? ''}\u0000${suggestions.findIndex((o) => o.label === s.label && o.detail === s.detail) === i ? '' : i}`}
+              id={`${listId}-${i}`}
+              role="option"
+              aria-selected={i === highlight}
+              className={styles.completion}
+              data-highlighted={i === highlight || undefined}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                accept(s);
+              }}
+            >
+              <span className={styles.completionIcon} aria-hidden="true">
+                {s.icon ? <s.icon size={14} /> : null}
+              </span>
+              <span className={s.mono ? styles.completionLabel : styles.completionText}>
+                {s.label}
+              </span>
+              {s.detail && <span className="caption">{s.detail}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
       <PromptInput
         value={value}
         onValueChange={setValue}

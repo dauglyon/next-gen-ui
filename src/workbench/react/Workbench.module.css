@@ -828,30 +828,22 @@
   max-height: 40vh;
   overflow: auto;
   z-index: var(--z-anchored);
-  /* Kept mounted and on its own layer; opening is a fade in place. A list
-     that mounted with a transform animation restructured compositing over
-     the page, and iPhone Safari blanked the page for a frame on each open
-     and close. */
-  will-change: opacity;
-  visibility: hidden;
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    opacity var(--t-fast) ease-out,
-    visibility 0s linear var(--t-fast);
+  transform-origin: bottom center;
+  animation: completionsIn var(--t-fast) ease-out;
 }
 
-.completions[data-open] {
-  visibility: visible;
-  opacity: 1;
-  pointer-events: auto;
-  transition: opacity var(--t-fast) ease-out;
+/* It appears while the reader is looking at the field below it, so it moves
+   from there: a short rise and a small scale, over in one frame of thought. */
+@keyframes completionsIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.985);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .completions,
-  .completions[data-open] {
-    transition: none;
+  .completions {
+    animation: none;
   }
 }
 
