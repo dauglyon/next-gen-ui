@@ -20,9 +20,11 @@ export function DocsDocument() {
         <header className={styles.head} id="top">
           <h1 className="h2">Plugin developer documentation</h1>
           <p className={styles.lede}>
-            A plugin is a manifest and up to five modules, built with <Code>pluginFederation</Code>{' '}
-            and served by the plugin's own service. The workbench reads the manifest at startup and
-            loads each module the first time it is needed.
+            A plugin is a config object and up to five modules: <Code>background</Code>,{' '}
+            <Code>route</Code>, <Code>pane</Code>, <Code>commands</Code> and <Code>prompt</Code>.{' '}
+            <Code>pluginFederation</Code> in the plugin's Vite config exposes the modules and writes
+            the config to <Code>manifest.json</Code>. The workbench reads the manifest at startup
+            and loads each module the first time it is needed.
           </p>
         </header>
 
@@ -78,8 +80,12 @@ cd hello && npm i @kbase/plugin-sdk
 npm run dev -- --port 8770`}</File>
           <p className={styles.para}>
             Add <Code>VITE_DEV_SERVICE_PROXY=/services/hello=http://127.0.0.1:8770</Code> to the
-            workbench's <Code>.env.local</Code> and restart it. Hello now appears on Browse, and
-            typing <Code>/hello Alice</Code> opens a tab that says "Hello, Alice."
+            workbench's <Code>.env.local</Code> and restart it. The workbench proxies{' '}
+            <Code>/services/hello</Code> to the dev server and reads{' '}
+            <Code>/services/hello/manifest.json</Code> at startup. <Code>launcher</Code> puts Hello
+            on Browse. <Code>/hello Alice</Code> runs the <Code>hello</Code> handler, which opens
+            the <Code>route</Code> module at <Code>/Alice</Code>: <Code>usePanel().path</Code> is{' '}
+            <Code>/Alice</Code>, and <Code>usePanelTitle</Code> names the tab Alice.
           </p>
         </Part>
 
