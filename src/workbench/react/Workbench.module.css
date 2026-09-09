@@ -1339,6 +1339,22 @@
   background: var(--c-raised);
 }
 
+/* An answer to the previous question, kept until this plugin answers the
+   current one: readable, but visibly not yet confirmed. */
+.relatedStale {
+  opacity: 0.55;
+}
+
+/* A plugin still answering, holding its place in the list. */
+.relatedPending {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-1) var(--s-4);
+  font-size: var(--fs-2);
+  color: var(--c-ink3);
+}
+
 /* The row is a link: pressing it opens the page the plugin named. */
 .relatedOpen {
   flex: 1;

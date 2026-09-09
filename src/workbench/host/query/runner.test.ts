@@ -87,14 +87,13 @@ describe('the query runner', () => {
     expect(store.get('typing')).toMatchObject({ pool: [], answers: [], loading: false });
   });
 
-  it('shows a fast answer while a slow plugin is still working, and drops the slow one past the budget', async () => {
+  it('shows a fast answer while a slow plugin is still working, and lands the slow one after the budget', async () => {
     let release: (() => void) | undefined;
     const slow: Background = {
       recommend: {
-        commands: ({ signal }) =>
+        commands: () =>
           new Promise<CommandCall[]>((resolve) => {
             release = () => resolve([{ label: 'late', command: 'x' }]);
-            signal.addEventListener('abort', () => resolve([]));
           }),
       },
     };
@@ -103,12 +102,66 @@ describe('the query runner', () => {
     runner.set('typing', { text: 'P0AEX9' });
     await vi.advanceTimersByTimeAsync(SETTLE_MS);
     expect(store.get('typing').answers.map((a) => a.plugin)).toEqual(['fj']);
+    expect(store.get('typing').pending).toEqual(['slow']);
     expect(store.get('typing').loading).toBe(true);
     await vi.advanceTimersByTimeAsync(BUDGET_MS);
+    // The pane stops saying it is asking; the question is still open.
     expect(store.get('typing').loading).toBe(false);
+    expect(store.get('typing').pending).toEqual(['slow']);
     release?.();
     await vi.advanceTimersByTimeAsync(0);
-    expect(store.get('typing').answers.map((a) => a.plugin)).toEqual(['fj']);
+    // Registry order, not arrival order.
+    expect(store.get('typing').answers.map((a) => a.plugin)).toEqual(['slow', 'fj']);
+    expect(store.get('typing').pending).toEqual([]);
+  });
+
+  it('keeps the previous answers, dimmed, until each plugin answers the new question', async () => {
+    let release: (() => void) | undefined;
+    let calls = 0;
+    const p: Background = {
+      recommend: {
+        commands: ({ text }) =>
+          new Promise<CommandCall[]>((resolve) => {
+            calls += 1;
+            if (calls === 1) resolve([{ label: `for ${text}`, command: 'x' }]);
+            else release = () => resolve([{ label: `for ${text}`, command: 'x' }]);
+          }),
+      },
+    };
+    const store = createQueryStore();
+    const runner = createQueryRunner(index({ p }), store);
+    runner.set('typing', { text: 'a' });
+    await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    expect(store.get('typing').answers[0].commands[0].label).toBe('for a');
+    runner.set('typing', { text: 'ab' });
+    // Before and after the settle the old answer is still there, marked stale.
+    expect(store.get('typing').answers[0]).toMatchObject({ stale: true });
+    await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    expect(store.get('typing').answers[0]).toMatchObject({ stale: true });
+    expect(store.get('typing').answers[0].commands[0].label).toBe('for a');
+    release?.();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(store.get('typing').answers[0].stale).toBeUndefined();
+    expect(store.get('typing').answers[0].commands[0].label).toBe('for ab');
+  });
+
+  it('a pool that only grew is asked about the new terms, and the answers merge', async () => {
+    const commands = vi.fn<(q: Query) => CommandCall[]>(({ terms = [] }) =>
+      terms.map((t) => ({ label: `open ${t}`, command: 'x', args: { q: t } })),
+    );
+    const store = createQueryStore();
+    const runner = createQueryRunner(index({ p: { recommend: { commands } } }), store);
+    runner.set('page', { terms: ['uniprot:P0AEX9'], label: 'P0AEX9' });
+    await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    runner.set('page', { terms: ['uniprot:P0AEX9', 'taxon:83333'], label: 'P0AEX9' });
+    expect(store.get('page').answers[0].stale).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    expect(commands.mock.calls[1][0].terms).toEqual(['taxon:83333']);
+    expect(store.get('page').answers[0].commands.map((c) => c.label)).toEqual([
+      'open uniprot:P0AEX9',
+      'open taxon:83333',
+    ]);
+    expect(store.get('page').pool).toEqual(['uniprot:P0AEX9', 'taxon:83333']);
   });
 
   it('a terms() or recommend() that throws costs that plugin its answer, not the round', async () => {

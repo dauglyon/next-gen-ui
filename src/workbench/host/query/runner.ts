@@ -1,4 +1,4 @@
-import type { Query } from '../../../plugins/sdk';
+import type { CartItem, CommandCall, Query } from '../../../plugins/sdk';
 import type { Answer, QuerySource, QueryStore } from '../../core';
 import type { HostIndex } from '../installed';
 
@@ -10,17 +10,22 @@ import type { HostIndex } from '../installed';
 // every `recommend` with that source's pool. A source set again before the
 // settle restarts it; an answer that arrives for a question no longer being
 // asked is dropped.
+//
+// What the reader sees follows the omnibox rule rather than the clear-and-
+// refill one: the previous answers stay on screen, marked stale, until each
+// plugin's new answer replaces its own section; sections keep the plugin
+// order of the registry, so an arrival never moves another plugin's rows;
+// and the budget ends the waiting, not the showing — a late answer still
+// lands in its section if the question has not moved on.
 
 // Long enough that adding three items to a cart is one round of questions
 // rather than three, short enough that the pane does not feel detached from
 // what the user just did.
 export const SETTLE_MS = 250;
 
-// How long a `recommend` has to answer. Past it the signal aborts and the
-// answer, if it ever comes, is dropped: a suggestion that arrives after the
-// reader has moved on is noise, and one slow plugin must not hold the pane
-// for the rest. Each plugin's answer is shown as it lands, so the budget is
-// the most a reader waits for the last of them, not for the first.
+// How long the pane says it is still asking. Past it `loading` clears and the
+// stale sections of plugins that have not answered stay dimmed until they do;
+// nothing is aborted by time, only by the question changing.
 export const BUDGET_MS = 2000;
 
 export interface QueryInput {
@@ -38,9 +43,33 @@ export interface QueryRunner {
   stop: () => void;
 }
 
+const sameCall = (a: CommandCall, b: CommandCall) =>
+  a.command === b.command &&
+  a.label === b.label &&
+  JSON.stringify(a.args ?? {}) === JSON.stringify(b.args ?? {});
+
+// The union of two answers from one plugin, for a pool that grew: rows the
+// plugin gave for the earlier terms stay, rows for the new terms join them.
+function merged(prev: Answer | undefined, next: Answer): Answer {
+  if (!prev) return next;
+  const commands = [
+    ...prev.commands,
+    ...next.commands.filter((c) => !prev.commands.some((p) => sameCall(p, c))),
+  ];
+  const seen = new Set(prev.cartItems.map((i) => i.id));
+  const cartItems: CartItem[] = [
+    ...prev.cartItems,
+    ...next.cartItems.filter((i) => !seen.has(i.id)),
+  ];
+  return { plugin: next.plugin, commands, cartItems };
+}
+
 export function createQueryRunner(index: HostIndex, store: QueryStore): QueryRunner {
   const timers = new Map<QuerySource, number>();
   const inflight = new Map<QuerySource, AbortController>();
+  // The full pool each source was last asked about, to tell a pool that grew
+  // from one that changed.
+  const asked = new Map<QuerySource, { owner?: string; text?: string; pool: string[] }>();
 
   // Every plugin's terms for the text, then one pass in which each plugin
   // may expand a term it recognises into others. A `terms` that throws is
@@ -64,33 +93,52 @@ export function createQueryRunner(index: HostIndex, store: QueryStore): QueryRun
     return [...found];
   };
 
-  const ask = async (source: QuerySource, input: QueryInput, terms: string[]) => {
+  // `terms` is what the plugins are asked about this round; `pool` is what the
+  // heading says. They differ when the pool only grew: the question is the
+  // new terms, and its answers join what the plugins already said.
+  const ask = async (
+    source: QuerySource,
+    input: QueryInput,
+    terms: string[],
+    fullPool: string[],
+    grow: boolean,
+  ) => {
     inflight.get(source)?.abort();
     const controller = new AbortController();
     inflight.set(source, controller);
     const query: Query = { text: input.text, terms, signal: controller.signal };
     const label = input.label ?? input.text ?? '';
-    const asked = index
+    const plugins = index
       .backgrounds()
       .filter(({ plugin, background }) => background.recommend && plugin !== input.owner);
+    const order = new Map(plugins.map(({ plugin }, i) => [plugin, i]));
 
-    // Answers go into the store one plugin at a time, in arrival order; the
-    // round is over when every plugin has answered or the budget has run out.
-    const answers: Answer[] = [];
-    let pending = asked.length;
-    const publish = (loading: boolean) => {
+    // Previous answers stay, stale, until each plugin's new one replaces
+    // them; an answer from a plugin no longer asked goes now.
+    const answers = new Map<string, Answer>();
+    for (const a of store.get(source).answers) {
+      if (order.has(a.plugin)) answers.set(a.plugin, grow ? a : { ...a, stale: true });
+    }
+    const pending = new Set(plugins.map(({ plugin }) => plugin));
+    let settled = false;
+    const publish = () => {
       if (controller.signal.aborted) return;
-      store.set(source, { label, pool: terms, answers: [...answers], loading });
+      store.set(source, {
+        label,
+        pool: fullPool,
+        answers: [...answers.values()].sort((a, b) => order.get(a.plugin)! - order.get(b.plugin)!),
+        pending: [...pending],
+        loading: !settled && pending.size > 0,
+      });
     };
+    publish();
     const budget = window.setTimeout(() => {
-      if (pending > 0) {
-        publish(false);
-        controller.abort();
-      }
+      settled = true;
+      publish();
     }, BUDGET_MS);
 
     await Promise.all(
-      asked.map(async ({ plugin, background }) => {
+      plugins.map(async ({ plugin, background }) => {
         const recommend = background.recommend!;
         const call = async <T>(fn: ((q: Query) => T[] | Promise<T[]>) | undefined) => {
           if (!fn) return [] as T[];
@@ -108,13 +156,17 @@ export function createQueryRunner(index: HostIndex, store: QueryStore): QueryRun
           call(recommend.cartItems),
         ]);
         if (controller.signal.aborted) return;
-        pending -= 1;
-        if (commands.length || cartItems.length) answers.push({ plugin, commands, cartItems });
-        publish(pending > 0);
+        pending.delete(plugin);
+        const fresh: Answer = { plugin, commands, cartItems };
+        const answer = grow ? merged(answers.get(plugin), fresh) : fresh;
+        if (answer.commands.length || answer.cartItems.length) answers.set(plugin, answer);
+        else answers.delete(plugin);
+        publish();
       }),
     );
     window.clearTimeout(budget);
-    if (asked.length === 0) publish(false);
+    settled = true;
+    publish();
   };
 
   return {
@@ -124,13 +176,34 @@ export function createQueryRunner(index: HostIndex, store: QueryStore): QueryRun
       const label = input.label ?? input.text ?? '';
       if (terms.length === 0 && !input.text) {
         inflight.get(source)?.abort();
-        store.set(source, { label, pool: [], answers: [], loading: false });
+        asked.delete(source);
+        store.set(source, { label, pool: [], answers: [], pending: [], loading: false });
         return;
       }
-      store.set(source, { ...store.get(source), label, pool: terms, loading: true });
+      // A pool that only grew — a page whose terms arrive as it loads, a cart
+      // with one more item — is asked about the new terms alone, and the
+      // answers join the sections already showing rather than replacing them.
+      const before = asked.get(source);
+      const grow =
+        !!before &&
+        before.owner === input.owner &&
+        before.text === input.text &&
+        before.pool.length > 0 &&
+        before.pool.every((t) => terms.includes(t)) &&
+        terms.length > before.pool.length;
+      const question = grow ? terms.filter((t) => !before!.pool.includes(t)) : terms;
+      asked.set(source, { owner: input.owner, text: input.text, pool: terms });
+      const prev = store.get(source);
+      store.set(source, {
+        ...prev,
+        label,
+        pool: terms,
+        answers: grow ? prev.answers : prev.answers.map((a) => ({ ...a, stale: true })),
+        loading: true,
+      });
       timers.set(
         source,
-        window.setTimeout(() => void ask(source, input, terms), SETTLE_MS),
+        window.setTimeout(() => void ask(source, input, question, terms, grow), SETTLE_MS),
       );
     },
     stop() {

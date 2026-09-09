@@ -119,8 +119,10 @@ to `path`.
 
 What the bar suggests comes from the **background** modules, fetched from every plugin at
 startup. Each keystroke goes to every `terms(q)`; the strings that come back are pooled, expanded
-once, and after a 250 ms settle handed to every `recommend`, whose answers are shown as each
-arrives and dropped after a 2 s budget. The `commands` it returns are the
+once, and after a 250 ms settle handed to every `recommend`. Each plugin's answer replaces its
+own section as it arrives, the previous one staying dimmed until then; after 2 s the pane stops
+saying it is asking, and a later answer still lands. A pool that only grew is asked about the
+new terms alone and the answers merge. The `commands` it returns are the
 rows under the field — each a `CommandCall` the plugin filled in — and the `cartItems` are rows
 in the Related pane. Three sources are asked on their own clocks (`host/query/runner.ts`): the
 typed text, the front tab's terms (never sent to the plugin that owns the tab), and the cart's.

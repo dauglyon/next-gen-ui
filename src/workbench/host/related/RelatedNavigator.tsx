@@ -48,10 +48,14 @@ export function RelatedNavigator() {
             key: rowKey(source, answer.plugin, item.id),
             plugin: answer.plugin,
             item,
+            stale: answer.stale === true,
           })),
       ),
+      // Plugins still answering, with nothing showing for them yet: a row
+      // each, so the space exists before the answer does.
+      pending: state.pending.filter((plugin) => !state.answers.some((a) => a.plugin === plugin)),
     }))
-    .filter((s) => s.rows.length > 0);
+    .filter((s) => s.rows.length > 0 || s.pending.length > 0);
   const loading = QUERY_SOURCES.some((source) => query.get(source).loading);
 
   // The sidebar draws this block's header whether or not there is anything in
@@ -76,8 +80,8 @@ export function RelatedNavigator() {
 
   return (
     <div className={styles.related}>
-      {sections.map(({ source, state, rows }) => (
-        <Section key={source} source={source} state={state} rows={rows} />
+      {sections.map(({ source, state, rows, pending }) => (
+        <Section key={source} source={source} state={state} rows={rows} pending={pending} />
       ))}
     </div>
   );
@@ -87,28 +91,34 @@ interface Row {
   key: string;
   plugin: string;
   item: CartItem;
+  stale: boolean;
 }
 
 function Section({
   source,
   state,
   rows,
+  pending,
 }: {
   source: QuerySource;
   state: SourceState;
   rows: Row[];
+  pending: string[];
 }) {
   const { source: index } = useServices();
+  const title = (plugin: string) => index.manifest(plugin)?.title ?? plugin;
   return (
     <div className={styles.relatedSection}>
       <p className={styles.relatedFrom}>{HEADINGS[source](state.label)}</p>
       <ul className={styles.relatedList}>
         {rows.map((row) => (
-          <RelatedRow
-            key={row.key}
-            row={row}
-            title={index.manifest(row.plugin)?.title ?? row.plugin}
-          />
+          <RelatedRow key={row.key} row={row} title={title(row.plugin)} />
+        ))}
+        {pending.map((plugin) => (
+          <li key={`pending:${plugin}`} className={styles.relatedPending}>
+            <Loader size={14} label={`Asking ${title(plugin)}`} />
+            <span>{`Asking ${title(plugin)}…`}</span>
+          </li>
         ))}
       </ul>
     </div>
@@ -137,7 +147,7 @@ function RelatedRow({ row, title }: { row: Row; title: string }) {
   );
 
   return (
-    <li className={styles.relatedRow}>
+    <li className={row.stale ? `${styles.relatedRow} ${styles.relatedStale}` : styles.relatedRow}>
       <Tooltip.Root>
         <Tooltip.Trigger
           render={

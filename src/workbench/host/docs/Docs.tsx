@@ -432,7 +432,7 @@ function definePluginManifest(m: Manifest): Manifest;`}</Sig>
             <Export
               id="r-recommend"
               name="recommend"
-              when="Called 250 ms after the text, the open page's terms, or the cart last changed, with the terms for that source. Each plugin's answer is shown as it arrives. The signal aborts when the source changes again, or 2 s after the call; an answer after that is dropped."
+              when="Called 250 ms after the text, the open page's terms, or the cart last changed, with the terms for that source. Each plugin's answer replaces its own section as it arrives; the previous answer stays, dimmed, until then. The signal aborts when the source changes again. After 2 s the pane stops saying it is asking, but a later answer still lands. A pool that only grew is asked about the new terms, and the answers join the sections already shown."
             >
               <Sig>{`interface CartItem {
   id: string;                    // unique across plugins; prefix with the plugin id

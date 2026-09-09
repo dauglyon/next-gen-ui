@@ -15,18 +15,30 @@ export interface Answer {
   plugin: string;
   commands: CommandCall[];
   cartItems: CartItem[];
+  // Given for an earlier question; shown dimmed until this plugin answers the
+  // current one.
+  stale?: boolean;
 }
 
 export interface SourceState {
   // What the heading says the answers were computed from.
   label: string;
   pool: string[];
+  // In the registry's plugin order, whoever answered first.
   answers: Answer[];
-  // A request is out. The pane keeps what it has while this is true.
+  // Plugins asked the current question that have not answered yet.
+  pending: string[];
+  // Still within the budget with answers outstanding.
   loading: boolean;
 }
 
-export const EMPTY_SOURCE: SourceState = { label: '', pool: [], answers: [], loading: false };
+export const EMPTY_SOURCE: SourceState = {
+  label: '',
+  pool: [],
+  answers: [],
+  pending: [],
+  loading: false,
+};
 
 // A Related row's identity, for dismissal: the same item proposed for the
 // same source again stays gone.
