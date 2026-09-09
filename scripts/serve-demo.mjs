@@ -1,9 +1,10 @@
 // Serve the built app the way the container does, for a demo over a funnel.
 //
 // `vite preview` is not enough: the service proxies and the plugin registry
-// are dev-server middleware (`apply: 'serve'` in vite.config), and in
-// production nginx does both — so a preview of `dist` has no `/services/*` and
-// no `/plugin-registry/plugins`, and every federated plugin fails to load.
+// are dev-server middleware (`apply: 'serve'` in vite.config), and the built
+// image serves neither — a deployment fronts `/services/*` and
+// `/plugin-registry/plugins` with something else. This script is that
+// something for a demo: without it every federated plugin fails to load.
 //
 // The dev server is also the wrong thing to put in front of a phone. It ships
 // the module graph unbundled: a page costs ~430 requests and holds every module
