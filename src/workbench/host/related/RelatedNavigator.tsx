@@ -37,6 +37,12 @@ const FROM: Record<RelatedSource, (label: string) => string> = {
   cart: (label) => `the cart (${label})`,
 };
 
+// A source as the empty line names it.
+const ASKED: Record<RelatedSource, string> = {
+  page: 'the open page',
+  cart: 'the cart',
+};
+
 // The group heading: what the rows under it were answered for.
 const HEADING: Record<RelatedSource, (label: string) => string> = {
   page: (label) => label || 'Open page',
@@ -106,14 +112,16 @@ export function RelatedNavigator() {
   }, [empty, run]);
   const settledEmpty = empty && settledRun === run;
 
-  // The pane's empty line, as the other panes write theirs; it holds its
-  // line while the quiet period runs, so the words arrive without a shift.
+  // The pane's empty line states why it is empty: nothing was asked, or
+  // the plugins were asked and offered nothing. It holds its line while the
+  // quiet period runs, so the words arrive without a shift.
   if (empty) {
-    return (
-      <p className={`caption ${styles.relatedEmpty}`}>
-        {settledEmpty && 'Nothing related. Open a page or add to the cart.'}
-      </p>
-    );
+    const asked = SOURCES.filter((source) => query.get(source).pool.length > 0);
+    const line =
+      asked.length === 0
+        ? 'No page is open and the cart is empty.'
+        : `No plugin offers anything for ${asked.map((s) => ASKED[s]).join(' or ')}.`;
+    return <p className={`caption ${styles.relatedEmpty}`}>{settledEmpty && line}</p>;
   }
 
   return (
