@@ -28,23 +28,22 @@ import { HostContext } from './host';
 //            other plugins what relates to this item — omit them and the item
 //            is still a cart item, just an isolated one.
 //
-//   content  What was added, as JSON. Send the data, not a handle to it: an
-//            item outlives the panel it came from, and a consumer should never
-//            have to call back into your plugin to find out what it holds.
+//   context  What an assistant reads about the item and could not infer —
+//            units, the population a number was measured over, how the
+//            evidence was reached, the caveats you would print beside it.
+//            Small: it goes into a prompt.
 //
-//   context  What a reader of `content` needs and cannot infer — units, the
-//            population a number was measured over, how the evidence was
-//            reached, the caveats you would print beside it. This is the field
-//            that decides whether an assistant's answer is any good, and it is
-//            the one most often left empty.
+//   source   How to get back to the thing: the path that reopens your route
+//            on it, or a command that produces it again.
 //
-//   source   The path that reopens your route on this thing, or a URL outside
-//            the workbench. The pointer half: it is what lets a user get back
-//            to it and lets you refresh it.
-//
-// Send both halves. A pointer alone makes every consumer re-fetch and strands
-// the item when a service is slow; a payload alone leaves the user unable to
-// get back to the thing it came from.
+// The item carries no data. What it names is fetched by whoever consumes it,
+// through the terms and the source, from where the data lives.
+
+// A path on the adding plugin's route, or one of its commands with the
+// arguments that produce the item. A bare command name is the plugin's own.
+export type CartSource =
+  | { path: string }
+  | { command: string; args?: Record<string, string | number> };
 
 export interface CartItem {
   id: string;
@@ -57,8 +56,7 @@ export interface CartItem {
   // what lets a second plugin say something about an item without knowing
   // anything about the plugin that added it.
   terms?: string[];
-  source?: { path?: string; href?: string };
-  content?: unknown;
+  source?: CartSource;
   context?: Record<string, unknown>;
 }
 

@@ -14,7 +14,6 @@ function mount(
     name: string;
     subject?: string;
     summary?: string;
-    content?: unknown;
     context?: Record<string, unknown>;
   }[],
 ) {
@@ -81,7 +80,7 @@ describe('the cart tray', () => {
     expect(getComputedStyle(row).flexWrap).not.toBe('wrap');
   });
 
-  it('opens the item, payload and all, when its tile is pressed', async () => {
+  it('opens the item, context and all, when its tile is pressed', async () => {
     const user = userEvent.setup();
     mount([
       {
@@ -89,17 +88,13 @@ describe('the cart tray', () => {
         plugin: 'data',
         name: 'one',
         summary: '4.2 GB',
-        content: { contigs: 41 },
         context: { measuredOver: '41 contigs' },
       },
     ]);
     await user.click(screen.getByRole('button', { name: /Open one/ }));
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText('one')).toBeInTheDocument();
-    // Context is shown outright; content is behind a disclosure that says how
-    // much opening it costs.
     expect(within(dialog).getByText(/"measuredOver"/)).toBeInTheDocument();
-    expect(within(dialog).getByText(/Content · \d+ B/)).toBeInTheDocument();
   });
 
   // Emptying the tray throws away work that took several presses to collect
@@ -145,9 +140,7 @@ describe('the cart tray', () => {
     expect(container.querySelector('[class*="cartRow"]')).toBeNull();
     expect(container.querySelector('[class*="attachments"]')).toBeNull();
 
-    act(() =>
-      services.cart.add({ id: 'a', plugin: 'data', name: 'one', addedAt: 1 }),
-    );
+    act(() => services.cart.add({ id: 'a', plugin: 'data', name: 'one', addedAt: 1 }));
     expect(container.querySelector('[class*="cartRow"]')).not.toBeNull();
     expect(container.querySelector('[class*="attachments"]')).not.toBeNull();
   });

@@ -246,7 +246,6 @@ export default defineBackground({
         summary: row.verdict,
         terms: [\`uniprot:\${row.id}\`, \`taxon:\${row.taxon}\`],
         source: { path: \`/\${row.id}\` },
-        content: row,
         context: { measuredOver: row.population },
       }));
     },
@@ -277,12 +276,13 @@ export default defineBackground({
               for the status bar.
             </p>
             <p className={styles.para}>
-              In a cart item, <Code>content</Code> is the data as JSON and <Code>context</Code>{' '}
-              describes it: units, caveats, the population a number was measured over.{' '}
-              <Code>terms</Code> are passed to other plugins' <Code>recommend</Code> once the item
-              is in the cart. <Code>source.path</Code> is the path <Code>openRoute</Code> uses to
-              open it. <Code>id</Code> must be unique across plugins; adding an item with an
-              existing id replaces it.
+              A cart item carries no data: <Code>context</Code> is what an assistant is told about
+              it (units, caveats, the population a number was measured over), and a consumer fetches
+              the thing itself from where it lives. <Code>terms</Code> are passed to other plugins'{' '}
+              <Code>recommend</Code> once the item is in the cart. <Code>source</Code> is the path{' '}
+              <Code>openRoute</Code> uses to open it, or a command that produces it again.{' '}
+              <Code>id</Code> must be unique across plugins; adding an item with an existing id
+              replaces it.
             </p>
           </Explainer>
         </Part>
@@ -440,9 +440,8 @@ function definePluginManifest(m: Manifest): Manifest;`}</Sig>
   subject?: string;              // the identifier the item is about
   summary?: string;              // one line
   terms?: string[];              // what other plugins are asked about once the item is in the cart
-  source?: { path?: string; href?: string };   // this plugin's path, or an outside link
-  content?: unknown;             // the data; must survive JSON
-  context?: Record<string, unknown>;           // what content cannot say: units, population, caveats
+  source?: { path: string } | { command: string; args?: Record<string, string | number> };
+  context?: Record<string, unknown>;           // what an assistant is told: units, population, caveats
 }`}</Sig>
               <p className={styles.para}>
                 Commands are shown for the typed text only, at most four. Cart items already in the

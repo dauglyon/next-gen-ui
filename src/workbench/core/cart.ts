@@ -2,24 +2,17 @@ import { z } from 'zod';
 
 // Things the user has set aside to work with.
 //
-// A cart item is a payload *and* a pointer, and generous about both. The
-// payload is what was added, plus whatever an assistant needs to reason about
-// it — so an assistant can act without calling back into the plugin, and the
-// item still means something after the panel it came from is closed. The
-// pointer is where it came from, so the user can reopen it and a plugin can
-// refresh it.
-//
-// Carrying both is the whole design. A pointer alone makes every consumer
-// re-fetch, and makes an item useless the moment a service is slow or a session
-// is restored somewhere else. A payload alone strands the item: a reader cannot
-// get back to the thing, and nothing can tell whether it is still current.
+// A cart item is a pointer with a caption: what the thing is, how to get back
+// to it, and what an assistant needs to know before reasoning about it. It
+// carries no data. The data stays where it lives and is fetched by whoever
+// consumes the item, through the terms and the source, so nothing large moves
+// through the page, its storage, or a prompt.
 //
 // The host owns the cart, because items come from plugins and are consumed by
 // assistants and neither can hold state the other reaches. It is plain JSON for
 // the same reason it is host-owned: it is written to storage now and may be
 // synced to an account later, and neither is possible if an item can hold a
 // function, a DOM node, or a class instance.
-
 export const CartItemSchema = z.object({
   // Stable and content-derived, so adding the same thing twice is idempotent
   // rather than a second copy. A plugin builds it from what the item *is* —
@@ -41,23 +34,23 @@ export const CartItemSchema = z.object({
   // workbench asks with them; it never interprets them.
   terms: z.array(z.string()).optional(),
 
-  // POINTER — how to get back to it. `path` is the plugin's own route; the
-  // href is for anything outside the workbench.
+  // How to get back to it: a path on the plugin's route, or one of its
+  // commands with the arguments that produce the item again.
   source: z
-    .object({
-      path: z.string().optional(),
-      href: z.string().optional(),
-    })
+    .union([
+      z.object({ path: z.string() }),
+      z.object({
+        command: z.string(),
+        args: z.record(z.string(), z.union([z.string(), z.number()])).optional(),
+      }),
+    ])
     .optional(),
 
-  // PAYLOAD — the thing itself, as JSON. Whatever the Add button captured.
-  content: z.unknown().optional(),
-
-  // Everything an assistant would otherwise have to ask for: units, the
+  // What an assistant reads about the item and could not infer: units, the
   // population a number was measured over, the route the evidence took, the
-  // caveats the builder attached. Named separately from `content` because it
-  // describes the content rather than being it, and because an assistant should
-  // be able to read the caveats without parsing the data.
+  // caveats the builder attached. Small, because it goes into a prompt. The
+  // item carries no data: a consumer fetches what the terms and the source
+  // name from where it lives.
   context: z.record(z.string(), z.unknown()).optional(),
 
   addedAt: z.number(),

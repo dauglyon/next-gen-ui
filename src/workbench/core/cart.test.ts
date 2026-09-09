@@ -29,16 +29,16 @@ describe('the cart', () => {
     expect(seen).toHaveBeenCalledTimes(1);
   });
 
-  it('carries both halves of an item through storage', () => {
+  it('carries the context and the source through storage', () => {
     const full = item('P0AEX9', {
-      content: { spread: 'universal', phyla: 8 },
       context: { measuredOver: '8 phyla', reach: 'direct' },
       source: { path: '/P0AEX9' },
     });
-    const back = readCart(JSON.stringify([full]));
-    expect(back[0].content).toEqual({ spread: 'universal', phyla: 8 });
+    const made = item('fitness', { source: { command: 'fitness', args: { acc: 'P0AEX9' } } });
+    const back = readCart(JSON.stringify([full, made]));
     expect(back[0].context).toEqual({ measuredOver: '8 phyla', reach: 'direct' });
-    expect(back[0].source?.path).toBe('/P0AEX9');
+    expect(back[0].source).toEqual({ path: '/P0AEX9' });
+    expect(back[1].source).toEqual({ command: 'fitness', args: { acc: 'P0AEX9' } });
   });
 
   // One item written by an older build should cost the user that item, not the

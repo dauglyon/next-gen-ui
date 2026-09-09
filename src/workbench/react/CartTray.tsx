@@ -1,9 +1,10 @@
 import { useState, useSyncExternalStore } from 'react';
 import { ShoppingCartSimple, X } from '@phosphor-icons/react';
 import { AlertDialog, Button, CodeBlock, Dialog, Tooltip } from '@kbase/design-system';
+import { qualifyCommand } from '../../plugins/sdk';
 import type { CartItem } from '../core';
 import { iconFor } from '../host/icons';
-import { useServices } from './context';
+import { useRun, useServices } from './context';
 import styles from './Workbench.module.css';
 
 // The cart: what the user has added, sitting where it will be sent from.
@@ -158,12 +159,11 @@ export function CartTray() {
 }
 
 // Everything the item is carrying, in the order a reader needs it: what it is,
-// then what an assistant would be told about it, then the payload itself.
-// `context` is shown apart from `content` because it is the half that decides
-// whether an answer drawn from the payload is any good.
+// what an assistant would be told about it, and how to get back to it.
 function Preview({ item, plugin }: { item: CartItem; plugin?: string }) {
   const json = (value: unknown) => JSON.stringify(value, null, 2);
-  const content = item.content != null ? json(item.content) : null;
+  const run = useRun();
+  const source = item.source;
   return (
     <>
       <Dialog.Title className={styles.cartPreviewTitle}>{item.name}</Dialog.Title>
@@ -172,9 +172,6 @@ function Preview({ item, plugin }: { item: CartItem; plugin?: string }) {
       </Dialog.Description>
       {item.summary && <p className={styles.cartPreviewSummary}>{item.summary}</p>}
 
-      {/* Open. This is the half that decides whether an answer drawn from the
-          payload is any good, it is small, and a preview whose contents are
-          behind a disclosure is not a preview. */}
       {item.context != null && (
         <section className={styles.cartPreviewPart}>
           <h3 className={styles.cartPreviewHeading}>Context</h3>
@@ -187,23 +184,20 @@ function Preview({ item, plugin }: { item: CartItem; plugin?: string }) {
         </section>
       )}
 
-      {/* Closed, with its weight on the label: the payload is unbounded — a
-          table, a whole dossier — and opening it by default would bury
-          everything above it. */}
-      {content != null && (
-        <section className={styles.cartPreviewPart}>
-          <CodeBlock language="json" title={`Content · ${sizeOf(content)}`} code={content} />
-        </section>
-      )}
-
-      {item.source?.path && (
+      {source && 'path' in source && (
         <p className={styles.cartPreviewSource}>
-          Reopens at <code className={styles.cartPreviewParam}>{item.source.path}</code>
+          Reopens at <code className={styles.cartPreviewParam}>{source.path}</code>
         </p>
       )}
-      {item.source?.href && (
+      {source && 'command' in source && (
         <p className={styles.cartPreviewSource}>
-          <a href={item.source.href}>{item.source.href}</a>
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={() => void run(qualifyCommand(source.command, item.plugin), source.args)}
+          >
+            {`Run /${source.command}`}
+          </Button>
         </p>
       )}
     </>
@@ -216,7 +210,3 @@ function countOf(n: number): string {
 
 // On the disclosure label, so a reader knows whether opening it costs them the
 // screen before they press it.
-function sizeOf(text: string): string {
-  const bytes = new Blob([text]).size;
-  return bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`;
-}

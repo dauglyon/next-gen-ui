@@ -1,13 +1,13 @@
 import { useSyncExternalStore } from 'react';
 import { X } from '@phosphor-icons/react';
 import { EmptyState, Loader, Tooltip } from '@kbase/design-system';
-import { CartButton, usePanelTitle } from '../../../plugins/sdk';
+import { CartButton, qualifyCommand, usePanelTitle } from '../../../plugins/sdk';
 import type { CartItem } from '../../../plugins/sdk';
 import type { QuerySource, SourceState } from '../../core';
 import { QUERY_SOURCES, rowKey } from '../../core';
 import { openRoute } from '../open';
 import { PluginMark } from '../PluginMark';
-import { useServices } from '../../react/context';
+import { useRun, useServices } from '../../react/context';
 import styles from '../../react/Workbench.module.css';
 
 // What the rest of the workbench has about what is being typed, what is on
@@ -120,7 +120,15 @@ function RelatedRow({ row, title }: { row: Row; title: string }) {
   const { query, cart, source } = services;
   const manifest = source.manifest(row.plugin);
   const { item } = row;
-  const path = item.source?.path;
+  const run = useRun();
+  const from = item.source;
+  // Pressing the row goes to the thing: its path, or the command that makes it.
+  const open =
+    from && 'path' in from
+      ? () => void openRoute(services, row.plugin, from.path)
+      : from && 'command' in from
+        ? () => void run(qualifyCommand(from.command, row.plugin), from.args)
+        : undefined;
   const label = (
     <span className={styles.relatedLabel}>
       <span className={styles.relatedName}>{item.subject ?? item.name}</span>
@@ -133,12 +141,8 @@ function RelatedRow({ row, title }: { row: Row; title: string }) {
       <Tooltip.Root>
         <Tooltip.Trigger
           render={
-            path !== undefined ? (
-              <button
-                type="button"
-                className={styles.relatedOpen}
-                onClick={() => void openRoute(services, row.plugin, path)}
-              >
+            open ? (
+              <button type="button" className={styles.relatedOpen} onClick={open}>
                 <PluginMark
                   icon={manifest?.icon}
                   color={manifest?.color}
@@ -163,7 +167,7 @@ function RelatedRow({ row, title }: { row: Row; title: string }) {
           }
         />
         <Tooltip.Popup side="right">
-          {path !== undefined ? `Open in ${title}` : `${item.name} — ${title}`}
+          {open ? `Open in ${title}` : `${item.name} — ${title}`}
         </Tooltip.Popup>
       </Tooltip.Root>
 

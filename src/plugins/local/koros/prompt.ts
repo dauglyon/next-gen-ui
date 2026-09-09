@@ -15,7 +15,7 @@ export default definePrompt({
         id: item.id,
         name: item.name,
         subject: item.subject,
-        path: item.source?.path,
+        path: item.source && 'path' in item.source ? item.source.path : undefined,
       })),
     );
     host.openRoute(`/${slug}`);
