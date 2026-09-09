@@ -89,6 +89,24 @@
   color: var(--c-ink2);
 }
 
+/* The friendly account of a section, at body size. */
+.narrative {
+  margin: 0;
+  max-inline-size: 46rem;
+}
+
+/* The rules, framed and a step smaller, under the narrative and the example. */
+.explainer {
+  display: grid;
+  gap: var(--s-3);
+  max-inline-size: 46rem;
+  padding: var(--s-4) var(--s-5);
+  background: var(--c-raised);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  font-size: var(--fs-4);
+}
+
 .part {
   display: grid;
   gap: var(--s-6);
