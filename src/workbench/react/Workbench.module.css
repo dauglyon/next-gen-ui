@@ -1427,3 +1427,50 @@
 }
 
 /* What the per-plugin cap is holding back, counted rather than dropped. */
+
+/* Related: one list, the recommendation as the unit. Rows keep their place;
+   a view transition carries a row that enters or leaves. */
+.relatedList > li {
+  view-transition-class: related-row;
+}
+
+/* Who offers a row, as a small count when more than one does. */
+.relatedOffers {
+  font-size: var(--fs-1);
+  color: var(--c-ink3);
+  padding-inline: var(--s-1);
+}
+
+/* Faint rows where the first answers are about to land. Only for an empty
+   list: a skeleton over content that was already there is a regression. */
+.relatedSkeleton {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-4);
+}
+
+.relatedSkeleton > span {
+  display: block;
+  block-size: 0.9rem;
+  border-radius: var(--r-sm);
+  background: var(--c-raised);
+  opacity: 0.8;
+}
+
+.relatedSkeleton > span:nth-child(2) {
+  inline-size: 70%;
+}
+
+.relatedSkeleton > span:nth-child(3) {
+  inline-size: 85%;
+}
+
+/* What is still being asked, in a line under the rows rather than a row. */
+.relatedActivity {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-4);
+  font-size: var(--fs-2);
+  color: var(--c-ink3);
+}

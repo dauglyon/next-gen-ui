@@ -40,10 +40,8 @@ export const EMPTY_SOURCE: SourceState = {
   loading: false,
 };
 
-// A Related row's identity, for dismissal: the same item proposed for the
-// same source again stays gone.
-export const rowKey = (source: QuerySource, plugin: string, id: string) =>
-  `${source}:${plugin}:${id}`;
+// A dismissed recommendation stays gone whoever offers it next: the key is
+// the item's own id.
 
 export interface QueryStore {
   get: (source: QuerySource) => SourceState;

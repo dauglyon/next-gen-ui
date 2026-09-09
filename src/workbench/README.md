@@ -124,7 +124,9 @@ own section as it arrives, the previous one staying dimmed until then; after 2 s
 saying it is asking, and a later answer still lands. A pool that only grew is asked about the
 new terms alone and the answers merge. The `commands` it returns are the
 rows under the field — each a `CommandCall` the plugin filled in — and the `cartItems` are rows
-in the Related pane. Three sources are asked on their own clocks (`host/query/runner.ts`): the
+in the Related pane, one list with the recommendation as the unit: a row keeps its place until
+nothing offers it, provenance sits on the row, and what is still being asked is a line under the
+rows. Three sources are asked on their own clocks (`host/query/runner.ts`): the
 typed text, the front tab's terms (never sent to the plugin that owns the tab), and the cart's.
 Under the recommendations the host adds what it can see for itself: shortcut buttons by name,
 apps with a `launcher` by name or description, and panes — a pinned one focused where it lives,

@@ -13,3 +13,5 @@ export { createWorkbenchStore } from './store';
 export type { WorkbenchStore, StoreOptions, DispatchResult } from './store';
 export * from './terms';
 export * from './query';
+export { mergeRecommendations } from './recommendations';
+export type { Offer, Recommendation } from './recommendations';

@@ -367,10 +367,10 @@ export function PromptBar() {
         <ul id={listId} role="listbox" aria-label="Completions" className={styles.completions}>
           {suggestions.map((s, i) => (
             <li
-              // By position: several rows can share a value (every offer
-              // for one query carries the text that produced it), and a
-              // duplicate key renders the list wrong.
-              key={i}
+              // By what the row says, so a suggestion that survives a
+              // keystroke keeps its element; the position breaks a tie
+              // between rows that say the same thing.
+              key={`${s.label}\u0000${s.detail ?? ''}\u0000${suggestions.findIndex((o) => o.label === s.label && o.detail === s.detail) === i ? '' : i}`}
               id={`${listId}-${i}`}
               role="option"
               aria-selected={i === highlight}
