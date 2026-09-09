@@ -74,22 +74,22 @@ function normalizeKey(key: string): string {
   return key.length === 1 ? key.toUpperCase() : key;
 }
 
+// Command names are qualified, as everywhere in the registry.
 export const DEFAULT_KEYBINDINGS: Readonly<Record<string, string>> = {
-  '/': 'prompt',
-  'Ctrl+Z': 'undo',
-  'Ctrl+Shift+Z': 'redo',
-  'Alt+Shift+W': 'close',
-  'Alt+Shift+ArrowLeft': 'focus-previous-tab',
-  'Alt+Shift+ArrowRight': 'focus-next-tab',
-  'Alt+Shift+ArrowUp': 'focus-previous-group',
-  'Alt+Shift+ArrowDown': 'focus-next-group',
-  'Ctrl+Alt+Shift+ArrowLeft': 'move-left',
-  'Ctrl+Alt+Shift+ArrowRight': 'move-right',
-  'Ctrl+Alt+Shift+ArrowUp': 'move-up',
-  'Ctrl+Alt+Shift+ArrowDown': 'move-down',
-  'Alt+Shift+F': 'fold',
-  'Alt+Shift+B': 'sidebar',
-  'Alt+Shift+C': 'customize',
+  '/': 'workbench:prompt',
+  'Ctrl+Z': 'workbench:undo',
+  'Ctrl+Shift+Z': 'workbench:redo',
+  'Alt+Shift+W': 'workbench:close',
+  'Alt+Shift+ArrowLeft': 'workbench:focus-previous-tab',
+  'Alt+Shift+ArrowRight': 'workbench:focus-next-tab',
+  'Alt+Shift+ArrowUp': 'workbench:focus-previous-group',
+  'Alt+Shift+ArrowDown': 'workbench:focus-next-group',
+  'Ctrl+Alt+Shift+ArrowLeft': 'workbench:move-left',
+  'Ctrl+Alt+Shift+ArrowRight': 'workbench:move-right',
+  'Ctrl+Alt+Shift+ArrowUp': 'workbench:move-up',
+  'Ctrl+Alt+Shift+ArrowDown': 'workbench:move-down',
+  'Alt+Shift+F': 'workbench:fold',
+  'Alt+Shift+B': 'workbench:sidebar',
 };
 
 // User overrides win; a user binding of null (stored as '') removes a default.

@@ -453,31 +453,24 @@ export default defineCommands({
 
 function definePrompt(p: {
   handle: (q: Query, ctx: { host: PluginHost; attachments: readonly CartItem[] }) => Promise<void>;
-  destination?: { get: () => Destination | null; subscribe: (listener: () => void) => Cleanup };
+  destination?: {
+    current: () => Destination | null;                  // what the bar shows; read whenever it redraws
+    subscribe: (onChange: () => void) => () => void;    // call onChange when current() would differ; the function returned stops the calls
+  };
 }): Prompt;`}</Sig>
             <File
               name="src/prompt.ts"
               language="typescript"
             >{`import { definePrompt } from '@kbase/plugin-sdk';
+import { koros } from './store';
 
 export default definePrompt({
   handle: async ({ text }, { host, attachments }) => {
-    const slug = current() ?? newArc().slug;
+    const slug = koros.current() ?? koros.newArc().slug;
     host.openRoute(\`/\${slug}\`);
-    await ask(slug, text, attachments);
+    await koros.ask(slug, text, attachments);
   },
-  destination: {
-    get: () => {
-      const arc = currentArc();
-      return {
-        label: arc ? arc.title : 'A new arc',
-        path: arc && \`/\${arc.slug}\`,
-        options: arcs().map((a) => ({ key: a.slug, label: a.title })),
-        select: setCurrent,
-      };
-    },
-    subscribe,
-  },
+  destination: { current: () => koros.destination(), subscribe: koros.subscribe },
 });`}</File>
             <p className={styles.para}>
               Settings offers a plugin as the assistant iff its manifest lists <Code>prompt</Code>.
@@ -485,11 +478,15 @@ export default definePrompt({
               the text and the pooled terms, and with <Code>attachments</Code>, the cart as it stood
               when Enter was pressed — every plugin's items. The cart is then emptied, because the
               attachments belong to that message. The host draws nothing for the answer; the handler
-              opens a page and streams there. <Code>destination</Code> is read with <Code>get</Code>{' '}
-              and re-read on every <Code>subscribe</Code> notification: the bar shows{' '}
-              <Code>label</Code> above the field, lists <Code>options</Code> in a menu that calls{' '}
-              <Code>select</Code>, and opens <Code>path</Code> with <Code>openRoute</Code> when the
-              jump beside the label is pressed. Without it the row names only the plugin.
+              opens a page and streams there. <Code>destination</Code> is what the bar shows above
+              the field. The bar reads <Code>current()</Code> and reads it again each time the
+              plugin calls the <Code>onChange</Code> it was given; the function{' '}
+              <Code>subscribe</Code> returns is called when the bar stops listening, on unmount or
+              when Settings names another assistant. A store that already notifies listeners, as
+              koros's does, is passed through as-is. The bar shows <Code>label</Code>, lists{' '}
+              <Code>options</Code> in a menu that calls <Code>select</Code>, and opens{' '}
+              <Code>path</Code> with <Code>openRoute</Code> when the jump beside the label is
+              pressed. Without it the row names only the plugin.
             </p>
           </Entry>
 

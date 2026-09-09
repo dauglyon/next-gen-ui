@@ -2,7 +2,8 @@ import { useSyncExternalStore } from 'react';
 import { LockSimple, SidebarSimple } from '@phosphor-icons/react';
 import { Button } from '@kbase/design-system';
 import type { StatusItem } from '../../plugins/sdk';
-import { useDispatch, useLayout, useRun, useServices, useTitle } from './context';
+import { qualifyCommand } from '../../plugins/sdk';
+import { useBusy, useDispatch, useLayout, useRun, useServices, useTitle } from './context';
 import styles from './Workbench.module.css';
 
 export function StatusBar() {
@@ -38,7 +39,7 @@ export function StatusBar() {
         </span>
       )}
       {withStatus.map(({ id, hook }) => (
-        <PluginStatus key={id} useStatus={hook} />
+        <PluginStatus key={id} plugin={id} useStatus={hook} />
       ))}
       <span className={styles.spacer} />
       {focused && <span className="caption">{title}</span>}
@@ -46,21 +47,13 @@ export function StatusBar() {
   );
 }
 
-function PluginStatus({ useStatus }: { useStatus: () => StatusItem[] }) {
+function PluginStatus({ plugin, useStatus }: { plugin: string; useStatus: () => StatusItem[] }) {
   const items = useStatus();
-  const run = useRun();
   return (
     <>
       {items.map((item, i) =>
-        item.command ? (
-          <button
-            key={i}
-            type="button"
-            className={styles.statusItem}
-            onClick={() => void run(item.command!)}
-          >
-            {item.text}
-          </button>
+        item.action ? (
+          <StatusAction key={i} plugin={plugin} item={item} />
         ) : (
           <span key={i} className={`caption ${styles.statusItem}`}>
             {item.text}
@@ -68,5 +61,22 @@ function PluginStatus({ useStatus }: { useStatus: () => StatusItem[] }) {
         ),
       )}
     </>
+  );
+}
+
+function StatusAction({ plugin, item }: { plugin: string; item: StatusItem }) {
+  const run = useRun();
+  const name = qualifyCommand(item.action!.command, plugin);
+  const busy = useBusy(name);
+  return (
+    <button
+      type="button"
+      className={styles.statusItem}
+      aria-busy={busy || undefined}
+      disabled={busy}
+      onClick={() => void run(name, item.action!.args)}
+    >
+      {item.text}
+    </button>
   );
 }

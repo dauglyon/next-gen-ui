@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useSyncExternalStore } from 're
 import type { Crumb } from '../../plugins/sdk';
 import type { Layout, Operation, Panel, PanelId } from '../core';
 import type { ArgValues } from '../commands';
+import { qualifiedName } from '../commands';
 import type { WorkbenchServices } from './services';
 
 export const ServicesContext = createContext<WorkbenchServices | null>(null);
@@ -29,18 +30,39 @@ export function useDispatch(): (op: Operation) => boolean {
   );
 }
 
+// Runs a command on the user's behalf. The invoking control can watch
+// `useBusy` while it runs; a rejection becomes a toast naming the command,
+// and the live region hears it too.
 export function useRun(): (name: string, values?: ArgValues) => Promise<void> {
-  const { registry, announcer } = useServices();
+  const { registry, announcer, runs, toasts } = useServices();
   return useCallback(
     async (name: string, values: ArgValues = {}) => {
+      const found = registry.find(name);
+      const key = found.ok ? qualifiedName(found.command) : name;
+      runs.start(key);
       try {
-        await registry.run(name, values);
+        await registry.run(name, values, 'user');
       } catch (err) {
-        announcer.announce(err instanceof Error ? err.message : `/${name} failed`);
+        const message = err instanceof Error ? err.message : `/${name} failed`;
+        toasts.add({
+          title: `/${found.ok ? found.command.name : name} failed`,
+          description: message,
+        });
+        announcer.announce(message);
+      } finally {
+        runs.end(key);
       }
     },
-    [registry, announcer],
+    [registry, announcer, runs, toasts],
   );
+}
+
+// Whether a command, named bare or qualified, is running right now.
+export function useBusy(name: string): boolean {
+  const { registry, runs } = useServices();
+  useSyncExternalStore(runs.subscribe, runs.version, runs.version);
+  const found = registry.find(name);
+  return runs.running(found.ok ? qualifiedName(found.command) : name);
 }
 
 // The placeholder shown before a panel supplies its own title: the plugin's

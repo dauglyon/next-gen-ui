@@ -22,6 +22,14 @@ function registry() {
   return r;
 }
 
+// Two plugins declaring the same bare name, which the registry allows: only
+// the qualified name is unique.
+function contested() {
+  const r = registry();
+  r.register({ name: 'open', title: 'Open a dossier', source: 'fj', run: () => {} });
+  return r;
+}
+
 describe('parse', () => {
   it('treats text without a leading slash as a prompt', () => {
     expect(parse('what is nitrogenase')).toEqual({ kind: 'prompt', text: 'what is nitrogenase' });
@@ -48,6 +56,11 @@ describe('resolve', () => {
     expect(result.ok && result.values).toEqual({ id: '12' });
   });
 
+  it('accepts the qualified name as well as the bare one', () => {
+    const result = resolve(registry(), '/jobs:cancel 12');
+    expect(result.ok && result.command.source).toBe('jobs');
+  });
+
   it.each([
     ['/nope', 'unknown-command'],
     ['/cancel', 'missing'],
@@ -55,6 +68,13 @@ describe('resolve', () => {
   ])('%s fails with %s', (input, code) => {
     const result = resolve(registry(), input);
     expect(!result.ok && result.code).toBe(code);
+  });
+
+  it('refuses a bare name two commands carry and names them', () => {
+    const result = resolve(contested(), '/open');
+    expect(!result.ok && result.code).toBe('ambiguous-command');
+    expect(!result.ok && result.message).toMatch(/fj:open and workbench:open/);
+    expect(resolve(contested(), '/fj:open').ok).toBe(true);
   });
 
   it('hides a command whose when-clause is false', () => {
@@ -68,6 +88,14 @@ describe('complete', () => {
     const options = await complete(registry(), '/c');
     expect(options.map((o) => o.value)).toEqual(['/cancel ', '/customize']);
     expect(options[0].label).toBe('/cancel <id>');
+  });
+
+  it('offers the qualified form where the bare name is contested', async () => {
+    expect((await complete(contested(), '/o')).map((o) => o.value)).toEqual([]);
+    expect((await complete(contested(), '/fj:')).map((o) => o.value)).toEqual(['/fj:open']);
+    expect((await complete(contested(), '/workbench:o')).map((o) => o.value)).toEqual([
+      '/workbench:open',
+    ]);
   });
 
   it('offers argument values once the name is complete', async () => {

@@ -1,4 +1,5 @@
-import { useLayout } from './context';
+import { Toast } from '@kbase/design-system';
+import { useLayout, useServices } from './context';
 import { FrameLayerProvider } from './FrameLayer';
 import { LiveRegion } from './LiveRegion';
 import { MainArea } from './MainArea';
@@ -13,24 +14,28 @@ import styles from './Workbench.module.css';
 
 export function Workbench() {
   const layout = useLayout();
+  const { toasts } = useServices();
   useKeybindings();
   useFocusSync();
   return (
-    <div className={styles.root} data-locked={layout.locked || undefined}>
-      <WorkbenchMenubar />
-      <WorkbenchDnd>
-        <FrameLayerProvider>
-          <div className={styles.body}>
-            <Sidebar />
-            <div className={styles.mainColumn}>
-              <MainArea />
-              {layout.bars.prompt && <PromptBar />}
+    <Toast.Provider manager={toasts}>
+      <div className={styles.root} data-locked={layout.locked || undefined}>
+        <WorkbenchMenubar />
+        <WorkbenchDnd>
+          <FrameLayerProvider>
+            <div className={styles.body}>
+              <Sidebar />
+              <div className={styles.mainColumn}>
+                <MainArea />
+                {layout.bars.prompt && <PromptBar />}
+              </div>
             </div>
-          </div>
-        </FrameLayerProvider>
-      </WorkbenchDnd>
-      {layout.bars.status && <StatusBar />}
-      <LiveRegion />
-    </div>
+          </FrameLayerProvider>
+        </WorkbenchDnd>
+        {layout.bars.status && <StatusBar />}
+        <LiveRegion />
+        <Toast.Viewport />
+      </div>
+    </Toast.Provider>
   );
 }

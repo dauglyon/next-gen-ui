@@ -29,14 +29,17 @@ export function WorkbenchMenubar() {
         <Menu.Root>
           <Menubar.Trigger>Workbench</Menubar.Trigger>
           <Menu.Popup>
-            <Menu.Item disabled={!store.canUndo()} onClick={() => run('undo')}>
+            <Menu.Item disabled={!store.canUndo()} onClick={() => run('workbench:undo')}>
               Undo
             </Menu.Item>
-            <Menu.Item disabled={!store.canRedo()} onClick={() => run('redo')}>
+            <Menu.Item disabled={!store.canRedo()} onClick={() => run('workbench:redo')}>
               Redo
             </Menu.Item>
             <Menu.Separator />
-            <Menu.CheckboxItem checked={layout.locked} onCheckedChange={() => run('lock-layout')}>
+            <Menu.CheckboxItem
+              checked={layout.locked}
+              onCheckedChange={() => run('workbench:lock-layout')}
+            >
               Lock layout
             </Menu.CheckboxItem>
             <Menu.Separator />
@@ -61,13 +64,13 @@ export function WorkbenchMenubar() {
             <Menu.Separator />
             {/* The host's own page, reached from the menu that governs the
                 workbench rather than from the list of things installed in it. */}
-            <Menu.Item onClick={() => run('catalog')}>Settings</Menu.Item>
+            <Menu.Item onClick={() => run('catalog:catalog')}>Settings</Menu.Item>
           </Menu.Popup>
         </Menu.Root>
         <Menu.Root>
           <Menubar.Trigger>Panel</Menubar.Trigger>
           <Menu.Popup>
-            <Menu.Item disabled={!focused || !group} onClick={() => run('close')}>
+            <Menu.Item disabled={!focused || !group} onClick={() => run('workbench:close')}>
               Close
             </Menu.Item>
             <Menu.Separator />
@@ -83,7 +86,7 @@ export function WorkbenchMenubar() {
                 key={side}
                 disabled={!canSplit}
                 onClick={() =>
-                  run(`move-${side === 'top' ? 'up' : side === 'bottom' ? 'down' : side}`)
+                  run(`workbench:move-${side === 'top' ? 'up' : side === 'bottom' ? 'down' : side}`)
                 }
               >
                 {label}

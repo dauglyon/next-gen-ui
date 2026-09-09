@@ -2,19 +2,12 @@ import { useState, useSyncExternalStore } from 'react';
 import { Button, Chip, SearchBar } from '@kbase/design-system';
 import { Code, Gear } from '@phosphor-icons/react';
 import type { Manifest } from '../../../plugins/sdk';
-import { usePanelTitle } from '../../../plugins/sdk';
+import { qualifyCommand, usePanelTitle } from '../../../plugins/sdk';
 import { makePanel } from '../../core';
-import { useDispatch, useLayout, useServices } from '../../react/context';
+import { useDispatch, useLayout, useRun, useServices } from '../../react/context';
 import { iconFor } from '../icons';
-import { routeParams } from '../routes';
+import { isApp } from './apps';
 import styles from './Home.module.css';
-
-// An app is a document that can be opened with nothing: either its route takes
-// no params, or it declares that it renders a landing state when they are
-// absent. Function Junction is the second kind — its route names a protein so a
-// dossier has a readable URL, and it asks for one when none is given.
-export const isApp = (m: Manifest) =>
-  Boolean(m.document && (m.document.opensEmpty || routeParams(m.document.route).length === 0));
 
 // The launcher as a page: everything installed, searchable. The prompt
 // bar completes the same names inline; this is that search given room,
@@ -25,6 +18,7 @@ export function HomeDocument() {
   const { source, preview, prompt: promptBar } = useServices();
   const layout = useLayout();
   const dispatch = useDispatch();
+  const run = useRun();
   const [query, setQuery] = useState('');
   useSyncExternalStore(source.subscribe, source.version, source.version);
 
@@ -41,7 +35,7 @@ export function HomeDocument() {
   const panels = listed.filter((m) => m.navigator);
 
   const openApp = (m: Manifest) =>
-    dispatch({ type: 'open', panel: makePanel(m.id, 'document', {}) });
+    void run(qualifyCommand(m.launcher!.command, m.id), m.launcher!.args);
   // Settings is installed like anything else, but it is not listed here: it is
   // the host's own page rather than something a user chose to install, and a
   // reader looking for it is looking for a link, not a search result.

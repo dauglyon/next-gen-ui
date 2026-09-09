@@ -1,4 +1,6 @@
+import { createToastManager } from '@kbase/design-system';
 import type { PluginHost } from '../../plugins/sdk';
+import { qualifyCommand } from '../../plugins/sdk';
 import type { PluginId } from '../core';
 import {
   CART_STORAGE_KEY,
@@ -14,7 +16,7 @@ import {
   serialize,
 } from '../core';
 import type { Command } from '../commands';
-import { createCommandRegistry, workbenchCommands } from '../commands';
+import { createCommandRegistry, createRunStore, workbenchCommands } from '../commands';
 import { createAnnouncer, createCrumbStore, createTitleStore } from '../react';
 import type { WorkbenchServices } from '../react';
 import { fallbackTitle } from '../react/context';
@@ -31,7 +33,12 @@ import { createSettingsStore } from './settings';
 import { createRelatedRunner } from './related/runner';
 import type { RelatedRunner } from './related/runner';
 
-export const LAYOUT_STORAGE_KEY = 'workbench.layout.v1';
+export const LAYOUT_STORAGE_KEY = 'workbench.layout.v2';
+
+// Keys earlier builds wrote. Removed on boot rather than read: a layout or
+// cart from before the contract change is not migrated, and leaving it in
+// storage would only let a later build find it.
+const RETIRED_STORAGE_KEYS = ['workbench.layout.v1', 'kbase-workbench-cart'];
 
 export interface CreateWorkbenchOptions {
   installed: InstalledPlugin[];
@@ -66,6 +73,13 @@ export function createWorkbench({
     home,
   ]);
   const settings = createSettingsStore(storage, { assistant: defaultAssistant });
+  for (const key of RETIRED_STORAGE_KEYS) {
+    try {
+      storage?.removeItem(key);
+    } catch {
+      // Privacy mode; there is nothing there to retire.
+    }
+  }
   // The cart is host state, not layout: it survives a layout reset, and it is
   // the thing most likely to move to the account later.
   const cart = createCartStore(readCart(storage?.getItem(CART_STORAGE_KEY) ?? null));
@@ -82,6 +96,8 @@ export function createWorkbench({
   });
 
   const registry = createCommandRegistry();
+  const runs = createRunStore();
+  const toasts = createToastManager();
   const dispatch: WorkbenchServices['dispatch'] = (op) => {
     const result = store.dispatch(op);
     if (result.changed) announcer.announce(result.announcement);
@@ -97,6 +113,8 @@ export function createWorkbench({
     // Set below: the runner needs `source`, which the services object holds.
     relatedRunner: undefined as unknown as RelatedRunner,
     registry,
+    runs,
+    toasts,
     source,
     settings,
     titles,
@@ -210,15 +228,19 @@ export function pluginHostFor(services: WorkbenchServices, plugin: PluginId): Pl
   return {
     openDocument: (params) =>
       void services.dispatch({ type: 'open', panel: makePanel(plugin, 'document', params) }),
-    runCommand: async (name, values = {}) => {
-      await services.registry.run(name, values);
+    // A bare name is this plugin's own command; another plugin's is named in
+    // full. The caller is recorded so a handler can tell a keystroke from a
+    // neighbour acting for someone.
+    execute: async (command, args = {}) => {
+      await services.registry.run(qualifyCommand(command, plugin), args, plugin);
     },
+    hasCommand: (command) => services.registry.get(qualifyCommand(command, plugin)) !== undefined,
+    notify: (text) => void services.toasts.add({ title: text }),
     // Scoped to the adding plugin: it stamps its own id on what it adds, and
     // `has` and `count` answer about its own items only. What else is in the
     // cart is the user's business and the assistant's.
     cart: {
-      add: (item) =>
-        services.cart.add({ ...item, plugin, addedAt: Date.now() }),
+      add: (item) => services.cart.add({ ...item, plugin, addedAt: Date.now() }),
       remove: (id) => {
         const own = services.cart.items().find((i) => i.id === id && i.plugin === plugin);
         if (own) services.cart.remove(id);

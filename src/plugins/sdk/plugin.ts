@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import type { CartItem } from './cart';
+import type { CommandCall } from './contract';
 import type { PluginHost } from './host';
 
 // The module a plugin's entry exports: the code side of the manifest. The
@@ -8,11 +9,20 @@ import type { PluginHost } from './host';
 
 export interface StatusItem {
   text: string;
-  // A slash command name to run when the item is activated.
-  command?: string;
+  // Run when the line is pressed.
+  action?: CommandCall;
 }
 
 export type CommandValues = Record<string, string | number>;
+
+// What a command handler runs against. `caller` is the plugin that called
+// `execute`, or 'user' for the prompt bar and every button.
+export interface CommandContext {
+  host: PluginHost;
+  caller: string;
+}
+
+export type CommandHandler = (args: CommandValues, ctx: CommandContext) => void | Promise<void>;
 
 export interface PromptRequest {
   text: string;
@@ -74,7 +84,7 @@ export type Matcher = (text: string) => Offer[];
 export interface PluginModule {
   navigator?: ComponentType;
   document?: ComponentType;
-  commands?: Record<string, (values: CommandValues, host: PluginHost) => void | Promise<void>>;
+  commands?: Record<string, CommandHandler>;
   prompt?: PromptHandler;
   // A hook, so counts can be live. Called by the host once the module has
   // loaded, which happens when a panel renders or a command runs.

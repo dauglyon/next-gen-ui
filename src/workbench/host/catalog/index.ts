@@ -16,14 +16,8 @@ export const catalog: InstalledPlugin = {
     contractVersion: CONTRACT_VERSION,
     icon: 'Gear',
     document: { route: '/' },
-    commands: [
-      {
-        name: 'catalog',
-        title: 'Open settings',
-        icon: 'Gear',
-        shortcut: 'Settings',
-      },
-    ],
+    commands: [{ name: 'catalog', title: 'Open settings', icon: 'Gear' }],
+    shortcuts: [{ label: 'Settings', command: 'catalog' }],
   },
   load: async () => ({
     document: (await import('./Catalog')).CatalogDocument,

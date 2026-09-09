@@ -1,16 +1,18 @@
 export { PanelContext, usePanel, usePanelTitle, usePanelBreadcrumbs, usePanelTerms } from './panel';
 export type { Crumb, PanelHandle, PanelKind, PanelParams } from './panel';
 export { HostContext, useHost } from './host';
-export type { PluginHost } from './host';
+export type { PluginHost, PluginCart } from './host';
 export {
   CONTRACT_VERSION,
   ManifestSchema,
-  CommandDeclSchema,
+  SlashCommandSchema,
+  CommandCallSchema,
   ArgDeclSchema,
   PluginIdSchema,
   parseManifest,
+  qualifyCommand,
 } from './contract';
-export type { Manifest, CommandDecl, ArgDecl } from './contract';
+export type { Manifest, SlashCommand, CommandCall, ArgDecl } from './contract';
 export { definePlugin } from './plugin';
 export type {
   PluginModule,
@@ -22,6 +24,8 @@ export type {
   Offer,
   Matcher,
   CommandValues,
+  CommandContext,
+  CommandHandler,
 } from './plugin';
 export { AppFrame } from './AppFrame';
 export type { AppFrameProps } from './AppFrame';

@@ -60,7 +60,7 @@ export type Bars = z.infer<typeof BarsSchema>;
 export type BarName = keyof Bars;
 
 export const LayoutSchema = z.object({
-  version: z.literal(1),
+  version: z.literal(2),
   panels: z.record(z.string(), PanelSchema),
   main: NodeSchema,
   sidebar: SidebarSchema,
@@ -127,7 +127,7 @@ export function defaultLayout({
     panels[panel.id] = panel;
   }
   return {
-    version: 1,
+    version: 2,
     panels,
     main: emptyGroup(rootGroupId),
     sidebar: {

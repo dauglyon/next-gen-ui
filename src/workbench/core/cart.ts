@@ -87,7 +87,7 @@ export interface CartStore {
   subscribe: (listener: () => void) => () => void;
 }
 
-export const CART_STORAGE_KEY = 'kbase-workbench-cart';
+export const CART_STORAGE_KEY = 'kbase-workbench-cart.v2';
 
 // A stored cart is read back item by item: one item written by an older build,
 // or truncated by a full disk, costs the user that item and not the cart.

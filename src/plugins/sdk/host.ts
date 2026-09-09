@@ -2,12 +2,18 @@ import { createContext, useContext } from 'react';
 import type { PanelParams } from './panel';
 import type { CartAddition } from './cart';
 
-// What a plugin may ask the workbench to do. Deliberately small: opening the
-// plugin's own document, running a registered command, and setting something
-// aside in the cart.
+// What a plugin may ask the workbench to do: open its own document, run a
+// command — its own by bare name, another plugin's by "plugin:name" — say
+// something when nothing on screen changed, and set things aside in the cart.
 export interface PluginHost {
   openDocument: (params: PanelParams) => void;
-  runCommand: (name: string, values?: Record<string, string | number>) => Promise<void>;
+  // Resolves when the handler resolves, with nothing: data between plugins
+  // travels as terms and cart items, not as return values.
+  execute: (command: string, args?: Record<string, string | number>) => Promise<void>;
+  hasCommand: (command: string) => boolean;
+  // A toast. For the outcome only the plugin can see: a command that ran and
+  // changed nothing visible, a neighbour that is not installed.
+  notify: (text: string) => void;
   // The cart is the host's; a plugin adds to it and reads whether a thing of
   // its own is in it. Reached through `useCart()` rather than directly, so a
   // plugin does not have to hold the handle.

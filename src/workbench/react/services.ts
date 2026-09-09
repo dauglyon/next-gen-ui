@@ -1,7 +1,8 @@
+import type { ToastManager } from '@kbase/design-system';
 import type { RelatedStore, TermStore } from '../core';
 import type { RelatedRunner } from '../host/related/runner';
 import type { CartStore, PluginId, WorkbenchStore } from '../core';
-import type { CommandRegistry } from '../commands';
+import type { CommandRegistry, RunStore } from '../commands';
 import type { Operation } from '../core';
 import type { HostIndex } from '../host/installed';
 import type { SettingsStore } from '../host/settings';
@@ -67,6 +68,11 @@ export interface WorkbenchServices {
   terms: TermStore;
   relatedRunner: RelatedRunner;
   registry: CommandRegistry;
+  // Which commands are in flight, so the control that ran one shows busy.
+  runs: RunStore;
+  // Host-owned so a plugin's `notify` and a failed command reach the same
+  // viewport as anything a component raises.
+  toasts: ToastManager;
   source: HostIndex;
   settings: SettingsStore;
   // dispatch + announce, for code outside React (route loaders, plugin hosts).

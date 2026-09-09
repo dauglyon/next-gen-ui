@@ -96,7 +96,7 @@ function JobDocument() {
           variant="danger"
           size="sm"
           disabled={!cancellable}
-          onClick={() => void host.runCommand('cancel', { id: job.id })}
+          onClick={() => void host.execute('cancel', { id: job.id })}
         >
           Cancel job
         </Button>

@@ -17,7 +17,7 @@ export const manifest: Manifest = {
     {
       name: 'cancel',
       title: 'Cancel a job',
-      args: [{ name: 'id', type: 'string', required: true, description: 'job id' }],
+      args: [{ name: 'id', required: true, description: 'job id' }],
     },
   ],
 };

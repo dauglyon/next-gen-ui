@@ -132,7 +132,7 @@ export default definePlugin({
   useStatus,
   usePromptContext,
   commands: {
-    'new-question': (_values, host) => {
+    'new-question': (_args, { host }) => {
       const arc = koros.newArc();
       host.openDocument({ slug: arc.slug });
     },

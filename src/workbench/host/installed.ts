@@ -2,6 +2,7 @@ import { lazy } from 'react';
 import type { ComponentType } from 'react';
 import type { IconProps } from '@phosphor-icons/react';
 import type {
+  ArgDecl,
   Manifest,
   Matcher,
   Offer,
@@ -193,14 +194,14 @@ export function createHostIndex(installed: InstalledPlugin[]): HostIndex {
             description: decl.description,
             source: manifest.id,
             args: (decl.args ?? []).map(toArgSpec),
-            run: async (values) => {
+            run: async (values, caller) => {
               const module = await load(manifest.id);
               const fn = module.commands?.[decl.name];
               if (!fn)
                 throw new Error(
                   `plugin ${manifest.id} declares /${decl.name} but does not implement it`,
                 );
-              await fn(values, host(manifest.id));
+              await fn(values, { host: host(manifest.id), caller });
             },
           };
           registry.register(command);
@@ -234,18 +235,13 @@ export function createHostIndex(installed: InstalledPlugin[]): HostIndex {
   };
 }
 
-function toArgSpec(
-  decl: NonNullable<Manifest['commands']>[number]['args'] extends (infer A)[] | undefined
-    ? A
-    : never,
-): ArgSpec {
-  const base = { name: decl.name, description: decl.description, required: decl.required };
-  switch (decl.type) {
-    case 'number':
-      return { ...base, type: 'number' };
-    case 'choice':
-      return { ...base, type: 'choice', choices: decl.choices ?? [] };
-    default:
-      return { ...base, type: 'string' };
-  }
+// A manifest argument is typed by the handler once it runs; the bar only
+// needs to know how many there are and which are required.
+function toArgSpec(decl: ArgDecl): ArgSpec {
+  return {
+    name: decl.name,
+    description: decl.description,
+    required: decl.required,
+    type: 'string',
+  };
 }

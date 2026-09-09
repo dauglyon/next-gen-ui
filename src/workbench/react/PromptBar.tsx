@@ -4,12 +4,13 @@ import { ArrowUpRight, CaretRight, CaretUpDown, Check } from '@phosphor-icons/re
 import type { IconProps } from '@phosphor-icons/react';
 import { Menu, PromptInput, cx } from '@kbase/design-system';
 import type { Manifest, PromptContext } from '../../plugins/sdk';
+import { qualifyCommand } from '../../plugins/sdk';
 import { makePanel } from '../core';
 import type { Suggestion } from '../commands';
-import { complete, parse, resolve, usage } from '../commands';
+import { complete, parse, qualifiedName, resolve, usage } from '../commands';
+import { pluginHostFor } from '../host/createWorkbench';
 import { iconFor } from '../host/icons';
 import { PluginMark } from '../host/PluginMark';
-import { routeParams } from '../host/routes';
 import { CartTray } from './CartTray';
 import { useDispatch, useLayout, useRun, useServices } from './context';
 import { focusPanelElement } from './useFocusSync';
@@ -34,7 +35,8 @@ export function PromptBar() {
   const [highlight, setHighlight] = useState(-1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { registry, announcer, prompt, settings, source, dispatch, preview, cart } = useServices();
+  const services = useServices();
+  const { registry, announcer, prompt, settings, source, dispatch, preview, cart } = services;
   const layout = useLayout();
   const run = useRun();
   const wrapper = useRef<HTMLDivElement>(null);
@@ -68,7 +70,7 @@ export function PromptBar() {
         return;
       }
       setValue('');
-      await run(resolved.command.name, resolved.values);
+      await run(qualifiedName(resolved.command), resolved.values);
       return;
     }
     if (!assistant) {
@@ -97,18 +99,7 @@ export function PromptBar() {
       cart.clear();
       await handler(
         { text, signal: controller.signal, attachments },
-        {
-          openDocument: (params) =>
-            void dispatch({ type: 'open', panel: makePanel(assistant, 'document', params) }),
-          runCommand: (name, values) => run(name, values ?? {}),
-          cart: {
-            add: (item) => cart.add({ ...item, plugin: assistant, addedAt: Date.now() }),
-            remove: (id) => cart.remove(id),
-            has: (id) => cart.has(id),
-            count: () => cart.items().length,
-            subscribe: (listener) => cart.subscribe(listener),
-          },
-        },
+        pluginHostFor(services, assistant),
       );
     } catch (err) {
       const message = err instanceof Error ? err.message : 'The assistant failed.';
@@ -182,17 +173,16 @@ export function PromptBar() {
   };
 
   // The omnibox path to page-like plugins: "protein evidence" reaches
-  // Function Junction without knowing it exists.
+  // Function Junction without knowing it exists. A plugin is an app iff
+  // its manifest has a launcher, and the row runs that launcher.
   const appSuggestions = (text: string): BarSuggestion[] =>
-    nameHits(text, (m) => Boolean(m.document) && routeParams(m.document!.route).length === 0).map(
-      (m) => ({
-        value: `/open ${m.id}`,
-        label: `Open ${m.title}`,
-        detail: m.description,
-        icon: iconFor(m.icon, m.color),
-        run: () => void submit(`/open ${m.id}`),
-      }),
-    );
+    nameHits(text, (m) => Boolean(m.launcher)).map((m) => ({
+      value: text,
+      label: `Open ${m.title}`,
+      detail: m.description,
+      icon: iconFor(m.icon, m.color),
+      run: () => void run(qualifyCommand(m.launcher!.command, m.id), m.launcher!.args),
+    }));
 
   // Panels are reached the way Home reaches them: a pinned navigator is
   // focused where it already lives, an unpinned one is previewed. The
@@ -212,31 +202,32 @@ export function PromptBar() {
       };
     });
 
-  // The verbs plugins put on the Shortcuts toolbar, reachable by name as
-  // well as by button. One that takes arguments completes into the bar
-  // instead of running, since the bar is where they get typed.
+  // The buttons plugins put on the Shortcuts block, reachable by name as
+  // well. A shortcut is a call with its arguments filled in, so the row
+  // always runs.
   const shortcutSuggestions = (text: string): BarSuggestion[] => {
     const query = text.trim().toLowerCase();
     if (query.length < 2) return [];
     return source
       .manifests()
       .flatMap((m) =>
-        (m.commands ?? [])
-          .filter((c) => c.shortcut)
-          .map((c) => ({ m, c, label: typeof c.shortcut === 'string' ? c.shortcut : c.title })),
+        (m.shortcuts ?? []).map((call) => {
+          const name = qualifyCommand(call.command, m.id);
+          const declared = registry.get(name);
+          return { m, call, name, declared };
+        }),
       )
-      .filter(({ c, label }) => `${label} ${c.title} ${c.name}`.toLowerCase().includes(query))
+      .filter(({ call, declared }) =>
+        `${call.label} ${declared?.title ?? ''} ${call.command}`.toLowerCase().includes(query),
+      )
       .slice(0, 3)
-      .map(({ m, c, label }) => {
-        const needsArgs = (c.args ?? []).some((a) => a.required);
-        return {
-          value: `/${c.name}${needsArgs ? ' ' : ''}`,
-          label,
-          detail: c.title,
-          icon: iconFor(c.icon ?? m.icon, m.color),
-          run: needsArgs ? undefined : () => void run(c.name),
-        };
-      });
+      .map(({ m, call, name, declared }) => ({
+        value: text,
+        label: call.label,
+        detail: declared?.title,
+        icon: iconFor(m.commands?.find((c) => c.name === declared?.name)?.icon ?? m.icon, m.color),
+        run: () => void run(name, call.args),
+      }));
   };
 
   // The full-density form of the same search, for when the rows above are
@@ -256,8 +247,8 @@ export function PromptBar() {
       if (!live) return;
       // A command's icon is its plugin's; the workbench's own have none.
       const commands: BarSuggestion[] = list.map((s) => {
-        const owner = registry.get(s.value.trim().replace(/^\//, '').split(/\s+/)[0])?.source;
-        const manifest = owner ? source.manifest(owner) : undefined;
+        const found = registry.find(s.value.trim().replace(/^\//, '').split(/\s+/)[0]);
+        const manifest = found.ok ? source.manifest(found.command.source) : undefined;
         return {
           ...s,
           mono: true,
@@ -302,12 +293,13 @@ export function PromptBar() {
   }, [value, registry]);
 
   const parsed = parse(value);
-  const known = parsed.kind === 'command' ? registry.get(parsed.name) : undefined;
+  const found = parsed.kind === 'command' ? registry.find(parsed.name) : undefined;
+  const known = found?.ok ? found.command : undefined;
   // Free-text destination is the row above the bar; the hint slot only
   // ever explains the command being typed.
   const hint =
     parsed.kind === 'command' && known && known.args?.length
-      ? `${usage(known.name, known.args)} — ${known.title}`
+      ? `${usage(parsed.name, known.args)} — ${known.title}`
       : null;
 
   const accept = (s: BarSuggestion) => {

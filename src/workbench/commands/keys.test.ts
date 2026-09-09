@@ -20,12 +20,18 @@ describe('chords', () => {
   });
 
   it('matches letters regardless of the case Shift produced', () => {
-    expect(resolveKeybinding(press('W', { altKey: true, shiftKey: true }), {})).toBe('close');
-    expect(resolveKeybinding(press('w', { altKey: true, shiftKey: true }), {})).toBe('close');
+    expect(resolveKeybinding(press('W', { altKey: true, shiftKey: true }), {})).toBe(
+      'workbench:close',
+    );
+    expect(resolveKeybinding(press('w', { altKey: true, shiftKey: true }), {})).toBe(
+      'workbench:close',
+    );
   });
 
   it('user overrides win and an empty override removes a default', () => {
-    expect(resolveKeybinding(press('Z', { ctrlKey: true }), { 'Ctrl+Z': 'close' })).toBe('close');
+    expect(resolveKeybinding(press('Z', { ctrlKey: true }), { 'Ctrl+Z': 'workbench:close' })).toBe(
+      'workbench:close',
+    );
     expect(resolveKeybinding(press('Z', { ctrlKey: true }), { 'Ctrl+Z': '' })).toBeNull();
   });
 

@@ -12,9 +12,8 @@ export const home: InstalledPlugin = {
     contractVersion: CONTRACT_VERSION,
     icon: 'House',
     document: { route: '/' },
-    commands: [
-      { name: 'browse', title: 'Browse everything installed', icon: 'House', shortcut: 'Browse' },
-    ],
+    commands: [{ name: 'browse', title: 'Browse everything installed', icon: 'House' }],
+    shortcuts: [{ label: 'Browse', command: 'browse' }],
   },
   load: async () => ({
     document: (await import('./Home')).HomeDocument,

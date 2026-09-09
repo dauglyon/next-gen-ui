@@ -1,10 +1,13 @@
 import type { ArgError, ArgValues } from './args';
 import { completeArg, usage, validateArgs } from './args';
-import type { Command, CommandContext, CommandRegistry } from './registry';
+import type { Command, CommandRegistry, WhenContext } from './registry';
+import { qualifiedName } from './registry';
 
 // Text typed into the prompt bar is either a slash command or a prompt for
 // the assistant. Slash commands are `/name arg arg`, with double quotes
-// grouping an argument that contains spaces.
+// grouping an argument that contains spaces. The name is bare (`/cancel`)
+// when one command carries it, qualified (`/jobs:cancel`) when the user
+// has to say which.
 
 export type Parsed =
   | { kind: 'prompt'; text: string }
@@ -28,20 +31,31 @@ export function tokenize(text: string): string[] {
 
 export type Resolved =
   | { ok: true; command: Command; values: ArgValues }
-  | { ok: false; code: 'unknown-command' | ArgError['code']; message: string };
+  | {
+      ok: false;
+      code: 'unknown-command' | 'ambiguous-command' | ArgError['code'];
+      message: string;
+    };
 
-export function resolve(registry: CommandRegistry, input: string, ctx?: CommandContext): Resolved {
+export function resolve(registry: CommandRegistry, input: string, ctx?: WhenContext): Resolved {
   const parsed = parse(input);
   if (parsed.kind !== 'command') {
     return { ok: false, code: 'unknown-command', message: 'not a slash command' };
   }
-  const command = registry.get(parsed.name);
-  if (!command || (ctx && command.when && !command.when(ctx))) {
+  const found = registry.find(parsed.name, ctx);
+  if (!found.ok) {
+    if (found.reason === 'ambiguous') {
+      return {
+        ok: false,
+        code: 'ambiguous-command',
+        message: `/${parsed.name} is declared by ${found.candidates.map(qualifiedName).join(' and ')}; type one of them`,
+      };
+    }
     return { ok: false, code: 'unknown-command', message: `unknown command /${parsed.name}` };
   }
-  const result = validateArgs(command.args ?? [], parsed.tokens);
+  const result = validateArgs(found.command.args ?? [], parsed.tokens);
   if (!result.ok) return { ok: false, code: result.error.code, message: result.error.message };
-  return { ok: true, command, values: result.values };
+  return { ok: true, command: found.command, values: result.values };
 }
 
 export interface Suggestion {
@@ -51,11 +65,18 @@ export interface Suggestion {
   detail?: string;
 }
 
+// The shortest name that reaches a command: bare when no other command
+// carries that bare name, qualified otherwise.
+export function displayName(registry: CommandRegistry, command: Command): string {
+  const sharers = registry.list().filter((c) => c.name === command.name);
+  return sharers.length > 1 ? qualifiedName(command) : command.name;
+}
+
 // Completions for the token under the caret, which is always the last one.
 export async function complete(
   registry: CommandRegistry,
   input: string,
-  ctx?: CommandContext,
+  ctx?: WhenContext,
 ): Promise<Suggestion[]> {
   const parsed = parse(input);
   if (parsed.kind !== 'command') return [];
@@ -64,17 +85,22 @@ export async function complete(
   if (namingCommand) {
     return registry
       .list(ctx)
-      .filter((c) => c.name.startsWith(parsed.name))
-      .map((c) => ({
-        value: `/${c.name}${c.args?.length ? ' ' : ''}`,
-        label: usage(c.name, c.args ?? []),
+      .map((c) => ({ c, shown: displayName(registry, c) }))
+      .filter(
+        ({ c, shown }) =>
+          shown.startsWith(parsed.name) ||
+          (parsed.name.includes(':') && qualifiedName(c).startsWith(parsed.name)),
+      )
+      .map(({ c, shown }) => ({
+        value: `/${shown}${c.args?.length ? ' ' : ''}`,
+        label: usage(shown, c.args ?? []),
         detail: c.title,
       }));
   }
 
-  const command = registry.get(parsed.name);
-  if (!command || (ctx && command.when && !command.when(ctx))) return [];
-  const specs = command.args ?? [];
+  const found = registry.find(parsed.name, ctx);
+  if (!found.ok) return [];
+  const specs = found.command.args ?? [];
   const index = parsed.trailingSpace ? parsed.tokens.length : parsed.tokens.length - 1;
   const spec = specs[index];
   if (!spec) return [];
@@ -82,7 +108,7 @@ export async function complete(
   const done = parsed.tokens.slice(0, index);
   const options = await completeArg(spec, prefix);
   return options.map((option) => ({
-    value: ['/' + command.name, ...done.map(quote), quote(option)].join(' '),
+    value: ['/' + parsed.name, ...done.map(quote), quote(option)].join(' '),
     label: option,
     detail: spec.description ?? spec.name,
   }));

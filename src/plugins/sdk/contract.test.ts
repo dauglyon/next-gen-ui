@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CONTRACT_VERSION, ManifestSchema } from './contract';
+import { CONTRACT_VERSION, ManifestSchema, qualifyCommand } from './contract';
 
 const base = { id: 'jobs', title: 'Jobs', contractVersion: CONTRACT_VERSION };
 
@@ -14,6 +14,7 @@ describe('ManifestSchema', () => {
     ['another contract version', { ...base, contractVersion: 2 }],
     ['a route without a leading slash', { ...base, document: { route: 'job/$id' } }],
     ['a command name with spaces', { ...base, commands: [{ name: 'do it', title: 'x' }] }],
+    ['a call to a command with a slash', { ...base, launcher: { label: 'x', command: '/open' } }],
   ])('rejects %s', (_label, raw) => {
     expect(ManifestSchema.safeParse(raw).success).toBe(false);
   });
@@ -28,12 +29,21 @@ describe('ManifestSchema', () => {
         {
           name: 'cancel',
           title: 'Cancel a job',
-          args: [{ name: 'id', type: 'string', required: true }],
+          args: [{ name: 'id', required: true }],
         },
       ],
+      shortcuts: [{ label: 'Cancel 12', command: 'cancel', args: { id: '12' } }],
+      launcher: { label: 'Jobs', command: 'workbench:open', args: { plugin: 'jobs' } },
       promptHandler: false,
       entry: { url: '/plugin-registry/jobs/remoteEntry.js', module: './plugin' },
     });
     expect(result.success).toBe(true);
+  });
+});
+
+describe('qualifyCommand', () => {
+  it('gives a bare name to its owner and leaves a qualified one alone', () => {
+    expect(qualifyCommand('cancel', 'jobs')).toBe('jobs:cancel');
+    expect(qualifyCommand('genknown:taxon', 'jobs')).toBe('genknown:taxon');
   });
 });

@@ -1,7 +1,7 @@
-import type { PluginHost } from '../../../plugins/sdk';
+import type { CommandHandler } from '../../../plugins/sdk';
 
 // `/catalog`, and the Shortcuts button that runs it. Its own file because
 // a component module may only export components.
-export const commands = {
-  catalog: (_values: unknown, host: PluginHost) => host.openDocument({}),
+export const commands: Record<string, CommandHandler> = {
+  catalog: (_args, { host }) => host.openDocument({}),
 };

@@ -18,7 +18,7 @@ describe('deserialize', () => {
   it.each([
     ['nothing', null],
     ['not json', '{'],
-    ['wrong version', JSON.stringify({ ...defaultLayout(), version: 2 })],
+    ['an earlier version', JSON.stringify({ ...defaultLayout(), version: 1 })],
     [
       'a tab without a panel',
       JSON.stringify({
