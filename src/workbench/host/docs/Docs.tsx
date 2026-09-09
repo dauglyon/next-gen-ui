@@ -20,11 +20,9 @@ export function DocsDocument() {
         <header className={styles.head} id="top">
           <h1 className="h2">Plugin developer documentation</h1>
           <p className={styles.lede}>
-            A plugin is a package the workbench loads at runtime. It describes itself in a manifest
-            and provides up to five modules: a page, a sidebar pane, slash commands, a background
-            module that reacts to what the user is doing, and a prompt handler that makes it an
-            assistant. The workbench reads the manifest at startup and loads each module the first
-            time it is needed.
+            A plugin is a manifest and up to five modules, built with <Code>pluginFederation</Code>{' '}
+            and served by the plugin's own service. The workbench reads the manifest at startup and
+            loads each module the first time it is needed.
           </p>
         </header>
 
@@ -85,29 +83,11 @@ npm run dev -- --port 8770`}</File>
           </p>
         </Part>
 
-        <Part id="model" title="How it works">
-          <p className={styles.para}>
-            The manifest describes the plugin: its name and icon, its commands, and which modules it
-            has. The workbench builds Browse, slash completion and the shortcut buttons from
-            manifests alone. It loads a module when the user opens a tab, runs a command, or sends a
-            prompt. The background module is the exception; it loads at startup.
-          </p>
-          <p className={styles.para}>
-            Plugins do not call each other. They communicate through terms. A term is a namespaced
-            identifier such as <Code>uniprot:P0AEX9</Code>. When the user types, opens a page, or
-            adds to the cart, plugins turn that into terms, and every plugin is asked what it can
-            offer for them. The offers appear in the prompt bar and in the Related pane.
-          </p>
-          <p className={styles.para}>
-            The cart collects items to send to the assistant. An item carries its data, so the
-            assistant and other plugins can read it without calling the plugin that made it.
-          </p>
-        </Part>
-
         <Part id="manifest" title="The manifest">
           <p className={styles.para}>
-            <Code>plugin.config.ts</Code> is everything the workbench knows about a plugin before
-            loading its code.
+            <Code>plugin.config.ts</Code> is read by the build and served as{' '}
+            <Code>manifest.json</Code>. The workbench reads it at startup, before loading any
+            module.
           </p>
           <File
             name="plugin.config.ts"
@@ -126,23 +106,25 @@ npm run dev -- --port 8770`}</File>
   launcher: { label: 'Function Junction', command: 'open' },
 });`}</File>
           <p className={styles.para}>
-            <Code>launcher</Code> puts a card on Browse. <Code>commands</Code> declares the slash
-            commands; the prompt bar completes them and checks their arguments, and{' '}
-            <Code>commands.ts</Code> must provide a handler for each. <Code>shortcuts</Code> are
-            buttons in the sidebar that run a command with fixed arguments.
+            <Code>launcher</Code> adds a card to Browse that runs the command. <Code>commands</Code>{' '}
+            declares slash commands. The prompt bar completes each one and validates its arguments
+            from this declaration; <Code>commands.ts</Code> must export a handler with the same
+            name. <Code>shortcuts</Code> adds buttons to the sidebar; each runs the command with the
+            given arguments.
           </p>
           <p className={styles.para}>
-            The <Code>id</Code> is part of every URL and every saved layout, so it cannot change.
-            Commands are registered as <Code>function-junction:open</Code>. The short form{' '}
-            <Code>/open</Code> works until another plugin declares a command named <Code>open</Code>
-            ; after that only the full name does.
+            <Code>id</Code> appears in URLs and saved layouts and must not change. A command's full
+            name is <Code>&lt;id&gt;:&lt;name&gt;</Code>. <Code>/open</Code> resolves to it while no
+            other plugin declares <Code>open</Code>; otherwise <Code>/function-junction:open</Code>{' '}
+            is required.
           </p>
         </Part>
 
         <Part id="pages" title="Pages">
           <p className={styles.para}>
-            The <Code>route</Code> module is the plugin's page. The workbench shows it in a tab at{' '}
-            <Code>/p/&lt;id&gt;/&lt;path&gt;</Code> and gives the component the path.
+            <Code>route.tsx</Code> exports the page. The workbench opens it in a tab at{' '}
+            <Code>/p/&lt;id&gt;&lt;path&gt;</Code>; <Code>usePanel().path</Code> is the part after{' '}
+            <Code>/p/&lt;id&gt;</Code>, including the query string.
           </p>
           <File name="src/route.tsx" language="tsx">{`function Dossier() {
   const { path, navigate } = usePanel();
@@ -158,17 +140,18 @@ export default defineRoute({
   normalize: (path) => path.split('?')[0].toUpperCase(),
 });`}</File>
           <p className={styles.para}>
-            <Code>normalize</Code> decides when two paths are the same page. <Code>openRoute</Code>{' '}
-            uses it to focus the existing tab instead of opening a duplicate. <Code>navigate</Code>{' '}
-            changes the tab's path and adds a history entry. <Code>usePanelTitle</Code> sets the tab
-            title. <Code>usePanelTerms</Code> tells the workbench what the page is about, so other
-            plugins can offer related things while it is open.
+            <Code>normalize(path)</Code> returns a canonical form of the path. Before opening a tab,{' '}
+            <Code>openRoute</Code> compares the normalized path with the plugin's open tabs and
+            focuses a match instead of opening a new tab. <Code>navigate(path)</Code> changes the
+            tab's path and pushes a history entry. <Code>usePanelTitle(title)</Code> sets the tab
+            title. <Code>usePanelTerms(terms)</Code> registers the page's terms; the workbench
+            passes them to every plugin's <Code>recommend</Code> while the tab is in front.
           </p>
         </Part>
 
         <Part id="pane" title="Sidebar pane">
           <p className={styles.para}>
-            The <Code>pane</Code> module is the plugin's block in the sidebar. Users pin it from
+            <Code>pane.tsx</Code> exports the sidebar block. A plugin with a pane can be pinned from
             Settings.
           </p>
           <File
@@ -176,16 +159,16 @@ export default defineRoute({
             language="tsx"
           >{`export default definePane({ ...fromReact(RecentProteins), fit: 'content' });`}</File>
           <p className={styles.para}>
-            <Code>fit: 'content'</Code> makes the block as tall as its content; otherwise it shares
-            the sidebar's height. A pane has no path. It unmounts when folded and can be mounted
-            twice while the sidebar is collapsed, so keep state outside the component.
+            <Code>fit: 'content'</Code> sizes the block to its content; without it, the block shares
+            the sidebar's height with the other pinned panes. <Code>usePanel().path</Code> is{' '}
+            <Code>''</Code>. The pane unmounts when its block is folded, and is mounted a second
+            time in the flyout while the sidebar is collapsed.
           </p>
         </Part>
 
         <Part id="background" title="Background">
           <p className={styles.para}>
-            The <Code>background</Code> module runs while the plugin is not open. It loads at
-            startup.
+            <Code>background.ts</Code> is loaded at startup. It exports up to three functions.
           </p>
           <File
             name="src/background.ts"
@@ -223,27 +206,37 @@ export default defineBackground({
     pending() > 0 ? [{ text: \`\${pending()} lookups running\`, action: { label: 'Show', command: 'open' } }] : [],
 });`}</File>
           <p className={styles.para}>
-            <Code>terms</Code> runs on every keystroke and returns the terms it recognises in the
-            text. It must be synchronous and must not fetch. <Code>recommend</Code> runs when typing
-            pauses, and again when the open page's terms or the cart change. It may fetch, and its{' '}
-            <Code>signal</Code> aborts when the input changes. Recommended <Code>commands</Code>{' '}
-            become rows in the prompt bar. Recommended <Code>cartItems</Code> become rows in the
-            Related pane, where the user can open them or add them to the cart. <Code>status</Code>{' '}
-            returns lines for the status bar; it is read at startup and after every command.
+            <Code>terms(query)</Code> is called on every keystroke with <Code>query.text</Code> set
+            to the typed text. Return the terms found in it, as strings of the form{' '}
+            <Code>prefix:value</Code>. It must be synchronous.
           </p>
           <p className={styles.para}>
-            A cart item is JSON. <Code>content</Code> is the data. <Code>context</Code> is what a
-            reader needs to interpret it: units, caveats, the population a number was measured over.{' '}
-            <Code>terms</Code> let other plugins react to the item. <Code>source.path</Code> is
-            where it opens. Build <Code>id</Code> from the item's identity, so adding it twice
+            <Code>recommend.commands(query)</Code> and <Code>recommend.cartItems(query)</Code> are
+            called 250 ms after typing stops, with <Code>query.terms</Code> set to every term
+            returned by every plugin. They may be async; <Code>query.signal</Code> aborts when the
+            text changes. Returned commands are shown as rows in the prompt bar. Returned cart items
+            are shown in the Related pane, where the user can open one or add it to the cart. Both
+            functions are also called with the front tab's terms and with the cart items' terms,
+            except that a plugin is not called with its own tab's terms.
+          </p>
+          <p className={styles.para}>
+            <Code>status()</Code> is called at startup and after every command. Return lines for the
+            status bar.
+          </p>
+          <p className={styles.para}>
+            In a cart item, <Code>content</Code> is the data as JSON and <Code>context</Code>{' '}
+            describes it: units, caveats, the population a number was measured over.{' '}
+            <Code>terms</Code> are passed to other plugins' <Code>recommend</Code> once the item is
+            in the cart. <Code>source.path</Code> is the path <Code>openRoute</Code> uses to open
+            it. <Code>id</Code> must be unique across plugins; adding an item with an existing id
             replaces it.
           </p>
         </Part>
 
         <Part id="assistant" title="Assistant">
           <p className={styles.para}>
-            The <Code>prompt</Code> module makes the plugin an assistant. The user picks one in
-            Settings.
+            <Code>prompt.ts</Code> exports the assistant handler. Settings lists every plugin with a
+            prompt module, and the user picks one.
           </p>
           <File name="src/prompt.ts" language="typescript">{`export default definePrompt({
   handle: async ({ text }, { host, attachments }) => {
@@ -254,16 +247,22 @@ export default defineBackground({
   destination: { current: () => koros.destination(), subscribe: koros.subscribe },
 });`}</File>
           <p className={styles.para}>
-            <Code>handle</Code> receives the text the user typed and the cart as{' '}
-            <Code>attachments</Code>. The cart is emptied when the message is sent. The handler
-            opens its own page and writes the answer there; the workbench draws nothing itself.{' '}
-            <Code>destination</Code> tells the prompt bar where the next message will go.
+            <Code>handle(query, ctx)</Code> is called when the user sends text that does not start
+            with <Code>/</Code>. <Code>query.text</Code> is the text, <Code>query.terms</Code> the
+            terms found in it, and <Code>ctx.attachments</Code> the cart's items. The cart is
+            emptied when <Code>handle</Code> is called. The workbench renders nothing for the
+            response; call <Code>host.openRoute</Code> and render it in the plugin's page.
+          </p>
+          <p className={styles.para}>
+            <Code>destination.current()</Code> returns what the prompt bar shows above the input: a
+            label, and optionally a path and a list of options. The bar calls it again after each{' '}
+            <Code>subscribe</Code> notification.
           </p>
         </Part>
 
         <Part id="commands" title="Commands and the host">
           <p className={styles.para}>
-            The <Code>commands</Code> module provides a handler for each command in the manifest.
+            <Code>commands.ts</Code> exports one handler per command declared in the manifest.
           </p>
           <File name="src/commands.ts" language="typescript">{`export default defineCommands({
   open: ({ id }, { host }) => host.openRoute(\`/\${id}\`),
@@ -273,13 +272,14 @@ export default defineBackground({
   },
 });`}</File>
           <p className={styles.para}>
-            A handler receives the arguments and a <Code>host</Code>. <Code>host.openRoute</Code>{' '}
-            opens this plugin's page. <Code>host.execute</Code> runs a command; a bare name is this
-            plugin's own, <Code>plugin:name</Code> is another plugin's. <Code>host.hasCommand</Code>{' '}
-            checks whether a command exists. <Code>host.notify</Code> shows a toast.{' '}
-            <Code>host.cart</Code> adds and removes this plugin's cart items. Pages get the same
-            host from <Code>useHost()</Code>, and <Code>CartButton</Code> is the standard Add
-            control.
+            A handler receives the arguments and a <Code>host</Code>.{' '}
+            <Code>host.openRoute(path)</Code> opens the plugin's page.{' '}
+            <Code>host.execute(command, args)</Code> runs a command: <Code>name</Code> runs this
+            plugin's command, <Code>plugin:name</Code> another plugin's.{' '}
+            <Code>host.hasCommand(command)</Code> returns whether it is registered.{' '}
+            <Code>host.notify(text)</Code> shows a toast. <Code>host.cart</Code> adds and removes
+            this plugin's items. Pages get the same object from <Code>useHost()</Code>;{' '}
+            <Code>CartButton</Code> renders the Add button for an item.
           </p>
         </Part>
 
@@ -320,9 +320,9 @@ interface CommandCall {
 
 function definePluginManifest(m: Manifest): Manifest;`}</Sig>
             <p className={styles.para}>
-              A <Code>CommandCall</Code> is shown as a button wherever it appears. The workbench
-              skips a manifest whose <Code>contractVersion</Code> it does not accept and says so in
-              the console.
+              A <Code>CommandCall</Code> is rendered as a button that runs the command. The
+              workbench rejects a manifest whose <Code>contractVersion</Code> it does not accept and
+              logs the reason.
             </p>
           </Entry>
 
@@ -336,13 +336,11 @@ function definePluginManifest(m: Manifest): Manifest;`}</Sig>
   prompt?: string;
 }): VitePlugin[];`}</Sig>
             <p className={styles.para}>
-              The build exposes each named entry point as a module and writes the list into{' '}
-              <Code>manifest.modules</Code>. It shares the workbench's copies of <Code>react</Code>,{' '}
-              <Code>react-dom</Code>, <Code>zod</Code>, <Code>@kbase/plugin-sdk</Code>,{' '}
-              <Code>@kbase/design-system</Code>, <Code>@phosphor-icons/react</Code> and{' '}
-              <Code>@tanstack/react-router</Code> for each one listed in the plugin's{' '}
-              <Code>package.json</Code>. A second copy of React or the SDK breaks hooks and
-              contexts.
+              Exposes each named entry point as a module and writes the list to{' '}
+              <Code>manifest.modules</Code>. Shares <Code>react</Code>, <Code>react-dom</Code>,{' '}
+              <Code>zod</Code>, <Code>@kbase/plugin-sdk</Code>, <Code>@kbase/design-system</Code>,{' '}
+              <Code>@phosphor-icons/react</Code> and <Code>@tanstack/react-router</Code> with the
+              workbench, for each one listed in the plugin's <Code>package.json</Code>.
             </p>
           </Entry>
 
@@ -388,9 +386,8 @@ function definePluginManifest(m: Manifest): Manifest;`}</Sig>
   context?: Record<string, unknown>;           // what content cannot say: units, population, caveats
 }`}</Sig>
               <p className={styles.para}>
-                Recommended <Code>commands</Code> are shown for the typed text only, at most four.
-                Items already in the cart, or dismissed from Related, are not shown. A plugin is not
-                asked about terms from its own open page.
+                Commands are shown for the typed text only, at most four. Cart items already in the
+                cart, or dismissed from Related, are not shown.
               </p>
             </Export>
 
@@ -417,7 +414,6 @@ type Cleanup = () => void;
 function defineRoute(r: { mount: Mount; normalize: (path: string) => string }): Route;
 function fromReact(Component: ComponentType): { mount: Mount };`}</Sig>
             <p className={styles.para}>
-              The path is everything after <Code>/p/&lt;id&gt;</Code>, including the query string.{' '}
               <Code>{'openRoute(path, { duplicate: true })'}</Code> opens a second tab for the same
               page. <Code>{'navigate(path, { replace: true })'}</Code> replaces the history entry
               instead of adding one.
@@ -473,8 +469,7 @@ function definePrompt(p: {
   };
 }): Prompt;`}</Sig>
             <p className={styles.para}>
-              <Code>q.terms</Code> holds the terms found in the text. <Code>q.signal</Code> aborts
-              when the user presses Stop or sends another message.
+              <Code>q.signal</Code> aborts when the user presses Stop or sends another message.
             </p>
           </Entry>
 
@@ -522,7 +517,7 @@ function usePanelTerms(terms: string[]): void;
 function CartButton(props: { item: CartItem; tooltip?: string }): JSX.Element;`}</Sig>
             <p className={styles.para}>
               A component that throws is replaced inside its panel by the error and a Try again
-              button. The rest of the workbench keeps working.
+              button.
             </p>
           </Entry>
         </Part>
@@ -583,7 +578,6 @@ function CartButton(props: { item: CartItem; tooltip?: string }): JSX.Element;`}
 
 const SECTIONS: { id: string; label: string; children?: { id: string; label: string }[] }[] = [
   { id: 'start', label: 'Getting started' },
-  { id: 'model', label: 'How it works' },
   { id: 'manifest', label: 'The manifest' },
   { id: 'pages', label: 'Pages' },
   { id: 'pane', label: 'Sidebar pane' },
