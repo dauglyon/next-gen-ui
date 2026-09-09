@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { flushSync } from 'react-dom';
 import { X } from '@phosphor-icons/react';
-import { EmptyState, Loader, Tooltip } from '@kbase/design-system';
+import { Loader, Tooltip } from '@kbase/design-system';
 import { CartButton, qualifyCommand, usePanelTitle } from '../../../plugins/sdk';
 import type { QuerySource, Recommendation } from '../../core';
 import { QUERY_SOURCES, mergeRecommendations } from '../../core';
@@ -40,6 +40,9 @@ const HEADING: Record<QuerySource, (label: string) => string> = {
   cart: () => 'Cart',
 };
 
+// How long the pane stays blank before saying nothing is related.
+const QUIET_MS = 1500;
+
 // A view transition carries rows that enter and leave; names must be CSS
 // identifiers, and item ids are not.
 const transitionName = (id: string) => `related-${id.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
@@ -59,8 +62,12 @@ export function RelatedNavigator() {
         current.current,
         QUERY_SOURCES.map((source) => ({ source, state: query.get(source) })),
       );
+      // Only a change in which rows exist is worth a transition: a keystroke
+      // that changes nothing here must not snapshot the page.
+      const prev = current.current;
+      const moved = next.length !== prev.length || next.some((r, i) => r.id !== prev[i]?.id);
       current.current = next;
-      if (animate && typeof document.startViewTransition === 'function') {
+      if (animate && moved && typeof document.startViewTransition === 'function') {
         const t = document.startViewTransition(() => flushSync(() => setRows(next)));
         // A transition overtaken by the next one rejects; that is not an error here.
         t.ready.catch(() => {});
@@ -75,35 +82,51 @@ export function RelatedNavigator() {
 
   const shown = rows.filter((r) => !cart.has(r.id) && !query.dismissed(r.id));
   // A row sits in the group of its first offer; the count on the row says
-  // when others offer it too.
-  const groups = QUERY_SOURCES.map((source) => ({
-    source,
-    label: HEADING[source](query.get(source).label),
-    rows: shown.filter((r) => r.offeredBy[0].source === source),
-    pending: query.get(source).pending,
-  })).filter((g) => g.rows.length > 0 || g.pending.length > 0);
-  const asking = new Set(groups.flatMap((g) => g.pending));
+  // when others offer it too. A source is asking from the moment it is set,
+  // before the settle names who is being asked.
+  const groups = QUERY_SOURCES.map((source) => {
+    const state = query.get(source);
+    return {
+      source,
+      label: HEADING[source](state.label),
+      rows: shown.filter((r) => r.offeredBy[0].source === source),
+      pending: state.pending,
+      asking: state.loading || state.pending.length > 0,
+    };
+  }).filter((g) => g.rows.length > 0 || g.asking);
+
+  // "Nothing related" only once the pane has been empty and quiet for a
+  // moment: rows leave and arrive a beat apart, and the message in between
+  // read as a flash.
+  const empty = groups.length === 0;
+  // Each time the pane becomes empty is a run; the message shows once the
+  // current run has lasted a while: a framed page posts its terms a second
+  // or two after its tab opens, and the pane cannot know they are coming.
+  // (The previous-render pattern: a state set during render for a value
+  // derived from the last one.)
+  const [prevEmpty, setPrevEmpty] = useState(empty);
+  const [run, setRun] = useState(0);
+  if (prevEmpty !== empty) {
+    setPrevEmpty(empty);
+    if (empty) setRun(run + 1);
+  }
+  const [settledRun, setSettledRun] = useState(-1);
+  useEffect(() => {
+    if (!empty) return;
+    const t = window.setTimeout(() => setSettledRun(run), QUIET_MS);
+    return () => window.clearTimeout(t);
+  }, [empty, run]);
+  const settledEmpty = empty && settledRun === run;
 
   // The sidebar draws this block's header whether or not there is anything in
   // it, so the body has to account for itself.
-  if (shown.length === 0) {
+  if (empty) {
     return (
       <div className={styles.relatedEmpty}>
-        {asking.size > 0 ? (
-          <div
-            className={styles.relatedSkeleton}
-            aria-label="Asking the other plugins"
-            role="status"
-          >
-            <span />
-            <span />
-            <span />
-          </div>
-        ) : (
-          <EmptyState
-            title="Nothing related"
-            description="Open a page, type into the prompt bar, or add to the cart, and anything else that knows about it appears here."
-          />
+        {settledEmpty && (
+          <p className={styles.relatedQuiet}>
+            Nothing related yet. Open a page, type into the prompt bar, or add to the cart.
+          </p>
         )}
       </div>
     );
@@ -114,12 +137,24 @@ export function RelatedNavigator() {
       {groups.map((g) => (
         <div key={g.source} className={styles.relatedSection}>
           <p className={styles.relatedFrom}>{g.label}</p>
-          <ul className={styles.relatedList}>
-            {g.rows.map((row) => (
-              <RelatedRow key={row.id} row={row} />
-            ))}
-          </ul>
-          {g.pending.length > 0 && <Activity plugins={g.pending} />}
+          {g.rows.length > 0 ? (
+            <ul className={styles.relatedList}>
+              {g.rows.map((row) => (
+                <RelatedRow key={row.id} row={row} />
+              ))}
+            </ul>
+          ) : (
+            <div
+              className={styles.relatedSkeleton}
+              aria-label="Asking the other plugins"
+              role="status"
+            >
+              <span />
+              <span />
+              <span />
+            </div>
+          )}
+          {g.rows.length > 0 && g.pending.length > 0 && <Activity plugins={g.pending} />}
         </div>
       ))}
     </div>

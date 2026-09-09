@@ -227,3 +227,11 @@ body,
   max-width: 60ch;
   line-height: 1.6;
 }
+
+/* A view transition here moves named rows (the Related pane); the page itself
+   must not cross-fade, which on a dark theme reads as a black flash. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}

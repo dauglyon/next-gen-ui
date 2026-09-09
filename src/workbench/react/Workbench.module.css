@@ -1474,3 +1474,11 @@
   font-size: var(--fs-2);
   color: var(--c-ink3);
 }
+
+/* Nothing related, said quietly: a line, not an event. */
+.relatedQuiet {
+  margin: 0;
+  padding: var(--s-2) var(--s-4);
+  font-size: var(--fs-2);
+  color: var(--c-ink3);
+}
