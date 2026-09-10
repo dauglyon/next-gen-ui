@@ -2,7 +2,8 @@ import shapesJson from './shapes.json';
 
 // Identifiers the workbench recognises in typed text by shape alone, under
 // the prefix Bioregistry gives them: `P0AEX9` is `uniprot:P0AEX9` wherever
-// it sits in a sentence. The shapes are extracted from a pinned Bioregistry
+// it sits in a sentence, and so is `p0aex9`: the shape is matched in any
+// case and the id minted in the registry's. The shapes are extracted from a pinned Bioregistry
 // release by scripts/build-shapes.mjs, which also says why an entry is
 // tagged only in its prefixed form (`taxon:562`): a bare integer names as
 // many things as there are databases.
@@ -31,12 +32,19 @@ export interface Tag {
 
 interface Compiled extends Shape {
   re: RegExp;
+  // The registry writes the id in one case; typed text comes in any.
+  // A shape whose pattern names only upper-case letters is minted upper.
+  upper: boolean;
 }
 
 const SHAPES: Compiled[] = (shapesJson as { shapes: Shape[] }).shapes.map((s) => ({
   ...s,
-  re: new RegExp(s.pattern),
+  re: new RegExp(s.pattern, 'i'),
+  upper: !/[a-z]/.test(s.pattern.replace(/\\[a-zA-Z]/g, '')),
 }));
+
+// The id as the registry writes it: `p0aex9` is `P0AEX9` to UniProt.
+const canonical = (shape: Compiled, id: string) => (shape.upper ? id.toUpperCase() : id);
 const BARE = SHAPES.filter((s) => s.bare);
 const BY_ALIAS = new Map<string, Compiled[]>();
 for (const shape of SHAPES) {
@@ -82,20 +90,17 @@ export function tagText(text: string): Tag[] {
     if (colon > 0) {
       const id = token.slice(colon + 1);
       for (const shape of BY_ALIAS.get(token.slice(0, colon).toLowerCase()) ?? []) {
-        if (shape.re.test(id))
-          tags.push({ term: `${shape.prefix}:${id}`, prefix: shape.prefix, id, start, end });
+        if (shape.re.test(id)) {
+          const as = canonical(shape, id);
+          tags.push({ term: `${shape.prefix}:${as}`, prefix: shape.prefix, id: as, start, end });
+        }
       }
       continue;
     }
     for (const shape of BARE) {
       if (shape.re.test(token)) {
-        tags.push({
-          term: `${shape.prefix}:${token}`,
-          prefix: shape.prefix,
-          id: token,
-          start,
-          end,
-        });
+        const as = canonical(shape, token);
+        tags.push({ term: `${shape.prefix}:${as}`, prefix: shape.prefix, id: as, start, end });
       }
     }
   }

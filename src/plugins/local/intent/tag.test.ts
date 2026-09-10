@@ -24,6 +24,11 @@ describe('tagging identifiers in typed text', () => {
   });
 
   // 767 registry patterns match a bare integer; none of them is minted.
+  it('matches a shape in any case and mints the id in the registry case', () => {
+    expect(tagText('dossier for p0aex9').map((t) => t.term)).toEqual(['uniprot:P0AEX9']);
+    expect(tagText('gcf_000005845.2').map((t) => t.term)).toContain('insdc.gcf:GCF_000005845.2');
+  });
+
   it('tags no bare integer', () => {
     expect(terms('562')).toEqual([]);
     expect(terms('0008150')).toEqual([]);
@@ -49,10 +54,6 @@ describe('tagging identifiers in typed text', () => {
 
   it('strips the punctuation around a token', () => {
     expect(terms('(P0AEX9), "Q9X0E6"?')).toEqual(['uniprot:P0AEX9', 'uniprot:Q9X0E6']);
-  });
-
-  it('is case-sensitive where the registry is', () => {
-    expect(terms('p0aex9')).toEqual([]);
   });
 });
 

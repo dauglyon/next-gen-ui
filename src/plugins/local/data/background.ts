@@ -17,7 +17,8 @@ export default defineBackground({
   terms: ({ text }) => {
     const q = text?.trim() ?? '';
     if (!q) return [];
-    if (datasets.some((d) => d.ref === q)) return [`dataset:${q}`];
+    const ref = datasets.find((d) => d.ref.toLowerCase() === q.toLowerCase())?.ref;
+    if (ref) return [`dataset:${ref}`];
     if (UPA.test(q)) return [`upa:${q}`];
     const needle = q.toLowerCase();
     if (needle.length < 3) return [];
