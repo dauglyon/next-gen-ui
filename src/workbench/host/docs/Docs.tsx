@@ -3,13 +3,9 @@ import { CodeBlock } from '@kbase/design-system';
 import { usePanelTitle } from '../../../plugins/sdk';
 import styles from './Docs.module.css';
 
-// The plugin contract as it is meant to be: the page is the specification and
-// the implementation is measured against it.
-//
-// Shaped like Vite's and Rollup's plugin pages: a working plugin first, then
-// one section per module with its example and the few rules that are not
-// visible in the code, then the reference with each module's signature and
-// schedule. A type appears once, in the reference entry that consumes it.
+// The page is the specification; the implementation is measured against it. Shaped like Vite's
+// plugin docs: a working plugin, then a section per module, then the reference, where a type
+// appears once, in the entry that consumes it.
 
 export function DocsDocument() {
   usePanelTitle('Plugin developer documentation');
@@ -809,9 +805,7 @@ function Part({ id, title, children }: { id: string; title: string; children: Re
   );
 }
 
-// A named thing in the contract with its own schedule: a module (an h3
-// entry) or one member of a module whose default export holds several (an
-// h4 export nested in the entry).
+// A module (level 3) or one member of a module whose default export holds several (level 4).
 function Entry({
   id,
   name,
@@ -853,7 +847,6 @@ function File({ name, language, children }: { name: string; language: string; ch
   );
 }
 
-// The precise rules of a section, read after its narrative has set them up.
 function Explainer({ children }: { children: ReactNode }) {
   return <div className={styles.explainer}>{children}</div>;
 }

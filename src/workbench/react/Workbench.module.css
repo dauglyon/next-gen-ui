@@ -16,8 +16,7 @@
   white-space: nowrap;
 }
 
-/* Chrome sits on the warm page background; content panels are white
-   surface cards. The two-tone split is what makes the layout legible. */
+/* Chrome on the page ground, panels on surface cards: the split is what makes the layout legible. */
 .menubar {
   display: flex;
   align-items: center;
@@ -26,10 +25,7 @@
   border-bottom: 1px solid var(--c-border);
 }
 
-/* The design system's masthead RATIOS at menubar scale: per wordmark size
-   T, dots = 1.0 T and the mark→word gap = 0.75 T; the wordmark sits one
-   type step above its surroundings (triggers are --fs-4, so T = --fs-5),
-   bold ink2. */
+/* The masthead's ratios at menubar scale: gap 0.75 T for wordmark size T, one type step above the triggers. */
 .brand {
   display: inline-flex;
   align-items: center;
@@ -40,8 +36,7 @@
   padding: 0 var(--s-2);
 }
 
-/* Sized by height; the symbol is 2.4:1 and keeps its own ratio. Blocked so it
-   sits on the wordmark's centre rather than on its baseline. */
+/* Sized by height (the symbol keeps 2.4:1); blocked so it sits on the wordmark's centre, not its baseline. */
 .brandMark {
   display: block;
   height: 18px;
@@ -56,11 +51,8 @@
 
 /* Sidebar */
 
-/* Both states stay mounted; the container's width is the ONE animated
-   layout property, and the rail and the blocks crossfade inside it. The
-   rail is a fixed-width overlay so its icons are never clipped
-   mid-animation; the blocks keep their full width and are cropped by the
-   container, so nothing inside re-lays-out. */
+/* Width is the one animated layout property; the rail (a fixed-width overlay) and the blocks
+   (full width, cropped by the container) crossfade inside it, so nothing re-lays-out. */
 .sidebar {
   position: relative;
   flex: none;
@@ -69,8 +61,7 @@
   transition: width var(--t-slow) ease;
 }
 
-/* 48px wide so the rail glyphs centre on x=24 — the same line the brand
-   logo and the accordion header icons sit on. */
+/* 48px so the rail glyphs centre on x=24, the line the brand logo and header icons sit on. */
 .iconColumn {
   position: absolute;
   inset-block: 0;
@@ -120,8 +111,6 @@
     visibility 0s 0s;
 }
 
-/* The main area's column: panels above, the composer below, together
-   spanning only the width right of the sidebar. */
 .mainColumn {
   flex: 1;
   min-width: 0;
@@ -130,8 +119,7 @@
   flex-direction: column;
 }
 
-/* One section of the accordion card (.blockStack); only the preview block
-   is a card of its own. */
+/* One section of the accordion card; only the preview block is a card of its own. */
 .block {
   display: flex;
   flex-direction: column;
@@ -143,23 +131,21 @@
   border-bottom: none;
 }
 
-/* Insertion line: a dropped navigator lands before this block. On the
-   header, whose own inset shadow paints above its background — on the
-   section it hid behind it. */
-.block[data-over] .blockHeader {
+/* Insertion line where a dropped navigator lands: before this block, or at the end of the pins
+   (the More row's top edge). On the header, not the section: the section's shadow hid behind it. */
+.block[data-over] .blockHeader,
+.blocks[data-over] .moreRow {
   box-shadow: inset 0 3px 0 var(--c-primary);
 }
 
-/* An unpinned navigator being looked at. Its own card, dashed: not part
-   of the saved layout, gone on dismiss or reload. */
+/* An unpinned navigator being looked at: its own card, dashed, gone on dismiss or reload. */
 .previewBlock {
   flex: 0 0 auto;
   height: auto;
   max-height: 45%;
   margin-top: var(--s-2);
   background: var(--c-surface);
-  /* Dashed for ephemeral, primary for the offer it makes: drag this onto
-     the stack and it joins the layout there. */
+  /* Dashed for ephemeral, primary for the offer: drag it onto the stack and it joins there. */
   border: 1px dashed var(--c-primary);
   border-radius: var(--r-lg);
   overflow: hidden;
@@ -194,37 +180,31 @@
   color: var(--c-ink);
 }
 
-/* Focus marks with the system's tint-plus-tinted-text pair (NavIcon
-   active, Tree selected), not an edge bar of raw primary. */
+/* Focus is the system's tint-plus-tinted-text pair (NavIcon active, Tree selected), not an edge bar. */
 .block[data-focused] .blockHeader {
   background: var(--bg-primary);
 }
 
-.block[data-focused] .blockToggle {
+.block[data-focused] .blockToggle,
+.block[data-focused] .blockIcon {
   color: var(--ct-primary);
 }
 
-/* A whisper of tone, not a band: --c-raised plus the hairline and the
-   header's own height is what separates one section from the next. */
+/* Raised plus the hairline is all that separates one section from the next. */
 .blockHeader {
   display: flex;
   background: var(--c-raised);
   border-bottom: 1px solid var(--c-border);
 }
 
-/* The design system's accordion header: bold ink title, leading icon in
-   ink3, chevron on the right rotating open/closed. */
-/* The same row for a block's header and the More row under the blocks: a
-   section header names the section, so it sits back in ink3 and comes
+/* The accordion header, shared with the More row: a section header sits back in ink3 and comes
    forward on hover. */
 .blockToggle,
 .moreRow {
   display: flex;
   align-items: center;
   gap: var(--s-3);
-  /* Left inset --s-3, not --s-4: the icon centres on x=24 with the rail
-     glyphs and the brand logo. The vertical is the sidebar's row tier: the
-     sidebar declares itself compact, since it stacks four of these. */
+  /* Left inset --s-3 centres the icon on x=24 with the rail glyphs; the vertical is the row tier. */
   padding: var(--row-py) var(--ctl-px) var(--row-py) var(--s-3);
   border: none;
   color: var(--c-ink3);
@@ -240,12 +220,19 @@
   background: none;
 }
 
+/* Every quiet control in the chrome comes forward to full ink under the pointer. */
 .blockToggle:hover,
-.moreRow:hover {
+.moreRow:hover,
+.statusItem:hover,
+.cartClear.cartClear:hover,
+.cartRemove:hover,
+.relatedOpen:hover {
   color: var(--c-ink);
 }
 
-.blockIcon {
+/* Glyphs are currentColor, so they tint with their control's state. */
+.blockIcon,
+.tabIcon {
   display: inline-flex;
 }
 
@@ -260,10 +247,6 @@
   transform: none;
 }
 
-.block[data-focused] .blockIcon {
-  color: var(--ct-primary);
-}
-
 /* Surface, not raised: the header itself is raised now. */
 .blockToggle:focus-visible,
 .moreRow:focus-visible {
@@ -272,17 +255,15 @@
   box-shadow: inset 0 0 0 2px var(--c-focus);
 }
 
-.blockBody {
+.blockBody,
+.tabpanel {
   flex: 1;
   min-height: 0;
   overflow: auto;
 }
 
-/* The class is doubled to outrank Popover.Popup's own 320px max-width and
-   content padding: this popout holds a whole navigator panel, not a hint,
-   and the panel body pads itself like its sidebar twin. Width comes
-   inline from the layout's sidebar width, so the flyout is the sidebar's
-   own size. */
+/* Doubled to outrank Popover.Popup's 320px max-width and padding: this holds a whole navigator
+   panel. Width comes inline from the layout's sidebar width. */
 .popout.popout {
   display: flex;
   background: var(--c-surface);
@@ -293,9 +274,7 @@
   max-height: 80vh;
   padding: 0;
   overflow: hidden;
-  /* Popover elevation (--e-4, per the token's own grading), not the menu's
-     --e-3 — aligned flush with the cards, the shadow is what says this
-     floats above them. */
+  /* Popover elevation, not the menu's: flush with the cards, the shadow is what says it floats. */
   box-shadow: var(--e-4);
 }
 
@@ -325,8 +304,7 @@
   padding: var(--s-3) var(--s-3) var(--s-3) 0;
 }
 
-/* Cards separated by a gap; each separator straddles the gap after its
-   child, so the grab area is exactly the visible gutter. */
+/* Each separator straddles the gap after its child, so the grab area is exactly the gutter. */
 .split {
   display: flex;
   flex: 1;
@@ -366,16 +344,14 @@
 }
 
 .splitRow > .splitChild > .separator {
-  top: 0;
-  bottom: 0;
+  inset-block: 0;
   right: calc(-1 * var(--s-2));
   width: var(--s-2);
   cursor: col-resize;
 }
 
 .splitCol > .splitChild > .separator {
-  left: 0;
-  right: 0;
+  inset-inline: 0;
   bottom: calc(-1 * var(--s-2));
   height: var(--s-2);
   cursor: row-resize;
@@ -387,10 +363,8 @@
   outline: none;
 }
 
-/* The sidebar's accordion card: all pinned navigators on one surface,
-   sections met by hairlines rather than gaps, so the stack reads as one
-   object — closed by the More footer row. Separators straddle the seams
-   instead of living in gutters. */
+/* All pinned navigators on one surface, met by hairlines rather than gaps, so the stack reads as
+   one object closed by the More row. */
 .accordion {
   flex: 1;
   min-height: 0;
@@ -408,14 +382,14 @@
   min-height: 0;
 }
 
-/* The accordion's footer: shaped like a section header, but an action. */
+/* The footer: shaped like a section header, but an action. */
 .moreRow {
   width: 100%;
   background: var(--c-raised);
   border-top: 1px solid var(--c-border);
 }
 
-/* What the row opens onto, shown where a header would show its chevron. */
+/* What the row opens onto, where a header shows its chevron. */
 .moreIcons {
   display: inline-flex;
   align-items: center;
@@ -435,13 +409,9 @@
   height: 6px;
 }
 
-/* The design system's tabs (Tabs.tabClasses.list / .tab) dress the strip
-   inside the group card. These classes hold only what the workbench adds:
-   scrolling, the strip inset, the close button's flex layout, drag
-   markers, and the second focus level. */
+/* The design system's Tabs dress the strip; these classes hold only what the workbench adds. */
 .group {
-  /* A root-level group has no SplitView assigning it a share; without
-     flex it would shrink to its content's width. */
+  /* A root-level group has no SplitView assigning it a share; without flex it would shrink to fit. */
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -469,22 +439,14 @@
   white-space: nowrap;
 }
 
-/* The DS marks the selected tab --ct-primary; the workbench has many
-   groups, so only the focused group's keeps the tint. The .tablist hop
-   outranks the DS's .tab[data-selected]. */
+/* Only the focused group's selected tab keeps the DS tint; the .tablist hop outranks the DS rule. */
 .group:not([data-focused]) .tablist .tab[data-selected] {
   color: var(--c-ink);
   border-bottom-color: var(--c-ink5);
 }
 
-/* The plugin's glyph; currentColor, so it tints with the tab's state. */
-.tabIcon {
-  display: inline-flex;
-}
-
-/* Shown on the selected tab and under the pointer; hidden-but-present
-   elsewhere so tab widths never change. Nudged 1px down: geometrically
-   centered, the glyph reads high against a lowercase label's mass. */
+/* Hidden-but-present off the selected tab so widths never change; 1px down, since centred it
+   reads high against a lowercase label. */
 .tabClose {
   position: relative;
   top: 1px;
@@ -496,21 +458,9 @@
   transition: opacity var(--t-fast);
 }
 
-.tab:hover .tabClose,
-.tab:focus-visible .tabClose,
-.tab[data-selected] .tabClose {
-  opacity: 1;
-}
-
 .tabClose:hover {
   background: var(--c-raised);
   color: var(--c-ink2);
-}
-
-.tabpanel {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
 }
 
 .panelMessage {
@@ -528,10 +478,7 @@
 
 /* Bars */
 
-/* A floating composer card on the page background, inset to the same
-   gutters as the panels; the wrapper also anchors the completion popup.
-   Lives in the main column, so it spans only the width right of the
-   sidebar. */
+/* The composer, inset to the panels' gutters; the wrapper also anchors the completion popup. */
 .promptBar {
   position: relative;
   padding: 0 var(--s-3) var(--s-3) 0;
@@ -543,7 +490,6 @@
   align-items: center;
   flex-wrap: wrap;
   gap: var(--s-2);
-  margin: 0;
   min-width: 0;
   font-size: var(--fs-4);
   color: var(--c-ink4);
@@ -555,8 +501,10 @@
   color: var(--c-ink4);
 }
 
-/* The assistant's own mark, ahead of its name, as the first crumb carries it. */
-.promptMark {
+/* Marks sit with their label and never shrink. */
+.promptMark,
+.crumbIcon,
+.relatedMark {
   flex: none;
 }
 
@@ -564,16 +512,13 @@
   color: var(--c-ink2);
 }
 
-/* Four spacings stacked between the switcher's caret and this arrow — the
-   switcher's own padding, the row's gap, this button's padding, and a margin
-   on top. Two are enough. */
+/* Pulled in: four spacings stacked between the switcher's caret and this arrow, and two are enough. */
 .promptJump {
   margin-inline-start: calc(-1 * var(--s-1));
   padding-inline: var(--s-1);
 }
 
-/* The destination switcher and the jump-to-it button. The pill's padding
-   is cancelled vertically so it doesn't inflate the footer row. */
+/* The pill's padding is cancelled vertically so it doesn't inflate the footer row. */
 .promptTarget {
   display: inline-flex;
   align-items: center;
@@ -587,11 +532,6 @@
   font-size: var(--fs-4);
   color: var(--c-ink2);
   cursor: pointer;
-}
-
-.promptTarget:hover {
-  background: var(--c-raised);
-  color: var(--c-ink);
 }
 
 .statusBar {
@@ -615,7 +555,8 @@
   pointer-events: none;
 }
 
-.tab[data-dragging] {
+.tab[data-dragging],
+.blockToggle[data-dragging] {
   opacity: 0.4;
 }
 
@@ -648,38 +589,31 @@
 }
 
 .dropZone_left {
-  top: 0;
-  bottom: 0;
+  inset-block: 0;
   left: 0;
   width: 25%;
 }
 
 .dropZone_right {
-  top: 0;
-  bottom: 0;
+  inset-block: 0;
   right: 0;
   width: 25%;
 }
 
 .dropZone_top {
-  left: 25%;
-  right: 25%;
+  inset-inline: 25%;
   top: 0;
   height: 25%;
 }
 
 .dropZone_bottom {
-  left: 25%;
-  right: 25%;
+  inset-inline: 25%;
   bottom: 0;
   height: 25%;
 }
 
 .dropZone_centre {
-  left: 25%;
-  right: 25%;
-  top: 25%;
-  bottom: 25%;
+  inset: 25%;
 }
 
 .groupBody {
@@ -690,19 +624,8 @@
   flex-direction: column;
 }
 
-/* The region is the end slot; the indicator is an insertion line at the
-   end of the pins — the More row's top edge, matching the per-block
-   lines — not a whole-region outline that reads as "into the sidebar". */
-.blocks[data-over] .moreRow {
-  box-shadow: inset 0 3px 0 var(--c-primary);
-}
-
 .blocks[data-over] .accordion:not(:has(.moreRow)) {
   box-shadow: inset 0 -3px 0 var(--c-primary);
-}
-
-.blockToggle[data-dragging] {
-  opacity: 0.4;
 }
 
 /* App frames */
@@ -755,24 +678,17 @@
 
 .completions {
   position: absolute;
-  /* The list sits above the field, so row zero — what Enter will do —
-     is painted at the bottom, nearest the text it answers. DOM order is
-     unchanged, so the listbox still reads in priority order. */
+  /* Row zero, what Enter will do, is painted at the bottom nearest the text; DOM order is unchanged. */
   display: flex;
   flex-direction: column-reverse;
   left: var(--s-4);
-  /* A palette anchored where the text is typed, not a bar spanning the
-     viewport — full width would put each description a screen away from
-     its command. */
+  /* Anchored where the text is typed: full width would put each description a screen from its command. */
   width: min(520px, calc(100% - 2 * var(--s-4)));
   bottom: 100%;
   margin: 0 0 var(--s-2);
   padding: var(--s-2);
   list-style: none;
-  /* Above the composer, and read as above it: the composer is the surface
-     tier, so the list takes the one over it, the border that goes with it and
-     the dialog's shadow. At surface-on-surface with e-3 it was a panel that
-     happened to overlap. */
+  /* One tier over the composer's surface, with the border and shadow that say so. */
   background: var(--c-raised);
   border: 1px solid var(--c-border2);
   border-radius: var(--r-lg);
@@ -784,8 +700,7 @@
   animation: completionsIn var(--t-fast) ease-out;
 }
 
-/* It appears while the reader is looking at the field below it, so it moves
-   from there: a short rise and a small scale, over in one frame of thought. */
+/* It rises from the field the reader is looking at. */
 @keyframes completionsIn {
   from {
     opacity: 0;
@@ -803,16 +718,13 @@
   cursor: pointer;
 }
 
-/* The row Enter will run. Against a raised list, a raised row is invisible —
-   this one takes the primary tint and its ink, so which row is armed is
-   legible from the far side of the screen. */
+/* The armed row: against a raised list a raised row is invisible, so it takes the primary tint. */
 .completion[data-highlighted] {
   background: var(--bg-primary);
   color: var(--ct-primary);
 }
 
-/* Whose row this is. The slot is kept when a row has no plugin (the
-   workbench's own commands) so the labels stay in one column. */
+/* The slot is kept when a row has no plugin, so the labels stay in one column. */
 .completionIcon {
   display: inline-flex;
   justify-content: center;
@@ -836,31 +748,28 @@
   color: var(--c-ink);
 }
 
-/* Locked layout: the arrangement is fixed (the reducer refuses structural
-   operations); hiding the resize handles removes the affordance too. */
+/* Locked: the reducer refuses structural operations, so the handles go too. */
 .root[data-locked] .separator {
   display: none;
 }
 
-.lockedNote {
+.lockedNote,
+.cartMeasure {
   display: inline-flex;
   align-items: center;
   gap: var(--s-1);
 }
 
-/* The trail, between a group's tabs and its panel. Absent when the active
-   panel declares none — the row is not rendered, so there is no band. */
+/* The trail between a group's tabs and its panel; not rendered when the panel declares none. */
 .crumbs {
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
   gap: var(--s-1);
-  /* One step of vertical padding, not two: the trail is a locator strip above
-     a panel, and every pixel it takes is one the panel does not get. */
+  /* One step of vertical padding: every pixel the strip takes is one the panel does not get. */
   padding: var(--s-1) var(--s-4);
-  /* A plugin's manifest colour, where it names one; the neutral bar otherwise.
-     Set as custom properties on the element by Breadcrumbs, so the host's
-     table stays the only place a colour name becomes a token. */
+  /* The plugin's colour, set as custom properties by Breadcrumbs so the host's table stays the only
+     place a colour name becomes a token. */
   background: var(--crumb-tint, var(--c-surface));
   border-bottom: 1px solid var(--crumb-edge, var(--c-border));
   font-size: var(--fs-4);
@@ -891,8 +800,7 @@
   text-overflow: ellipsis;
 }
 
-/* The plugin's own name, in the plugin's own colour. The crumbs after it are
-   places inside the plugin and stay in ink. */
+/* The plugin's own name in its own colour; the crumbs after it stay in ink. */
 .crumbFirst {
   display: inline-flex;
   align-items: center;
@@ -906,12 +814,6 @@
   color: inherit;
 }
 
-/* A crumb's own mark, where it names one. Sits with the label rather than
-   apart from it, so the pair reads as one crumb. */
-.crumbIcon {
-  flex: none;
-}
-
 .crumbLink {
   background: none;
   border: none;
@@ -920,6 +822,7 @@
   cursor: pointer;
 }
 
+.promptTarget:hover,
 .crumbLink:hover {
   background: var(--c-raised);
   color: var(--c-ink);
@@ -931,32 +834,20 @@
   box-shadow: inset 0 0 0 2px var(--c-focus);
 }
 
-/* Where you are: the same size as its ancestors, in full-strength ink. */
+/* Where you are, in full-strength ink. */
 .crumbHere {
   color: var(--c-ink);
   font-weight: var(--fw-bold);
 }
 
-/* Attachments on the next message, above the input the way a chat client puts
-   them: they travel with what is being said, so they sit where it is said.
-
-   Tiles rather than pills, which is what Slack, assistant-ui and Claude all
-   settle on for a composer — but with the figure in the preview slot where
-   those have a thumbnail. See CartTray.tsx. */
-/* The cart sits in the composer's own surface (PromptInput's `attachments`
-   slot), so the composer holds it — no second container, no second border. */
-/* Sideways, never taller. A row that wraps grows the composer downward and
-   pushes the message being written off the screen, worst when the most has
-   been collected. A photo strip scrolls; so does this. */
+/* Attachments on the next message, in the composer's own attachments slot (see CartTray.tsx).
+   Sideways, never taller: a row that wraps pushes the message being written off the screen. */
 .cartRow {
   display: flex;
   gap: var(--s-2);
-  margin: 0;
-  /* Room for the tiles' overhanging remove controls, which sit outside the
-     tile box and would otherwise be clipped by the scroller. */
+  /* Room for the tiles' overhanging remove controls, which the scroller would clip. */
   padding: var(--s-2) var(--s-2) var(--s-1);
-  /* One height for the row, set by its tallest tile: a ragged strip reads as
-     debris rather than as a set of like things. */
+  /* One height for the row: a ragged strip reads as debris. */
   align-items: stretch;
   list-style: none;
   overflow-x: auto;
@@ -968,14 +859,12 @@
 
 .cartItem {
   position: relative;
-  /* Fixed against the scroller: flexible widths would shrink every tile as
-     the row filled, which is the height problem turned on its side. */
+  /* Fixed: flexible widths would shrink every tile as the row filled. */
   flex: 0 0 auto;
   inline-size: 10.5rem;
 }
 
-/* The tile is the control that opens the item: a square mark and two lines
-   beside it, the shape a file attachment takes in a composer. */
+/* The tile is the control that opens the item. */
 .cartOpen {
   display: flex;
   align-items: center;
@@ -996,13 +885,13 @@
   border-color: var(--c-ink4);
 }
 
-.cartOpen:focus-visible {
+.cartOpen:focus-visible,
+.cartRemove:focus-visible {
   outline: 2px solid var(--c-focus);
   outline-offset: 1px;
 }
 
-/* The thumbnail slot. Square, because every item has one and a row of equal
-   squares is what makes the strip scannable. */
+/* The thumbnail slot: a row of equal squares is what makes the strip scannable. */
 .cartMark {
   display: inline-flex;
   align-items: center;
@@ -1014,8 +903,7 @@
   background: var(--c-bg);
 }
 
-/* What the item is *about* — the protein, the dataset, the run. Without it a
-   tray of figures says `2 small molecules` and never says of what. */
+/* What the item is about: without it a tray of figures says `2 small molecules` and never of what. */
 .cartSubject {
   font-size: var(--fs-3);
   font-weight: 500;
@@ -1025,8 +913,7 @@
   white-space: nowrap;
 }
 
-/* The figure it was added for. One line, clipped: the tile is a glance and the
-   whole of it is a press away. */
+/* The figure it was added for; the whole of it is a press away. */
 .cartSummary {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1040,25 +927,13 @@
   color: var(--c-ink3);
 }
 
-.cartClear.cartClear:hover {
-  color: var(--c-ink);
-}
-
-/* An inline SVG sits on the text baseline, which leaves it riding high against
-   a line of capitals. Blocked and centred by the button's own flex row. */
+/* An inline SVG rides high on the text baseline; blocked, the flex row centres it. */
 .cartClear svg,
 .cartMeasure svg {
   display: block;
 }
 
-.cartMeasure {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-1);
-}
-
-/* Two lines of text beside the mark, and the reason the tile has a fixed
-   height: the pair is always a subject and a figure. */
+/* Always a subject and a figure, which is why the tile has a fixed height. */
 .cartText {
   display: flex;
   flex-direction: column;
@@ -1066,22 +941,18 @@
   min-inline-size: 0;
 }
 
-/* The cart's own line, above its tiles: what this row is on the left, and the
-   one control that acts on all of it at the far right, where a section's
-   controls go. Caption weight for the label — the tiles are the content. */
+/* The cart's own line: the label left, the one control over all of it at the far right. */
 .cartCaption {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--s-2);
-  margin: 0;
   padding-inline: var(--s-2);
   font-size: var(--fs-3);
   color: var(--c-ink4);
 }
 
-/* Doubled to outrank Dialog's own popup class, whose 520px assumes a dialog
-   whose body is a sentence and two buttons. This one holds JSON. */
+/* Doubled to outrank Dialog's 520px, sized for a sentence and two buttons; this one holds JSON. */
 .cartPreview.cartPreview {
   display: flex;
   flex-direction: column;
@@ -1092,17 +963,14 @@
   overflow-y: auto;
 }
 
-/* Dialog's title and description carry their own bottom margins, sized for a
-   dialog that ends at the description (var(--s-8) under it). Here the body
-   continues, and the flex gap is what spaces it — both margins would stack on
-   top of that and blow the thing apart. Doubled to outrank them. */
+/* Dialog's title and description carry bottom margins for a dialog that ends there; here the flex
+   gap spaces the body, and both would stack on it. Doubled to outrank them. */
 .cartPreviewTitle.cartPreviewTitle,
 .cartPreviewMeta.cartPreviewMeta {
   margin-bottom: 0;
 }
 
 .cartPreviewSummary {
-  margin: 0;
   font-size: var(--fs-4);
   color: var(--c-ink2);
 }
@@ -1115,7 +983,6 @@
 }
 
 .cartPreviewHeading {
-  margin: 0;
   font-size: var(--fs-3);
   font-weight: var(--fw-bold);
   text-transform: uppercase;
@@ -1123,28 +990,21 @@
   color: var(--c-ink4);
 }
 
-/* The pointer half, as one line. It is two keys and a value; a JSON block
-   around it was more chrome than content. */
-/* Wrapped rather than scrolled sideways. A context value is prose as often as
-   it is a number — the builder's caveats run to a sentence — and a horizontal
-   scrollbar hides the end of exactly the field a reader opened this to read. */
-/* Doubled to outrank Prism's `pre[class*="language-"]`, which sets the
-   sideways scroll a page of code wants and a five-key object does not. */
+/* Wrapped, not scrolled sideways: a context value is prose as often as a number, and a scrollbar
+   hides the end of the field a reader opened this for. Doubled to outrank Prism's `pre` rule. */
 .cartPreviewJson.cartPreviewJson {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   overflow-x: hidden;
 }
 
-/* Prism sets `white-space: pre` on the inner code element too, so wrapping the
-   pre alone left the long line clipped rather than wrapped. */
+/* Prism sets `white-space: pre` on the inner code element too. */
 .cartPreviewJson.cartPreviewJson code {
   white-space: inherit;
   overflow-wrap: inherit;
 }
 
 .cartPreviewSource {
-  margin: 0;
   font-size: var(--fs-3);
   color: var(--c-ink4);
 }
@@ -1163,10 +1023,8 @@
   gap: var(--s-2);
 }
 
-/* Close is where nearly every visit ends, so it is the filled button on the
-   right where a hand goes. Removing is rare and cannot be undone, so it is
-   quiet, at the other end, and out of that path — two buttons of equal weight
-   an inch apart still trade places under a quick hand. */
+/* Close, where nearly every visit ends, is the filled button on the right; Remove cannot be undone,
+   so it is quiet and at the other end, out of that path. */
 .cartPreviewFoot {
   display: flex;
   align-items: center;
@@ -1194,44 +1052,24 @@
   opacity: 0;
 }
 
-.cartItem:hover .cartRemove,
-.cartRemove:focus-visible {
-  opacity: 1;
-}
-
-.cartRemove:hover {
-  color: var(--c-ink);
-}
-
-.cartRemove:focus-visible {
-  outline: 2px solid var(--c-focus);
-  outline-offset: 1px;
-}
-
-/* The Related navigator's own contents. The block around it — header, fold,
-   resize, rail glyph — is the sidebar's, like any other navigator's. */
+/* The Related navigator's own contents; the block around it is the sidebar's. */
 .related {
   display: flex;
   flex-direction: column;
   padding-block-end: var(--s-2);
 }
 
-/* The pane's empty line, set as Shortcuts sets its own. It keeps a line's
-   height while empty, so the words land without moving the blocks below. */
+/* Keeps a line's height while empty, so the words land without moving the blocks below. */
 .relatedEmpty {
-  margin: 0;
   padding: var(--s-3) var(--s-4);
   min-block-size: 1lh;
 }
 
-/* What the list was computed from, and nothing else: the block's own header
-   says what the relation is. Both sections take the same weight — the
-   difference between them is order, not rank. */
+/* What the list was computed from; both sections take the same weight, differing in order not rank. */
 .relatedFrom {
   display: flex;
   align-items: center;
   gap: var(--s-2);
-  margin: 0;
   padding: var(--s-3) var(--s-4) var(--s-1);
   font-size: var(--fs-2);
   text-transform: uppercase;
@@ -1240,8 +1078,6 @@
 }
 
 .relatedList {
-  margin: 0;
-  padding: 0;
   list-style: none;
 }
 
@@ -1256,7 +1092,6 @@
   background: var(--c-raised);
 }
 
-/* The row is a link: pressing it opens the page the plugin named. */
 .relatedOpen {
   flex: 1;
   display: flex;
@@ -1273,17 +1108,9 @@
   cursor: pointer;
 }
 
-.relatedOpen:hover {
-  color: var(--c-ink);
-}
-
 .relatedOpen:focus-visible {
   outline: none;
   box-shadow: inset 0 0 0 2px var(--c-focus);
-}
-
-.relatedMark {
-  flex: none;
 }
 
 .relatedLabel {
@@ -1292,9 +1119,7 @@
   min-inline-size: 0;
 }
 
-/* Two lines, because a sidebar row is about thirty characters wide and a
-   proposal has two things to say: which thing it opens, and what that thing
-   is. On one line the second was always the half that got cut. */
+/* Two lines: a sidebar row is thirty characters wide, and on one line the detail always got cut. */
 .relatedName,
 .relatedDetail {
   overflow: hidden;
@@ -1307,8 +1132,7 @@
   font-size: var(--fs-2);
 }
 
-/* Turning one down. Quiet until the row is under the pointer: a list of
-   suggestions should not read as a list of things to close. */
+/* Quiet until hovered: a list of suggestions should not read as a list of things to close. */
 .relatedDismiss {
   display: inline-flex;
   flex: none;
@@ -1320,12 +1144,16 @@
   opacity: 0;
 }
 
+/* Hidden controls come forward with their row, and always for keyboard focus. */
+.tab:hover .tabClose,
+.tab:focus-visible .tabClose,
+.tab[data-selected] .tabClose,
+.cartItem:hover .cartRemove,
+.cartRemove:focus-visible,
 .relatedRow:hover .relatedDismiss,
 .relatedDismiss:focus-visible {
   opacity: 1;
 }
-
-/* What the per-plugin cap is holding back, counted rather than dropped. */
 
 /* Who offers a row, as a small count when more than one does. */
 .relatedOffers {
@@ -1334,8 +1162,7 @@
   padding-inline: var(--s-1);
 }
 
-/* Faint rows where the first answers are about to land. Only for an empty
-   list: a skeleton over content that was already there is a regression. */
+/* Only for an empty list: a skeleton over content that was already there is a regression. */
 .relatedSkeleton {
   display: grid;
   gap: var(--s-2);
@@ -1358,7 +1185,7 @@
   inline-size: 85%;
 }
 
-/* What is still being asked, in a line under the rows rather than a row. */
+/* What is still being asked, as a line under the rows rather than a row. */
 .relatedActivity {
   display: flex;
   align-items: center;
@@ -1367,5 +1194,3 @@
   font-size: var(--fs-2);
   color: var(--c-ink3);
 }
-
-/* Nothing related, said quietly: a line, not an event. */
