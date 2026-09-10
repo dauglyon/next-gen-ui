@@ -73,6 +73,16 @@ describe('ranking commands against typed text', () => {
 
   // A row runs when pressed, so a command with a required argument the text
   // does not fill is not a row.
+  it('keeps a plugin offer whose letters say nothing, ranked by the letters', () => {
+    const offer = {
+      label: 'Dossier for P0AEX9',
+      command: 'function-junction:open',
+      args: { q: 'P0AEX9' },
+    };
+    const rows = rankCommands(index, 'zzzz', tagText('zzzz'), [], [offer]);
+    expect(rows.map((r) => r.command)).toEqual(['function-junction:open']);
+  });
+
   it('offers a command only with its required arguments filled', () => {
     expect(rank('kill the running job')).toEqual([]);
     expect(rank('cancel this job', ['job:12'])[0]?.args).toEqual({ id: '12' });

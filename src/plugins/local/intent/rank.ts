@@ -209,7 +209,9 @@ export function rankCommands(
         const offer = offered.get(entry.command);
         return { entry, offer, score: cosine(query, entry.vector) + (offer ? OFFER_LIFT : 0) };
       })
-      .filter(({ score }) => score >= FLOOR)
+      // A plugin's own offer is the plugin saying it recognised the text; it
+      // is ranked by the letters like the rest, never dropped by them.
+      .filter(({ offer, score }) => offer || score >= FLOOR)
       .map(({ entry, offer, score }) => ({
         entry,
         offer,
