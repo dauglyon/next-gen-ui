@@ -231,16 +231,16 @@
   align-items: center;
   gap: var(--s-3);
   /* Left inset --s-3, not --s-4: the icon centres on x=24 with the rail
-     glyphs and the brand logo. Vertically one step tighter: the sidebar
-     stacks four of these, so the header height is paid four times over. */
-  padding: var(--s-2) var(--s-4) var(--s-2) var(--s-3);
+     glyphs and the brand logo. The vertical is the sidebar's row tier: the
+     sidebar declares itself compact, since it stacks four of these. */
+  padding: var(--row-py) var(--ctl-px) var(--row-py) var(--s-3);
   background: none;
   border: none;
   /* The More row's treatment: a section header names the section, so it
      sits back in ink3 and comes forward on hover. */
   color: var(--c-ink3);
   font-family: inherit;
-  font-size: var(--fs-4);
+  font-size: var(--ctl-fs);
   font-weight: var(--fw-bold);
   text-align: left;
   cursor: pointer;
@@ -424,12 +424,12 @@
   align-items: center;
   gap: var(--s-3);
   width: 100%;
-  padding: var(--s-2) var(--s-4) var(--s-2) var(--s-3);
+  padding: var(--row-py) var(--ctl-px) var(--row-py) var(--s-3);
   background: var(--c-raised);
   border: none;
   border-top: 1px solid var(--c-border);
   font-family: inherit;
-  font-size: var(--fs-4);
+  font-size: var(--ctl-fs);
   font-weight: var(--fw-bold);
   color: var(--c-ink3);
   text-align: left;
@@ -646,7 +646,7 @@
   align-items: center;
   gap: var(--s-3);
   padding: var(--s-1) var(--s-4);
-  min-height: 24px;
+  min-height: var(--ctl-h-xs);
 }
 
 /* Drag and drop */
@@ -780,7 +780,7 @@
 
 .statusItem {
   font: inherit;
-  font-size: var(--fs-4);
+  font-size: var(--ctl-fs);
   color: var(--c-ink3);
   background: none;
   border: none;
@@ -852,7 +852,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--s-3);
-  padding: var(--s-2) var(--s-3);
+  padding: var(--item-py) var(--ctl-px);
   border-radius: var(--r-sm);
   cursor: pointer;
 }
@@ -1361,11 +1361,11 @@
   align-items: center;
   gap: var(--s-2);
   min-inline-size: 0;
-  padding: var(--s-2) var(--s-2) var(--s-2) var(--s-4);
+  padding: var(--item-py) var(--s-2) var(--item-py) var(--s-4);
   border: none;
   background: none;
   font: inherit;
-  font-size: var(--fs-4);
+  font-size: var(--ctl-fs);
   color: var(--c-ink2);
   text-align: start;
   cursor: pointer;

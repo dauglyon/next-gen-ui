@@ -16,7 +16,7 @@ export function WorkbenchMenubar() {
   const canSplit = !!group && group.tabs.length > 1;
 
   return (
-    <div className={styles.menubar}>
+    <div className={styles.menubar} data-density="compact">
       <span className={styles.brand}>
         {/* The KBase symbol, as the style guide draws it. It replaces a stand-in
             built from the Loader's three dots, which read as a spinner at rest
@@ -28,7 +28,7 @@ export function WorkbenchMenubar() {
       <Menubar.Root aria-label="Workbench menu">
         <Menu.Root>
           <Menubar.Trigger>Workbench</Menubar.Trigger>
-          <Menu.Popup>
+          <Menu.Popup size="sm">
             <Menu.Item disabled={!store.canUndo()} onClick={() => run('workbench:undo')}>
               Undo
             </Menu.Item>
@@ -69,7 +69,7 @@ export function WorkbenchMenubar() {
         </Menu.Root>
         <Menu.Root>
           <Menubar.Trigger>Panel</Menubar.Trigger>
-          <Menu.Popup>
+          <Menu.Popup size="sm">
             <Menu.Item disabled={!focused || !group} onClick={() => run('workbench:close')}>
               Close
             </Menu.Item>
@@ -108,7 +108,7 @@ export function WorkbenchMenubar() {
         </Menu.Root>
         <Menu.Root>
           <Menubar.Trigger>Plugins</Menubar.Trigger>
-          <Menu.Popup>
+          <Menu.Popup size="sm">
             {source
               .plugins()
               .filter((p) => source.has(p.id, 'pane'))
