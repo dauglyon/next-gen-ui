@@ -1,4 +1,5 @@
 import { defineBackground } from '@kbase/plugin-sdk';
+import { matchInventory } from '../../sdk/routes';
 import { dataset, datasets } from './data';
 
 // Data volunteers what it actually holds. Unlike an app that recognises an
@@ -20,16 +21,12 @@ export default defineBackground({
     const ref = datasets.find((d) => d.ref.toLowerCase() === q.toLowerCase())?.ref;
     if (ref) return [`dataset:${ref}`];
     if (UPA.test(q)) return [`upa:${q}`];
-    const needle = q.toLowerCase();
-    if (needle.length < 3) return [];
     // Name, type and narrative: "reads" finds the fastq by type, "74501"
     // finds a narrative's objects, "nifh" finds the hits table by name.
-    return datasets
-      .filter((d) =>
-        `${d.name} ${d.type} ${d.ref} ${d.narrative ?? ''}`.toLowerCase().includes(needle),
-      )
-      .slice(0, 3)
-      .map((d) => `dataset:${d.ref}`);
+    return matchInventory(datasets, q, {
+      fields: (d) => `${d.name} ${d.type} ${d.ref} ${d.narrative ?? ''}`,
+      term: (d) => `dataset:${d.ref}`,
+    });
   },
   recommend: {
     commands: ({ terms }) =>

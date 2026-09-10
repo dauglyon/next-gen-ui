@@ -1,3 +1,5 @@
+import { pathParam } from '../../sdk/routes';
+
 // Mock datasets. A ref is either a dataset id or, through the KBase 1.0
 // bridge, a workspace UPA (`<ws>/<obj>` or `<ws>/<obj>/<ver>`).
 
@@ -64,6 +66,6 @@ export const datasets: Dataset[] = [
 
 export const dataset = (ref: string) => datasets.find((d) => d.ref === ref);
 
-// The ref named by a path. A workspace ref has slashes of its own —
-// `/74501/3/1` — so the whole remainder is the ref, not its first segment.
-export const refOf = (path: string) => decodeURIComponent(path.split(/[?#]/)[0].slice(1));
+// A workspace ref has slashes of its own — `/74501/3/1` — so the whole
+// remainder is the ref, not its first segment.
+export const refOf = (path: string) => pathParam(path, { decode: true });

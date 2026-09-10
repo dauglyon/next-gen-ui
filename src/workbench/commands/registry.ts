@@ -97,7 +97,7 @@ export function createCommandRegistry(): CommandRegistry {
       if (!found.ok) {
         throw new Error(
           found.reason === 'ambiguous'
-            ? `/${name} is declared by ${found.candidates.map(qualifiedName).join(' and ')}`
+            ? ambiguousMessage(name, found.candidates)
             : `unknown command /${name}`,
         );
       }
@@ -117,3 +117,6 @@ export function createCommandRegistry(): CommandRegistry {
     },
   };
 }
+
+export const ambiguousMessage = (name: string, candidates: readonly Command[]) =>
+  `/${name} is declared by ${candidates.map(qualifiedName).join(' and ')}`;

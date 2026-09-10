@@ -1,7 +1,7 @@
 import type { ArgError, ArgValues } from './args';
 import { completeArg, usage, validateArgs } from './args';
 import type { Command, CommandRegistry, WhenContext } from './registry';
-import { qualifiedName } from './registry';
+import { ambiguousMessage, qualifiedName } from './registry';
 
 // Text typed into the prompt bar is either a slash command or a prompt for
 // the assistant. Slash commands are `/name arg arg`, with double quotes
@@ -50,7 +50,7 @@ export function resolve(registry: CommandRegistry, input: string, ctx?: WhenCont
       return {
         ok: false,
         code: 'ambiguous-command',
-        message: `/${parsed.name} is declared by ${found.candidates.map(qualifiedName).join(' and ')}; type one of them`,
+        message: `${ambiguousMessage(parsed.name, found.candidates)}; type one of them`,
       };
     }
     return { ok: false, code: 'unknown-command', message: `unknown command /${parsed.name}` };

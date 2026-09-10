@@ -8,6 +8,7 @@ import {
   groups,
   insertTab,
   normalize,
+  reinsert,
   removeTab,
   setSizes,
   splitGroup,
@@ -184,13 +185,11 @@ function move(
     const main = removed === layout.main ? layout.main : normalize(removed, layout.main.id);
     const before = layout.sidebar.pinned;
     const from = before.indexOf(panel.plugin);
-    const without = before.filter((p) => p !== panel.plugin);
-    // No index: a pinned plugin keeps its place, a new one appends.
-    let at = op.to.index ?? (from !== -1 ? from : without.length);
-    // A given index is in pre-removal terms, like a same-group tab move.
-    if (op.to.index !== undefined && from !== -1 && from < op.to.index) at -= 1;
-    at = Math.max(0, Math.min(at, without.length));
-    const pinned = [...without.slice(0, at), panel.plugin, ...without.slice(at)];
+    // No index: a pinned plugin keeps its place, a new one appends. A given
+    // index is in pre-removal terms, like a same-group tab move.
+    let at = op.to.index ?? (from === -1 ? undefined : from);
+    if (at !== undefined && from !== -1 && from < at) at -= 1;
+    const pinned = reinsert(before, panel.plugin, at);
     const unchanged = main === layout.main && pinned.every((p, i) => p === before[i]);
     if (unchanged) return focus(layout, panel.id);
     return { ...layout, main, sidebar: { ...layout.sidebar, pinned }, focus: panel.id };
@@ -199,9 +198,7 @@ function move(
 }
 
 function pin(layout: Layout, plugin: string, index?: number): Layout {
-  const pinned = layout.sidebar.pinned.filter((p) => p !== plugin);
-  const at = index === undefined ? pinned.length : Math.max(0, Math.min(index, pinned.length));
-  pinned.splice(at, 0, plugin);
+  const pinned = reinsert(layout.sidebar.pinned, plugin, index);
   const pane = makePane(plugin);
   const panels = layout.panels[pane.id] ? layout.panels : { ...layout.panels, [pane.id]: pane };
   return { ...layout, panels, sidebar: { ...layout.sidebar, pinned } };

@@ -2,10 +2,10 @@ import { useSyncExternalStore } from 'react';
 import type { ComponentType } from 'react';
 import type { IconProps } from '@phosphor-icons/react';
 import { Tooltip, Button, Toolbar } from '@kbase/design-system';
-import { qualifyCommand, usePanelTitle } from '../../../plugins/sdk';
+import { usePanelTitle } from '../../../plugins/sdk';
 import type { CommandCall } from '../../../plugins/sdk';
 import { useBusy, useRun, useServices } from '../../react/context';
-import { iconFor } from '../icons';
+import { allShortcuts } from './list';
 import styles from './Shortcuts.module.css';
 
 // The host's shortcut panel: every installed plugin's manifest `shortcuts`,
@@ -17,20 +17,7 @@ export function ShortcutsNavigator() {
   const { source, registry } = useServices();
   useSyncExternalStore(source.subscribe, source.version, source.version);
   useSyncExternalStore(registry.subscribe, () => registry.list().length);
-  const shortcuts = source.manifests().flatMap((m) =>
-    (m.shortcuts ?? []).map((call) => {
-      const name = qualifyCommand(call.command, m.id);
-      const declared = registry.get(name);
-      return {
-        key: `${m.id}/${call.command}`,
-        name,
-        call,
-        title: declared?.title ?? call.label,
-        // A command without its own icon wears its plugin's: provenance.
-        Icon: iconFor(m.commands?.find((c) => c.name === declared?.name)?.icon ?? m.icon, m.color),
-      };
-    }),
-  );
+  const shortcuts = allShortcuts(source, registry);
 
   if (shortcuts.length === 0) {
     return <p className={`caption ${styles.empty}`}>No plugin offers shortcuts.</p>;
@@ -38,8 +25,8 @@ export function ShortcutsNavigator() {
   return (
     <Tooltip.Provider delay={300}>
       <Toolbar.Root className={styles.list} aria-label="Shortcuts">
-        {shortcuts.map(({ key, ...s }) => (
-          <Shortcut key={key} {...s} />
+        {shortcuts.map(({ key, detail, ...s }) => (
+          <Shortcut key={key} title={detail ?? s.call.label} {...s} />
         ))}
       </Toolbar.Root>
     </Tooltip.Provider>

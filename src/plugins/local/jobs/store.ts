@@ -1,9 +1,10 @@
 import type { ChipColor } from '@kbase/design-system';
+import { createEmitter } from '../../sdk/emitter';
+import { pathParam } from '../../sdk/routes';
 
 export type JobStatus = 'queued' | 'running' | 'done' | 'cancelled' | 'failed';
 
-// The job named by a path: `/12`, with any query or fragment dropped.
-export const idOf = (path: string) => path.split(/[?#]/)[0].slice(1);
+export const idOf = (path: string) => pathParam(path);
 
 export const COLORS: Record<JobStatus, ChipColor> = {
   queued: 'neutral',
@@ -28,17 +29,13 @@ const jobs: Job[] = [
   { id: '21', name: 'Bin metagenome', status: 'failed', progress: 0.6, app: 'MetaBAT' },
 ];
 
-let version = 0;
-const listeners = new Set<() => void>();
-const notify = () => {
-  version += 1;
-  listeners.forEach((l) => l());
-};
+const emitter = createEmitter();
+let subscribers = 0;
 
 // Running jobs creep forward while any listener is attached.
 let timer: ReturnType<typeof setInterval> | null = null;
 function ensureTicking() {
-  if (timer || listeners.size === 0) return;
+  if (timer || subscribers === 0) return;
   timer = setInterval(() => {
     let changed = false;
     for (const job of jobs) {
@@ -52,8 +49,8 @@ function ensureTicking() {
       queued.status = 'running';
       changed = true;
     }
-    if (changed) notify();
-    if (listeners.size === 0 && timer) {
+    if (changed) emitter.notify();
+    if (subscribers === 0 && timer) {
       clearInterval(timer);
       timer = null;
     }
@@ -62,13 +59,15 @@ function ensureTicking() {
 
 export const jobStore = {
   subscribe(listener: () => void) {
-    listeners.add(listener);
+    subscribers += 1;
     ensureTicking();
+    const off = emitter.subscribe(listener);
     return () => {
-      listeners.delete(listener);
+      subscribers -= 1;
+      off();
     };
   },
-  version: () => version,
+  version: emitter.version,
   all: () => jobs,
   get: (id: string) => jobs.find((j) => j.id === id),
   running: () => jobs.filter((j) => j.status === 'running').length,
@@ -76,7 +75,7 @@ export const jobStore = {
     const job = jobs.find((j) => j.id === id);
     if (!job || (job.status !== 'running' && job.status !== 'queued')) return false;
     job.status = 'cancelled';
-    notify();
+    emitter.notify();
     return true;
   },
 };

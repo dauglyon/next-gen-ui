@@ -8,7 +8,8 @@ import { qualifyCommand } from '../../plugins/sdk';
 import type { Suggestion } from '../commands';
 import { complete, parse, qualifiedName, resolve, usage } from '../commands';
 import { pluginHostFor } from '../host/createWorkbench';
-import { openPane, openRoute } from '../host/open';
+import { openRoute, showPane } from '../host/open';
+import { allShortcuts } from '../host/shortcuts/list';
 import { iconFor } from '../host/icons';
 import { PluginMark } from '../host/PluginMark';
 import { CartTray } from './CartTray';
@@ -36,8 +37,7 @@ export function PromptBar() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const services = useServices();
-  const { registry, announcer, prompt, settings, source, preview, cart, query, queryRunner } =
-    services;
+  const { registry, announcer, prompt, settings, source, cart, query, queryRunner } = services;
   const layout = useLayout();
   const run = useRun();
   const wrapper = useRef<HTMLDivElement>(null);
@@ -228,16 +228,13 @@ export function PromptBar() {
   // focused where it already lives, an unpinned one is previewed. The
   // bar never changes the layout to show you something.
   const panelSuggestions = (text: string): BarSuggestion[] =>
-    nameHits(text, (m) => source.has(m.id, 'pane')).map((m) => {
-      const pinned = layout.sidebar.pinned.includes(m.id);
-      return {
-        value: text,
-        label: `Show ${m.title}`,
-        detail: pinned ? 'In the sidebar' : m.description,
-        icon: iconFor(m.icon, m.color),
-        run: () => (pinned ? void openPane(services, m.id) : preview.set(m.id)),
-      };
-    });
+    nameHits(text, (m) => source.has(m.id, 'pane')).map((m) => ({
+      value: text,
+      label: `Show ${m.title}`,
+      detail: layout.sidebar.pinned.includes(m.id) ? 'In the sidebar' : m.description,
+      icon: iconFor(m.icon, m.color),
+      run: () => showPane(services, m.id),
+    }));
 
   // The buttons plugins put on the Shortcuts block, reachable by name as
   // well. A shortcut is a call with its arguments filled in, so the row
@@ -245,24 +242,16 @@ export function PromptBar() {
   const shortcutSuggestions = (text: string): BarSuggestion[] => {
     const query = text.trim().toLowerCase();
     if (query.length < 2) return [];
-    return source
-      .manifests()
-      .flatMap((m) =>
-        (m.shortcuts ?? []).map((call) => {
-          const name = qualifyCommand(call.command, m.id);
-          const declared = registry.get(name);
-          return { m, call, name, declared };
-        }),
-      )
-      .filter(({ call, declared }) =>
-        `${call.label} ${declared?.title ?? ''} ${call.command}`.toLowerCase().includes(query),
+    return allShortcuts(source, registry)
+      .filter(({ call, detail }) =>
+        `${call.label} ${detail ?? ''} ${call.command}`.toLowerCase().includes(query),
       )
       .slice(0, 3)
-      .map(({ m, call, name, declared }) => ({
+      .map(({ call, name, detail, Icon }) => ({
         value: text,
         label: call.label,
-        detail: declared?.title,
-        icon: iconFor(m.commands?.find((c) => c.name === declared?.name)?.icon ?? m.icon, m.color),
+        detail,
+        icon: Icon,
         run: () => void run(name, call.args),
       }));
   };
