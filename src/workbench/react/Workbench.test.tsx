@@ -42,7 +42,9 @@ function mount(storage: Storage | null = null) {
 const status = () => screen.getByRole('status', { name: 'Workbench announcements' });
 const openJob = async (user: ReturnType<typeof userEvent.setup>, name: RegExp) => {
   const sidebar = screen.getByRole('region', { name: 'Sidebar' });
-  await user.click(await within(sidebar).findByRole('button', { name }));
+  // The Tree's click handler sits on the row inside the treeitem.
+  const item = await within(sidebar).findByRole('treeitem', { name });
+  await user.click(item.firstElementChild as HTMLElement);
 };
 
 describe('Workbench', () => {
@@ -118,7 +120,6 @@ describe('Workbench', () => {
     mount();
     await openJob(user, /assemble reads/i);
     const sidebar = screen.getByRole('region', { name: 'Sidebar' });
-    // The Tree's click handler sits on the row inside the treeitem.
     await user.click(await within(sidebar).findByText('Crash test panel'));
     expect(await screen.findByRole('alert')).toHaveTextContent('This panel crashed');
     await user.click(screen.getByRole('tab', { name: /job 12/i }));

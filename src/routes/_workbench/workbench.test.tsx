@@ -64,11 +64,17 @@ describe('workbench deep links', () => {
     const user = userEvent.setup();
     const { router } = mountAt('/workbench');
     const sidebar = await screen.findByRole('region', { name: 'Sidebar' });
-    await user.click(await within(sidebar).findByRole('button', { name: /assemble reads/i }));
+    await user.click(
+      (await within(sidebar).findByRole('treeitem', { name: /assemble reads/i }))
+        .firstElementChild as HTMLElement,
+    );
     await waitFor(() => expect(pathname(router)).toBe('/p/jobs/12'));
     // Same sidebar node: the shell must not remount when the URL changes.
     expect(sidebar.isConnected).toBe(true);
-    await user.click(await within(sidebar).findByRole('button', { name: /nifh search/i }));
+    await user.click(
+      (await within(sidebar).findByRole('treeitem', { name: /nifh search/i }))
+        .firstElementChild as HTMLElement,
+    );
     await waitFor(() => expect(pathname(router)).toBe('/p/jobs/20'));
     await user.click(screen.getByRole('tab', { name: /job 12/i }));
     await waitFor(() => expect(pathname(router)).toBe('/p/jobs/12'));
