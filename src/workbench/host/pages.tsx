@@ -35,7 +35,8 @@ export function hostPlugins(services: () => WorkbenchServices): InstalledPlugin[
       config: definePluginManifest({
         id: 'catalog',
         title: 'Settings',
-        description: 'Installed plugins, what is pinned, and the assistant setting.',
+        description:
+          'Installed plugins, what is pinned, the assistant and the suggestions setting.',
         icon: 'Gear',
         commands: [{ name: 'catalog', title: 'Open settings', icon: 'Gear' }],
         shortcuts: [{ label: 'Settings', command: 'catalog' }],

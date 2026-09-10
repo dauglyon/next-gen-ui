@@ -1,9 +1,12 @@
 import { z } from 'zod';
 
-// User settings that are not layout: today only which plugin answers the
-// prompt bar. Persisted separately so resetting the layout keeps them.
+// User settings that are not layout: which plugin answers the prompt bar,
+// and which suggests commands for what is typed there. Persisted separately
+// so resetting the layout keeps them. A setting a saved copy predates keeps
+// its default.
 export const SettingsSchema = z.object({
   assistant: z.string().nullable(),
+  intent: z.string().nullable().optional(),
 });
 export type Settings = z.infer<typeof SettingsSchema>;
 
@@ -16,7 +19,7 @@ export interface SettingsStore {
 }
 
 export function createSettingsStore(storage: Storage | null, defaults: Settings): SettingsStore {
-  let current = read(storage) ?? defaults;
+  let current: Settings = { ...defaults, ...(read(storage) ?? {}) };
   const listeners = new Set<() => void>();
   return {
     get: () => current,

@@ -1,4 +1,4 @@
-import type { CartItem, CommandCall } from '../../plugins/sdk';
+import type { CartItem, CommandCall, Suggestion } from '../../plugins/sdk';
 
 // What every plugin's `recommend` said about each source of terms.
 //
@@ -30,6 +30,9 @@ export interface SourceState {
   pending: string[];
   // Still within the budget with answers outstanding.
   loading: boolean;
+  // What the chosen intent suggested for the text; the typing source only.
+  // The previous answer stays until the next lands.
+  suggestions?: Suggestion[];
 }
 
 export const EMPTY_SOURCE: SourceState = {
@@ -38,6 +41,7 @@ export const EMPTY_SOURCE: SourceState = {
   answers: [],
   pending: [],
   loading: false,
+  suggestions: [],
 };
 
 // A dismissed recommendation stays gone whoever offers it next: the key is

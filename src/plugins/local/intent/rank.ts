@@ -1,13 +1,13 @@
-import type { ArgDecl, Manifest } from '../../plugins/sdk';
-import { qualifyCommand } from '../../plugins/sdk';
+import type { ArgDecl, DeclaredCommand } from '@kbase/plugin-sdk';
+import { qualifyCommand } from '@kbase/plugin-sdk';
 import type { Tag } from './tag';
 import { namespaceOf, shapeFor } from './tag';
 
-// Ranking every manifest's commands against typed text, and filling their
+// Ranking every declared command against typed text, and filling their
 // arguments from the terms the text carries.
 //
-// A command is indexed by what its manifest says about it: the plugin, the
-// name, the title, the descriptions, the semantics section, the examples.
+// A command is indexed by what its declaration says about it: the plugin,
+// the name, the title, the descriptions, the semantics section, the examples.
 // Text is scored against that by character n-gram cosine, which is what
 // held up best on partial words and on descriptions that share letters but
 // not tokens with what was typed. An identifier in the text is scored as
@@ -104,10 +104,10 @@ function cosine(a: Map<string, number>, b: Map<string, number>): number {
 
 const argText = (arg: ArgDecl) => `${arg.name} ${arg.description ?? ''}`;
 
-function docOf(manifest: Manifest, decl: NonNullable<Manifest['commands']>[number]): string {
+function docOf(decl: DeclaredCommand): string {
   return [
-    manifest.id,
-    manifest.title,
+    decl.plugin,
+    decl.pluginTitle,
     decl.name,
     decl.title,
     decl.description ?? '',
@@ -117,10 +117,8 @@ function docOf(manifest: Manifest, decl: NonNullable<Manifest['commands']>[numbe
   ].join(' ');
 }
 
-export function buildCommandIndex(manifests: Manifest[]): CommandIndex {
-  const docs = manifests.flatMap((m) =>
-    (m.commands ?? []).map((decl) => ({ manifest: m, decl, text: docOf(m, decl) })),
-  );
+export function buildCommandIndex(commands: DeclaredCommand[]): CommandIndex {
+  const docs = commands.map((decl) => ({ decl, text: docOf(decl) }));
   const df = new Map<string, number>();
   for (const { text } of docs) {
     for (const g of new Set(grams(text))) df.set(g, (df.get(g) ?? 0) + 1);
@@ -128,10 +126,10 @@ export function buildCommandIndex(manifests: Manifest[]): CommandIndex {
   const n = docs.length;
   const idf = new Map([...df].map(([g, d]) => [g, Math.log((1 + n) / (1 + d)) + 1]));
   const unseen = Math.log((1 + n) / 1) + 1;
-  const entries = docs.map(({ manifest, decl, text }) => ({
-    plugin: manifest.id,
+  const entries = docs.map(({ decl, text }) => ({
+    plugin: decl.plugin,
     name: decl.name,
-    command: qualifyCommand(decl.name, manifest.id),
+    command: qualifyCommand(decl.name, decl.plugin),
     title: decl.title,
     args: decl.args ?? [],
     vector: vectorize(text, idf, unseen),

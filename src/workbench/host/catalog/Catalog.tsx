@@ -5,8 +5,8 @@ import { useDispatch, useLayout, useServices } from '../../react/context';
 import { iconFor } from '../icons';
 import styles from './Catalog.module.css';
 
-// The host's own page: what is installed, what is pinned, and which plugin
-// answers the prompt bar. Reaches host services directly, which no plugin
+// The host's own page: what is installed, what is pinned, which plugin
+// answers the prompt bar and which suggests commands for it. Reaches host services directly, which no plugin
 // over the SDK can.
 export function CatalogDocument() {
   usePanelTitle('Settings');
@@ -17,6 +17,7 @@ export function CatalogDocument() {
   const current = useSyncExternalStore(settings.subscribe, settings.get, settings.get);
   const manifests = source.manifests().filter((m) => m.id !== 'catalog');
   const assistants = manifests.filter((m) => m.modules.includes('prompt'));
+  const intents = manifests.filter((m) => m.modules.includes('intent'));
 
   return (
     <div className={styles.root}>
@@ -73,6 +74,32 @@ export function CatalogDocument() {
           style={{ display: 'grid', gap: 'var(--s-2)' }}
         >
           {assistants.map((m) => (
+            <label key={m.id} className={styles.assistantRow}>
+              <Radio.Radio value={m.id} />
+              <span className="body">{m.title}</span>
+            </label>
+          ))}
+          <label className={styles.assistantRow}>
+            <Radio.Radio value="none" />
+            <span className="body">None</span>
+          </label>
+        </Radio.Group>
+      </section>
+
+      <section aria-labelledby="catalog-intent" className={styles.section}>
+        <h2 id="catalog-intent" className="h4">
+          Suggestions
+        </h2>
+        <p className="caption">Which plugin suggests commands for text typed in the prompt bar.</p>
+        <Radio.Group
+          aria-labelledby="catalog-intent"
+          value={current.intent ?? 'none'}
+          onValueChange={(value) =>
+            settings.set({ intent: value === 'none' ? null : String(value) })
+          }
+          style={{ display: 'grid', gap: 'var(--s-2)' }}
+        >
+          {intents.map((m) => (
             <label key={m.id} className={styles.assistantRow}>
               <Radio.Radio value={m.id} />
               <span className="body">{m.title}</span>

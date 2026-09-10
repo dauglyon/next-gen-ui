@@ -1,9 +1,9 @@
-import type { CartItem, CommandCall, Query } from '../../../plugins/sdk';
+import type { CartItem, CommandCall, Intent, Query, Suggestion } from '../../../plugins/sdk';
 import type { Answer, QuerySource, QueryStore } from '../../core';
-import { tagText } from '../../core';
 import type { HostIndex } from '../installed';
 
-// Asking every plugin about a source of terms.
+// Asking every plugin about a source of terms, and the chosen intent about
+// the text.
 //
 // Each source has its own clock. Setting one runs every `terms` at once —
 // they are synchronous and cheap — pools what comes back with the terms
@@ -44,6 +44,12 @@ export interface QueryRunner {
   stop: () => void;
 }
 
+export interface RunnerOptions {
+  // The intent module Settings names, once loaded. Read on every keystroke,
+  // so a change of setting takes effect on the next one.
+  intent?: () => Intent | undefined;
+}
+
 const sameCall = (a: CommandCall, b: CommandCall) =>
   a.command === b.command &&
   a.label === b.label &&
@@ -65,20 +71,23 @@ function merged(prev: Answer | undefined, next: Answer): Answer {
   return { plugin: next.plugin, commands, cartItems };
 }
 
-export function createQueryRunner(index: HostIndex, store: QueryStore): QueryRunner {
+export function createQueryRunner(
+  index: HostIndex,
+  store: QueryStore,
+  options: RunnerOptions = {},
+): QueryRunner {
   const timers = new Map<QuerySource, number>();
   const inflight = new Map<QuerySource, AbortController>();
+  let suggesting: AbortController | null = null;
   // The full pool each source was last asked about, to tell a pool that grew
   // from one that changed.
   const asked = new Map<QuerySource, { owner?: string; text?: string; pool: string[] }>();
 
-  // The identifiers the workbench recognises in the text, every plugin's
-  // terms for it, then one pass in which each plugin may expand a term it
-  // recognises into others. A `terms` that throws is that plugin's problem:
-  // it contributes nothing this round.
+  // Every plugin's terms for the text, then one pass in which each plugin
+  // may expand a term it recognises into others. A `terms` that throws is
+  // that plugin's problem: it contributes nothing this round.
   const pool = (input: QueryInput): string[] => {
     const found = new Set(input.terms ?? []);
-    if (input.text) for (const tag of tagText(input.text)) found.add(tag.term);
     const signal = new AbortController().signal;
     const ask = (q: Omit<Query, 'signal'>) => {
       for (const { plugin, background } of index.backgrounds()) {
@@ -94,6 +103,36 @@ export function createQueryRunner(index: HostIndex, store: QueryStore): QueryRun
     const first = [...found];
     if (first.length) ask({ terms: first });
     return [...found];
+  };
+
+  // The chosen intent's suggestions for the text, on the keystroke: a sync
+  // answer lands at once, an async one when it arrives unless the text has
+  // moved on. Until it lands the previous suggestions stay. A `suggest` that
+  // throws or rejects is that plugin's problem.
+  const suggest = (text: string | undefined, terms: string[]) => {
+    suggesting?.abort();
+    const intent = options.intent?.();
+    if (!intent || !text) {
+      store.set('typing', { ...store.get('typing'), suggestions: [] });
+      return;
+    }
+    const controller = new AbortController();
+    suggesting = controller;
+    const land = (suggestions: Suggestion[]) => {
+      if (controller.signal.aborted) return;
+      store.set('typing', { ...store.get('typing'), suggestions });
+    };
+    const fail = (err: unknown) => {
+      if (!controller.signal.aborted)
+        console.warn('the intent plugin: its suggest() threw; ignoring it', err);
+    };
+    try {
+      const result = intent.suggest({ text, terms, signal: controller.signal });
+      if (result instanceof Promise) result.then(land, fail);
+      else land(result);
+    } catch (err) {
+      fail(err);
+    }
   };
 
   // `terms` is what the plugins are asked about this round; `pool` is what the
@@ -132,6 +171,7 @@ export function createQueryRunner(index: HostIndex, store: QueryStore): QueryRun
         answers: [...answers.values()].sort((a, b) => order.get(a.plugin)! - order.get(b.plugin)!),
         pending: [...pending],
         loading: !settled && pending.size > 0,
+        suggestions: store.get(source).suggestions,
       });
     };
     publish();
@@ -184,6 +224,7 @@ export function createQueryRunner(index: HostIndex, store: QueryStore): QueryRun
         inflight.get(source)?.abort();
         asked.delete(source);
         store.set(source, { label, pool: [], answers: [], pending: [], loading: false });
+        if (source === 'typing') suggest(undefined, []);
         return;
       }
       // A pool that only grew — a page whose terms arrive as it loads, a cart
@@ -211,10 +252,12 @@ export function createQueryRunner(index: HostIndex, store: QueryStore): QueryRun
         source,
         window.setTimeout(() => void ask(source, input, question, terms, grow), SETTLE_MS),
       );
+      if (source === 'typing') suggest(input.text, terms);
     },
     stop() {
       for (const timer of timers.values()) window.clearTimeout(timer);
       for (const controller of inflight.values()) controller.abort();
+      suggesting?.abort();
     },
   };
 }

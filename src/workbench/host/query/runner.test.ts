@@ -189,3 +189,66 @@ describe('the query runner', () => {
     expect(store.get('typing').answers.map((a) => a.plugin)).toEqual(['fj']);
   });
 });
+
+describe('the chosen intent', () => {
+  const suggestion = (label: string) => ({
+    call: { label, command: 'jobs:cancel', args: { id: '12' } },
+    score: 0.5,
+  });
+
+  it('is asked on the keystroke and a sync answer lands at once', () => {
+    const store = createQueryStore();
+    const intent = { index: vi.fn(), suggest: vi.fn(() => [suggestion('Cancel a job: 12')]) };
+    const runner = createQueryRunner(index({ fj }), store, { intent: () => intent });
+    runner.set('typing', { text: 'cancel job 12' });
+    expect(intent.suggest).toHaveBeenCalledWith(
+      expect.objectContaining({ text: 'cancel job 12', terms: [] }),
+    );
+    expect(store.get('typing').suggestions?.map((s) => s.call.label)).toEqual(['Cancel a job: 12']);
+  });
+
+  it('keeps the previous answer until an async one lands, and drops one for older text', async () => {
+    const store = createQueryStore();
+    let resolveFirst!: (s: ReturnType<typeof suggestion>[]) => void;
+    const answers = [
+      new Promise<ReturnType<typeof suggestion>[]>((r) => (resolveFirst = r)),
+      Promise.resolve([suggestion('second')]),
+    ];
+    const intent = { index: vi.fn(), suggest: vi.fn(() => answers.shift()!) };
+    const runner = createQueryRunner(index({ fj }), store, { intent: () => intent });
+    runner.set('typing', { text: 'cancel' });
+    expect(store.get('typing').suggestions).toEqual([]);
+    runner.set('typing', { text: 'cancel job' });
+    await Promise.resolve();
+    expect(store.get('typing').suggestions?.map((s) => s.call.label)).toEqual(['second']);
+    resolveFirst([suggestion('first')]);
+    await Promise.resolve();
+    expect(store.get('typing').suggestions?.map((s) => s.call.label)).toEqual(['second']);
+  });
+
+  it('is not asked without an intent, and a throwing one contributes nothing', () => {
+    const store = createQueryStore();
+    const runner = createQueryRunner(index({ fj }), store);
+    runner.set('typing', { text: 'cancel' });
+    expect(store.get('typing').suggestions).toEqual([]);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const broken = {
+      index: vi.fn(),
+      suggest: () => {
+        throw new Error('no');
+      },
+    };
+    const other = createQueryRunner(index({ fj }), createQueryStore(), { intent: () => broken });
+    expect(() => other.set('typing', { text: 'cancel' })).not.toThrow();
+    warn.mockRestore();
+  });
+
+  it('is cleared with the text', () => {
+    const store = createQueryStore();
+    const intent = { index: vi.fn(), suggest: () => [suggestion('x')] };
+    const runner = createQueryRunner(index({ fj }), store, { intent: () => intent });
+    runner.set('typing', { text: 'cancel' });
+    runner.set('typing', { text: '' });
+    expect(store.get('typing').suggestions).toEqual([]);
+  });
+});

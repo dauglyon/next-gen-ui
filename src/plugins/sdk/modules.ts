@@ -1,9 +1,9 @@
 import type { CartItem } from './cart';
-import type { CommandCall } from './contract';
+import type { CommandCall, SlashCommand } from './contract';
 import type { PluginHost } from './host';
 import type { PanelHandle } from './panel';
 
-// The five modules a plugin can expose, in the order the host reaches them.
+// The six modules a plugin can expose, in the order the host reaches them.
 // Each `define*` is identity at runtime: it exists so the file's default
 // export is typed, and so a plugin that omits a required field — a route
 // without `normalize` — fails to compile rather than to run.
@@ -101,12 +101,37 @@ export interface Prompt {
   };
 }
 
+// A command as its manifest declares it, with the plugin that declares it.
+export type DeclaredCommand = SlashCommand & { plugin: string; pluginTitle: string };
+
+export interface Suggestion {
+  // `command` qualified as "plugin:name": the plugin suggesting is seldom
+  // the one that declared it.
+  call: CommandCall;
+  // Higher is a closer match; rows are shown in the order returned.
+  score: number;
+}
+
+// What turns typed text into command suggestions. One plugin's intent
+// module is chosen in Settings, the way the assistant is; the workbench
+// itself reads no text.
+export interface Intent {
+  // Once when the module arrives, with every installed plugin's commands,
+  // so that no keystroke has to see the catalog.
+  index: (commands: DeclaredCommand[]) => void;
+  // Every keystroke, with the text and the terms every background found in
+  // it. Sync or async; what arrives is shown, and an answer to text that has
+  // since changed is dropped by the signal.
+  suggest: (q: Query) => Suggestion[] | Promise<Suggestion[]>;
+}
+
 export interface Modules {
   background: Background;
   route: Route;
   pane: Pane;
   commands: Commands;
   prompt: Prompt;
+  intent: Intent;
 }
 
 export const defineBackground = (b: Background): Background => b;
@@ -114,3 +139,4 @@ export const defineRoute = (r: Route): Route => r;
 export const definePane = (p: Pane): Pane => p;
 export const defineCommands = (c: Commands): Commands => c;
 export const definePrompt = (p: Prompt): Prompt => p;
+export const defineIntent = (i: Intent): Intent => i;

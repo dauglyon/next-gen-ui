@@ -9,7 +9,9 @@ import { version as SDK_VERSION } from './package.json';
 // another is skipped at registry time, so a contract change ships as a new
 // SDK version and the host lists the ones it still understands.
 export { SDK_VERSION };
-export const ACCEPTED_SDK_VERSIONS: readonly string[] = [SDK_VERSION];
+// 0.1.0 predates the intent module; a plugin built with it lists nothing the
+// host cannot load.
+export const ACCEPTED_SDK_VERSIONS: readonly string[] = [SDK_VERSION, '0.1.0'];
 
 const NAME = /^[a-z][a-z0-9-]*$/;
 
@@ -60,8 +62,8 @@ export type CommandCall = z.infer<typeof CommandCallSchema>;
 // reads well there and never change once published.
 export const PluginIdSchema = z.string().regex(/^[a-z][a-z0-9-]{1,40}$/);
 
-// The five modules a bundle can hold, each fetched at its own moment.
-export const MODULES = ['background', 'route', 'pane', 'commands', 'prompt'] as const;
+// The six modules a bundle can hold, each fetched at its own moment.
+export const MODULES = ['background', 'route', 'pane', 'commands', 'prompt', 'intent'] as const;
 export const ModuleSchema = z.enum(MODULES);
 export type Module = z.infer<typeof ModuleSchema>;
 

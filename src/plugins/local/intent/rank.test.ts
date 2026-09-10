@@ -1,72 +1,55 @@
 import { describe, expect, it } from 'vitest';
-import type { Manifest } from '../../plugins/sdk';
+import type { DeclaredCommand } from '@kbase/plugin-sdk';
 import { buildCommandIndex, rankCommands } from './rank';
 import { tagText } from './tag';
 
-const manifest = (m: Partial<Manifest> & Pick<Manifest, 'id' | 'title'>): Manifest => ({
-  sdkVersion: '0.0.0',
-  modules: [],
-  ...m,
-});
+const fj = { plugin: 'function-junction', pluginTitle: 'Function Junction' };
+const gk = { plugin: 'genknown', pluginTitle: 'genKnown' };
+const jobs = { plugin: 'jobs', pluginTitle: 'Jobs' };
 
-const manifests: Manifest[] = [
-  manifest({
-    id: 'function-junction',
-    title: 'Function Junction',
-    description: 'Per-protein evidence report card.',
-    commands: [
+const commands: DeclaredCommand[] = [
+  {
+    ...fj,
+    name: 'open',
+    title: 'Open the evidence dossier for a protein',
+    args: [{ name: 'q', description: 'a UniProt or RefSeq id, a gene name, or a sequence' }],
+  },
+  {
+    ...gk,
+    name: 'open',
+    title: 'Open the taxon dossier',
+    args: [
       {
-        name: 'open',
-        title: 'Open the evidence dossier for a protein',
-        args: [{ name: 'q', description: 'a UniProt or RefSeq id, a gene name, or a sequence' }],
+        name: 'q',
+        description: 'a taxon name, NCBI taxid, FitnessBrowser orgId, or genome accession',
       },
     ],
-  }),
-  manifest({
-    id: 'genknown',
-    title: 'genKnown',
-    description: 'Per-taxon evidence report card.',
-    commands: [
-      {
-        name: 'open',
-        title: 'Open the taxon dossier',
-        args: [
-          {
-            name: 'q',
-            description: 'a taxon name, NCBI taxid, FitnessBrowser orgId, or genome accession',
-          },
-        ],
-      },
-      {
-        name: 'compare',
-        title: 'Compare two taxa',
-        args: [
-          { name: 'a', description: 'a taxon name or NCBI taxid' },
-          { name: 'b', description: 'a taxon name or NCBI taxid' },
-        ],
-      },
+  },
+  {
+    ...gk,
+    name: 'compare',
+    title: 'Compare two taxa',
+    args: [
+      { name: 'a', description: 'a taxon name or NCBI taxid' },
+      { name: 'b', description: 'a taxon name or NCBI taxid' },
     ],
-  }),
-  manifest({
-    id: 'jobs',
-    title: 'Jobs',
-    commands: [
-      {
-        name: 'cancel',
-        title: 'Cancel a job',
-        args: [{ name: 'id', required: true, description: 'job id' }],
-        semantics: { description: 'Cancel, stop, kill or abort a running or queued job.' },
-      },
-      {
-        name: 'open',
-        title: 'Open a job',
-        args: [{ name: 'id', required: true, description: 'job id' }],
-      },
-    ],
-  }),
+  },
+  {
+    ...jobs,
+    name: 'cancel',
+    title: 'Cancel a job',
+    args: [{ name: 'id', required: true, description: 'job id' }],
+    semantics: { description: 'Cancel, stop, kill or abort a running or queued job.' },
+  },
+  {
+    ...jobs,
+    name: 'open',
+    title: 'Open a job',
+    args: [{ name: 'id', required: true, description: 'job id' }],
+  },
 ];
 
-const index = buildCommandIndex(manifests);
+const index = buildCommandIndex(commands);
 const rank = (text: string, terms: string[] = []) =>
   rankCommands(index, text, tagText(text), terms);
 

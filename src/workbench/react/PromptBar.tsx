@@ -1,12 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from 'react';
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import type { ComponentType, KeyboardEvent } from 'react';
 import { ArrowUpRight, CaretRight, CaretUpDown, Check } from '@phosphor-icons/react';
 import type { IconProps } from '@phosphor-icons/react';
@@ -15,7 +7,6 @@ import type { Destination, Manifest, Prompt } from '../../plugins/sdk';
 import { qualifyCommand } from '../../plugins/sdk';
 import type { Suggestion } from '../commands';
 import { complete, parse, qualifiedName, resolve, usage } from '../commands';
-import { buildCommandIndex, rankCommands, tagText } from '../core';
 import { pluginHostFor } from '../host/createWorkbench';
 import { openPane, openRoute } from '../host/open';
 import { iconFor } from '../host/icons';
@@ -165,27 +156,26 @@ export function PromptBar() {
       })
       .slice(0, 4);
 
-  // Every manifest's commands, ranked against the text by what their
-  // manifests say about them, with arguments filled from the identifiers
-  // the text carries: "dossier for P0AEX9" reaches Function Junction's open
-  // with q filled, whether or not that plugin recognised the text itself. A
-  // command a plugin already offered, with the same arguments, is its offer.
-  const index = useMemo(() => buildCommandIndex(source.manifests()), [source]);
-  const rankedSuggestions = (text: string): BarSuggestion[] => {
+  // What the chosen intent suggested for this text: every plugin's commands
+  // ranked by its declaration, arguments filled from the identifiers the text
+  // carries, so "dossier for P0AEX9" reaches Function Junction's open with q
+  // filled whether or not that plugin recognised the text itself. A call a
+  // plugin already offered, with the same arguments, is its offer.
+  const suggested = (text: string): BarSuggestion[] => {
     const offers = new Set(
       offered().map(({ command, call }) => `${command}\u0000${JSON.stringify(call.args ?? {})}`),
     );
-    return rankCommands(index, text, tagText(text), query.get('typing').pool)
-      .filter((r) => !offers.has(`${r.command}\u0000${JSON.stringify(r.args)}`))
-      .map((r) => {
-        const manifest = source.manifest(r.plugin);
-        const filled = Object.values(r.args);
+    return (query.get('typing').suggestions ?? [])
+      .filter(({ call }) => !offers.has(`${call.command}\u0000${JSON.stringify(call.args ?? {})}`))
+      .slice(0, 4)
+      .map(({ call }) => {
+        const manifest = source.manifest(call.command.split(':')[0]);
         return {
           value: text,
-          label: filled.length ? `${r.title}: ${filled.join(', ')}` : r.title,
+          label: call.label,
           detail: manifest?.title,
           icon: iconFor(manifest?.icon, manifest?.color),
-          run: () => void run(r.command, r.args),
+          run: () => void run(call.command, call.args),
         };
       });
   };
@@ -310,18 +300,18 @@ export function PromptBar() {
         };
       });
       // Priority order, painted bottom-up: a plugin recognising its own
-      // data beats a command ranked by its manifest, which beats a
-      // shortcut's name, which beats a word shared with a description.
+      // data beats what the intent suggested, which beats a shortcut's
+      // name, which beats a word shared with a description.
       // An offer is a plugin saying it recognises this text and what it would
-      // do with it. The rows under it are the ranked commands; where none
-      // clears the floor, name and description matches — the same search the
-      // Browse page runs, inline.
+      // do with it. The rows under it are the intent's suggestions; where it
+      // has none, name and description matches — the same search the Browse
+      // page runs, inline.
       const offers = list.length ? [] : recommended(value);
-      const ranked = list.length ? [] : rankedSuggestions(value);
+      const suggestions = list.length ? [] : suggested(value);
       const guesses = list.length
         ? []
-        : ranked.length
-          ? ranked
+        : suggestions.length
+          ? suggestions
           : [...shortcutSuggestions(value), ...appSuggestions(value), ...panelSuggestions(value)];
       const alternatives = [...offers, ...guesses];
       // Nothing worth choosing between: no list, and Enter behaves as if

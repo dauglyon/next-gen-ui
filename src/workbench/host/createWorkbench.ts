@@ -42,6 +42,8 @@ export interface CreateWorkbenchOptions {
   defaultPinned?: PluginId[];
   // The plugin whose prompt module answers the bar until the user picks.
   defaultAssistant?: PluginId | null;
+  // The plugin whose intent module suggests commands until the user picks.
+  defaultIntent?: PluginId | null;
 }
 
 // Builds the store, the command registry and their companions once, before
@@ -52,6 +54,7 @@ export function createWorkbench({
   storage,
   defaultPinned = [],
   defaultAssistant = null,
+  defaultIntent = null,
 }: CreateWorkbenchOptions): WorkbenchServices {
   const titles = createTitleStore();
   const crumbs = createCrumbStore();
@@ -61,7 +64,10 @@ export function createWorkbench({
   const focusIntentRef: WorkbenchServices['focusIntentRef'] = { current: 'command' };
   const navIntentRef: WorkbenchServices['navIntentRef'] = { current: 'push' };
   const source = createHostIndex([...installed, ...hostPlugins(() => services)]);
-  const settings = createSettingsStore(storage, { assistant: defaultAssistant });
+  const settings = createSettingsStore(storage, {
+    assistant: defaultAssistant,
+    intent: defaultIntent,
+  });
   for (const key of RETIRED_STORAGE_KEYS) {
     try {
       storage?.removeItem(key);
@@ -99,7 +105,13 @@ export function createWorkbench({
     store,
     cart,
     query,
-    queryRunner: createQueryRunner(source, query),
+    queryRunner: createQueryRunner(source, query, {
+      // The chosen intent, once its module has arrived; nothing until then.
+      intent: () => {
+        const id = settings.get().intent;
+        return id ? source.loaded(id, 'intent') : undefined;
+      },
+    }),
     terms,
     status,
     registry,

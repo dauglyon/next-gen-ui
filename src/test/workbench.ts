@@ -9,5 +9,6 @@ export function testWorkbench(): WorkbenchServices {
     storage: null,
     defaultPinned: ['koros', 'data', 'jobs'],
     defaultAssistant: 'koros',
+    defaultIntent: 'intent',
   });
 }

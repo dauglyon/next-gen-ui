@@ -8,7 +8,8 @@ is built.
 ## Shape
 
 A plugin is a service that serves a manifest and a bundle. The author writes `plugin.config.ts`
-and up to five modules — `background`, `route`, `pane`, `commands`, `prompt` — and names the
+and up to six modules — `background`, `route`, `pane`, `commands`, `prompt`, `intent` — and names
+the
 modules in `vite.config.ts`:
 
 ```ts

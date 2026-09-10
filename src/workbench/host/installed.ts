@@ -1,6 +1,14 @@
 import type { ComponentType } from 'react';
 import type { IconProps } from '@phosphor-icons/react';
-import type { Background, Manifest, Module, Modules, PluginHost } from '../../plugins/sdk';
+import type {
+  Background,
+  DeclaredCommand,
+  Intent,
+  Manifest,
+  Module,
+  Modules,
+  PluginHost,
+} from '../../plugins/sdk';
 import type { PluginId } from '../core';
 import type { ArgSpec, Command, CommandRegistry } from '../commands';
 import type { ArgDecl } from '../../plugins/sdk';
@@ -29,6 +37,8 @@ export interface HostIndex {
   plugins: () => PluginInfo[];
   manifest: (id: PluginId) => Manifest | undefined;
   manifests: () => Manifest[];
+  // Every manifest's commands, each with the plugin that declares it.
+  declaredCommands: () => DeclaredCommand[];
   // Whether the manifest lists the module — what the host may offer before
   // fetching anything.
   has: (id: PluginId, kind: Module) => boolean;
@@ -92,15 +102,34 @@ export function createHostIndex(installed: InstalledPlugin[]): HostIndex {
     return promise;
   };
 
-  // Fetched now, not on first use: the host calls `terms` on every keystroke
-  // and `status` on its own schedule, so a background that has not arrived
-  // simply says nothing until it does. A rejection is the plugin's problem,
-  // not the bar's.
+  const declaredCommands = (): DeclaredCommand[] =>
+    installed.flatMap(({ manifest }) =>
+      (manifest.commands ?? []).map((decl) => ({
+        ...decl,
+        plugin: manifest.id,
+        pluginTitle: manifest.title,
+      })),
+    );
+
+  // Fetched now, not on first use: the host calls `terms` and `suggest` on
+  // every keystroke and `status` on its own schedule, so a module that has
+  // not arrived simply says nothing until it does. An intent is handed the
+  // catalog as it arrives; the installed set does not change within a
+  // session. A rejection is the plugin's problem, not the bar's.
   for (const { manifest } of installed) {
-    if (!manifest.modules.includes('background')) continue;
-    module(manifest.id, 'background').catch((err: unknown) => {
-      console.warn(`plugin ${manifest.id}: its background module failed to load; ignoring it`, err);
-    });
+    for (const kind of ['background', 'intent'] as const) {
+      if (!manifest.modules.includes(kind)) continue;
+      module(manifest.id, kind)
+        .then((loaded) => {
+          if (kind === 'intent') (loaded as Intent).index(declaredCommands());
+        })
+        .catch((err: unknown) => {
+          console.warn(
+            `plugin ${manifest.id}: its ${kind} module failed to load; ignoring it`,
+            err,
+          );
+        });
+    }
   }
 
   return {
@@ -112,6 +141,7 @@ export function createHostIndex(installed: InstalledPlugin[]): HostIndex {
       })),
     manifest: (id) => byId.get(id)?.manifest,
     manifests: () => installed.map((p) => p.manifest),
+    declaredCommands,
     has,
     module,
     loaded: <K extends Module>(id: PluginId, kind: K) =>

@@ -59,6 +59,7 @@ const workbench = createWorkbench({
   // column every time it did.
   defaultPinned: ['shortcuts', 'koros', 'related'],
   defaultAssistant: 'koros',
+  defaultIntent: 'intent',
 });
 
 const router = createRouter({

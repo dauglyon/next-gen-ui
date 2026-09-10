@@ -26,13 +26,23 @@ export type {
   ArgDecl,
   Module,
 } from './contract';
-export { defineBackground, defineRoute, definePane, defineCommands, definePrompt } from './modules';
+export {
+  defineBackground,
+  defineRoute,
+  definePane,
+  defineCommands,
+  definePrompt,
+  defineIntent,
+} from './modules';
 export type {
   Background,
   Route,
   Pane,
   Commands,
   Prompt,
+  Intent,
+  Suggestion,
+  DeclaredCommand,
   Modules,
   Mount,
   Cleanup,

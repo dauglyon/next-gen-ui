@@ -1,6 +1,6 @@
-// Regenerate src/workbench/core/shapes.json from a pinned Bioregistry release.
+// Regenerate src/plugins/local/intent/shapes.json from a pinned Bioregistry release.
 //
-// The workbench tags identifiers it recognises in typed text, under the
+// The intent plugin tags identifiers it recognises in typed text, under the
 // prefix Bioregistry gives them, so the vocabulary is the registry's rather
 // than one invented here. The registry itself is 3.7 MB and 1,700 patterns,
 // many of them a bare `^\d+$`: a bare integer matches 767 of them, so only
@@ -9,11 +9,12 @@
 //
 //   node scripts/build-shapes.mjs
 
+import { execFileSync } from 'node:child_process';
 import { writeFile } from 'node:fs/promises';
 
 const TAG = 'v0.14.5';
 const SOURCE = `https://raw.githubusercontent.com/biopragmatics/bioregistry/${TAG}/exports/registry/registry.json`;
-const OUT = new URL('../src/workbench/core/shapes.json', import.meta.url);
+const OUT = new URL('../src/plugins/local/intent/shapes.json', import.meta.url);
 
 // prefix -> overrides. `bare: false` means the id is tagged only when typed
 // with its prefix (`taxon:562`, `GO:0008150`): the bare form is an integer
@@ -129,4 +130,7 @@ for (const local of LOCAL) {
 shapes.sort((a, b) => a.prefix.localeCompare(b.prefix));
 
 await writeFile(OUT, JSON.stringify({ bioregistry: TAG, shapes }, null, 2) + '\n');
+// Laid out the way the repo's formatter would, so a regeneration diffs only
+// where the registry changed.
+execFileSync('npx', ['prettier', '--write', OUT.pathname], { stdio: 'ignore' });
 console.log(`${shapes.length} shapes from Bioregistry ${TAG} → ${OUT.pathname}`);

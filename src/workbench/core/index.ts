@@ -15,7 +15,3 @@ export * from './terms';
 export * from './query';
 export { mergeRecommendations } from './recommendations';
 export type { Offer, Recommendation } from './recommendations';
-export { tagText, namespaceOf, shapeFor } from './tag';
-export type { Tag, Shape } from './tag';
-export { buildCommandIndex, rankCommands, FLOOR, BIND_FLOOR } from './rank';
-export type { CommandIndex, RankedCall } from './rank';

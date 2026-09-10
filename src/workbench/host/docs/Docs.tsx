@@ -149,14 +149,14 @@ npm run dev -- --port 8770`}</File>
               the given arguments.
             </p>
             <p className={styles.para}>
-              Text that is not a slash command is matched against every declared command by what its
-              declaration says: the title, the descriptions, and <Code>semantics</Code>, a section
-              the prompt bar ranks by and never shows. <Code>semantics.description</Code> is what
-              the command does in the words a user would type for it, synonyms included;{' '}
-              <Code>semantics.examples</Code> are phrasings that should reach it. An identifier in
-              the text fills the argument whose description says it takes that kind of thing, so
-              "dossier for P0AEX9" offers <Code>open</Code> with <Code>q</Code> filled. The closest
-              commands are shown as rows under whatever plugins offered.
+              Text that is not a slash command goes to the intent plugin chosen in Settings, which
+              suggests commands for it from every declaration; see Intent below. The bundled one
+              reads the title, the descriptions, and <Code>semantics</Code>, a section never shown:{' '}
+              <Code>semantics.description</Code> is what the command does in the words a user would
+              type for it, synonyms included; <Code>semantics.examples</Code> are phrasings that
+              should reach it. An identifier in the text fills the argument whose description says
+              it takes that kind of thing, so "dossier for P0AEX9" offers <Code>open</Code> with{' '}
+              <Code>q</Code> filled.
             </p>
             <p className={styles.para}>
               <Code>id</Code> appears in URLs and saved layouts and must not change. Command names
@@ -227,11 +227,11 @@ export default defineRoute({
           <p className={styles.narrative}>
             The background module lets a plugin join in while the user is typing, before anything of
             the plugin's is open. It can recognise something it understands in the text, an
-            accession or a job id, and offer a command or a piece of data for it. The workbench tags
-            the identifiers it recognises by shape, under the prefix Bioregistry gives them (
-            <Code>uniprot:P0AEX9</Code>, <Code>ncbitaxon:562</Code>, <Code>go:0008150</Code> when
-            typed as <Code>GO:0008150</Code>; a bare number is never tagged), and passes those and
-            what plugins recognised to every plugin, so each can react to what the others found.
+            accession or a job id, and offer a command or a piece of data for it. The workbench does
+            not interpret text itself; it passes what plugins recognised to the other plugins, so
+            each can react to what the others found. The bundled intent plugin's background is one
+            such plugin: it tags identifiers by shape under the prefix Bioregistry gives them (
+            <Code>uniprot:P0AEX9</Code>, <Code>ncbitaxon:562</Code>; a bare number is never tagged).
           </p>
           <File
             name="src/background.ts"
@@ -277,12 +277,11 @@ export default defineBackground({
               called 250 ms after typing stops, with <Code>query.terms</Code> set to every term
               returned by every plugin. They may be async; <Code>query.signal</Code> aborts when the
               text changes, and a result returned after that is discarded. Returned commands are
-              shown as rows in the prompt bar, above the commands the workbench ranked from their
-              declarations. Returned cart items are shown in Related, a sidebar pane, where the user
-              can open one or add it to the cart, the list of items sent with the next message. Both
-              functions are also called 250 ms after the front tab's terms change, with those terms,
-              and 250 ms after the cart changes, with its items' terms; a plugin is not called with
-              its own tab's terms.
+              shown as rows in the prompt bar, above the intent plugin's suggestions. Returned cart
+              items are shown in Related, a sidebar pane, where the user can open one or add it to
+              the cart, the list of items sent with the next message. Both functions are also called
+              250 ms after the front tab's terms change, with those terms, and 250 ms after the cart
+              changes, with its items' terms; a plugin is not called with its own tab's terms.
             </p>
             <p className={styles.para}>
               <Code>status()</Code> is called at startup and after every command, and returns lines
@@ -339,6 +338,48 @@ export default defineBackground({
           </Explainer>
         </Part>
 
+        <Part id="intent" title="Intent">
+          <p className={styles.narrative}>
+            A plugin that can turn typed text into command suggestions can be chosen as the intent.
+            Every keystroke in the prompt bar that is not a slash command goes to it, with the terms
+            every background found, and what it suggests is shown as rows under the plugins' own
+            offers. The workbench ships one; a plugin with a better reading of text replaces it from
+            Settings.
+          </p>
+          <File name="src/intent.ts" language="typescript">{`let index = buildIndex([]);
+
+export default defineIntent({
+  index: (commands) => {
+    index = buildIndex(commands);
+  },
+  suggest: ({ text, terms }) =>
+    rank(index, text, terms).map((r) => ({
+      call: { label: r.title, command: \`\${r.plugin}:\${r.name}\`, args: r.args },
+      score: r.score,
+    })),
+});`}</File>
+          <Explainer>
+            <p className={styles.para}>
+              Settings lists every plugin with an <Code>intent</Code> module, and the user picks
+              one. <Code>index(commands)</Code> is called once when the module arrives, with every
+              installed plugin's commands as their manifests declare them, each with the plugin's id
+              and title; whatever the plugin builds from them is built here, so that a keystroke
+              never sees the catalog. <Code>suggest(query)</Code> is called on every keystroke with{' '}
+              <Code>query.text</Code> and <Code>query.terms</Code>, the terms every background
+              found. It may be synchronous or return a promise; what arrives is shown, the previous
+              suggestions stay until it does, and <Code>query.signal</Code> aborts when the text
+              changes. Each suggestion is a command call with its <Code>command</Code> qualified as{' '}
+              <Code>plugin:name</Code> and a score; rows are shown in the order returned, at most
+              four.
+            </p>
+            <p className={styles.para}>
+              The bundled intent ranks by character n-grams over each declaration, reads an
+              identifier in the text as the kind of thing it is, and fills an argument whose
+              description says it takes that kind. Its background is what tags the identifiers.
+            </p>
+          </Explainer>
+        </Part>
+
         <Part id="commands" title="Commands and the host">
           <p className={styles.narrative}>
             Commands are what the plugin does when a user runs it, from the prompt bar, a sidebar
@@ -382,7 +423,7 @@ export default defineBackground({
 
   // written by the build
   sdkVersion: string;            // the SDK's package version
-  modules: ('background' | 'route' | 'pane' | 'commands' | 'prompt')[];
+  modules: ('background' | 'route' | 'pane' | 'commands' | 'prompt' | 'intent')[];
 }
 
 interface SlashCommand {
@@ -552,6 +593,24 @@ function definePrompt(p: {
           </Entry>
 
           <Entry
+            id="r-intent"
+            name="intent"
+            when="Loaded at startup. index is called once the module arrives; suggest on every keystroke that is not a slash command, when Settings names this plugin."
+          >
+            <Sig>{`type DeclaredCommand = SlashCommand & { plugin: string; pluginTitle: string };
+
+interface Suggestion {
+  call: CommandCall;             // command qualified as "plugin:name"
+  score: number;                 // higher is closer; rows keep the order returned
+}
+
+function defineIntent(i: {
+  index: (commands: DeclaredCommand[]) => void;
+  suggest: (q: Query) => Suggestion[] | Promise<Suggestion[]>;   // q.text, q.terms, q.signal
+}): Intent;`}</Sig>
+          </Entry>
+
+          <Entry
             id="r-handles"
             name="Handles"
             when="Given to every mount, command handler and prompt handler. In React, read them with the hooks."
@@ -671,6 +730,7 @@ const SECTIONS: { id: string; label: string; children?: { id: string; label: str
   { id: 'pane', label: 'Sidebar pane' },
   { id: 'background', label: 'Background' },
   { id: 'assistant', label: 'Assistant' },
+  { id: 'intent', label: 'Intent' },
   { id: 'commands', label: 'Commands and the host' },
   {
     id: 'reference',
@@ -683,6 +743,7 @@ const SECTIONS: { id: string; label: string; children?: { id: string; label: str
       { id: 'r-pane', label: 'pane' },
       { id: 'r-commands', label: 'commands' },
       { id: 'r-prompt', label: 'prompt' },
+      { id: 'r-intent', label: 'intent' },
       { id: 'r-handles', label: 'Handles' },
     ],
   },
