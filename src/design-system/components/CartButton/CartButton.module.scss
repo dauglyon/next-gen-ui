@@ -8,6 +8,9 @@
   color: var(--ct-primary);
   border-color: var(--bo-primary);
   height: 30px;
+  /* Button's min-height is the density tier's control height, 34px at md,
+     which would stretch the circle into an oval; the pill is its own size. */
+  min-height: 0;
   /* With the 1px border, the 18px glyph's ring sits 6px inside the pill's. */
   padding: 0 5px;
   border-radius: var(--r-full);

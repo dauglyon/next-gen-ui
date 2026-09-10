@@ -19,8 +19,9 @@ export interface CartButtonProps extends Pick<ControlProps, 'labelled' | 'classN
   item?: CartItem;
   id?: string;
   onAdd?: () => void;
-  // What the button is adding, for the name: "Add P0AEX9 to the cart". Falls
-  // back to the item's own name.
+  // What the button is adding, for the accessible name: "Add P0AEX9 to the
+  // cart". The words shown stay the design system's short ones. Falls back
+  // to the item's own name.
   subject?: string;
 }
 
@@ -33,8 +34,7 @@ export function CartButton({ item, id, onAdd, subject, ...control }: CartButtonP
     <Control
       {...control}
       pressed={added}
-      label={`Add ${what} to the cart`}
-      pressedLabel={`${what} is in the cart`}
+      aria-label={control.labelled ? undefined : `Add ${what} to the cart`}
       onPressedChange={(next) => {
         if (!key) return;
         if (!next) cart.remove(key);
