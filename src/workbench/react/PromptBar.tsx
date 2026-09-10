@@ -162,12 +162,12 @@ export function PromptBar() {
   // the intent gave them. "dossier for P0AEX9" reaches Function Junction's
   // open with q filled whether or not that plugin recognised the text.
   const suggested = (text: string): BarSuggestion[] =>
-    (query.get('typing').suggestions ?? []).slice(0, 4).map(({ call }) => {
+    (query.get('typing').suggestions ?? []).slice(0, 4).map(({ call, detail }) => {
       const manifest = source.manifest(call.command.split(':')[0]);
       return {
         value: text,
         label: call.label,
-        detail: manifest?.title,
+        detail: detail ?? manifest?.title,
         icon: iconFor(manifest?.icon, manifest?.color),
         run: () => void run(call.command, call.args),
       };
