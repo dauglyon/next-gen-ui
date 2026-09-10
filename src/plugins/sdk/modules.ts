@@ -3,16 +3,13 @@ import type { CommandCall, CommandValues, Module, SlashCommand } from './contrac
 import type { PluginHost } from './host';
 import type { PanelHandle } from './panel';
 
-// The six modules a plugin can expose, in the order the host reaches them.
-// Each `define*` is identity at runtime: it exists so the file's default
-// export is typed, and so a plugin that omits a required field — a route
-// without `normalize` — fails to compile rather than to run.
+// The six modules a plugin can expose. Each `define*` is identity at
+// runtime: a plugin that omits a required field fails to compile, not run.
 
 export type Cleanup = () => void;
 
-// A panel's body. Called once, when the panel is first shown, with the
-// element to draw into; the return is called when the panel goes away.
-// `fromReact` builds one from a component.
+// Called once, when the panel is first shown; the return is called when the
+// panel goes away. `fromReact` builds one from a component.
 export type Mount = (
   el: HTMLElement,
   ctx: { panel: PanelHandle; host: PluginHost },
@@ -27,8 +24,8 @@ export interface Route {
 
 export interface Pane {
   mount: Mount;
-  // `content`: the sidebar block hugs its content instead of taking a share
-  // of the stack's height — for toolbars and status panels.
+  // `content`: the block hugs its content instead of taking a share of the
+  // stack's height.
   fit?: 'content';
 }
 
@@ -67,8 +64,8 @@ export interface Background {
   status?: () => StatusItem[];
 }
 
-// What a command handler runs against. `caller` is the plugin that called
-// `execute`, or 'user' for the prompt bar and every button.
+// `caller` is the plugin that called `execute`, or 'user' for the prompt bar
+// and every button.
 export interface CommandContext {
   host: PluginHost;
   caller: string;
@@ -97,10 +94,8 @@ export interface Prompt {
   // Opens the plugin's page for it, and the next message lands there.
   newConversation: (ctx: { host: PluginHost }) => void | Promise<void>;
   destination?: {
-    // What the bar shows; read whenever it redraws.
     current: () => Destination | null;
-    // Call `onChange` when `current()` would differ; the function returned
-    // stops the calls.
+    // Called when `current()` would differ.
     subscribe: (onChange: () => void) => () => void;
   };
 }

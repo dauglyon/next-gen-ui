@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { loadEnv } from 'vite';
+import type { ProxyOptions } from 'vite';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { tanstackRouter } from '@tanstack/router-plugin/vite';
@@ -15,20 +16,24 @@ import { SHARED_SINGLETONS } from './src/plugins/sdk/shared';
 // resolve the same way.
 const designSystemSrc = fileURLToPath(new URL('./src/design-system', import.meta.url));
 
+// A comma-separated env value, trimmed, without the empties.
+const list = (value: string | undefined) =>
+  (value ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
 // `/services/function-junction=http://127.0.0.1:8771` — one entry per backend
 // serving its own plugin. Same shape nginx is given in the container.
 function serviceProxies(spec: string | undefined) {
-  const entries = (spec ?? '')
-    .split(',')
-    .map((pair) => pair.trim())
-    .filter(Boolean)
-    .map((pair) => {
-      const at = pair.indexOf('=');
-      if (at < 1) throw new Error(`VITE_DEV_SERVICE_PROXY entry is not <prefix>=<origin>: ${pair}`);
-      // `ws`: a plugin that iframes its own app (Solara, Jupyter) needs its websocket through too.
-      return [pair.slice(0, at), { target: pair.slice(at + 1), changeOrigin: false, ws: true }] as const;
-    });
-  return Object.fromEntries(entries);
+  const out: Record<string, { target: string; changeOrigin: boolean; ws: boolean }> = {};
+  for (const pair of list(spec)) {
+    const at = pair.indexOf('=');
+    if (at < 1) throw new Error(`VITE_DEV_SERVICE_PROXY entry is not <prefix>=<origin>: ${pair}`);
+    // `ws`: a plugin that iframes its own app (Solara, Jupyter) needs its websocket through too.
+    out[pair.slice(0, at)] = { target: pair.slice(at + 1), changeOrigin: false, ws: true };
+  }
+  return out;
 }
 
 export default defineConfig(({ mode }) => {
@@ -36,11 +41,35 @@ export default defineConfig(({ mode }) => {
   // default; loadEnv brings them into the config too so allowedHosts
   // honors VITE_DEV_ALLOWED_HOSTS from .env.development.local.
   const env = loadEnv(mode, process.cwd(), '');
+  const authProxy: Record<string, ProxyOptions> = env.VITE_DEV_AUTH_PROXY
+    ? {
+        '/services/auth': {
+          target: env.VITE_DEV_AUTH_PROXY,
+          changeOrigin: true,
+          secure: true,
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq) => {
+              // Strip the locally-set kbase_session cookie (it
+              // was set on the dev origin; the auth service
+              // wouldn't recognize it anyway — Authorization
+              // header carries the bearer).
+              proxyReq.removeHeader('cookie');
+              proxyReq.setHeader('Origin', env.VITE_DEV_AUTH_PROXY);
+              proxyReq.setHeader('Referer', env.VITE_DEV_AUTH_PROXY + '/');
+              // Cloudflare's bot manager challenges browser UAs
+              // without a __cf_bm cookie; that cookie can't
+              // round-trip through this proxy (Domain mismatch).
+              // A non-browser UA is on the API allowlist.
+              proxyReq.setHeader('User-Agent', 'kbase-frontend-dev-proxy');
+            });
+          },
+        },
+      }
+    : {};
   return {
     plugins: [
-      // Module Federation host. Remotes are registered at runtime from the
-      // registry, so none are declared here; the shared list is the SDK's.
-      // Vitest gets no federation runtime: nothing in tests loads a remote.
+      // Remotes are registered at runtime from the registry, so none are
+      // declared here. Vitest gets no federation runtime.
       ...(mode === 'test'
         ? []
         : [federation({ name: 'host', remotes: {}, shared: SHARED_SINGLETONS, dts: false })]),
@@ -53,27 +82,18 @@ export default defineConfig(({ mode }) => {
         name: 'local-plugin-registry',
         apply: 'serve' as const,
         configureServer(server) {
-          server.middlewares.use('/plugin-registry/plugins', (_req, res) => {
+          server.middlewares.use('/plugin-registry/plugins', async (_req, res) => {
             res.setHeader('Content-Type', 'application/json');
             // A proxied service publishes its own manifest, so a plugin under
             // development is registered by running its backend rather than by
             // editing this repo. Asked for on each request: restarting the
             // service is enough, no dev-server restart.
+            const manifest = (prefix: string) =>
+              fetch(`http://127.0.0.1:${server.config.server.port}${prefix}/manifest.json`)
+                .then((answer) => (answer.ok ? answer.json() : null))
+                .catch(() => null);
             const proxied = Object.keys(serviceProxies(env.VITE_DEV_SERVICE_PROXY));
-            Promise.all(
-              proxied.map(async (prefix) => {
-                try {
-                  const answer = await fetch(
-                    `http://127.0.0.1:${server.config.server.port}${prefix}/manifest.json`,
-                  );
-                  return answer.ok ? await answer.json() : undefined;
-                } catch {
-                  return undefined;
-                }
-              }),
-            ).then((manifests) => {
-              res.end(JSON.stringify(manifests.filter(Boolean)));
-            });
+            res.end(JSON.stringify((await Promise.all(proxied.map(manifest))).filter(Boolean)));
           });
         },
       },
@@ -145,10 +165,7 @@ export default defineConfig(({ mode }) => {
       // Comma-separated. Leading dot is Vite's subdomain wildcard
       // (`.example.com`). Personal dev hostnames go in
       // .env.development.local, not source.
-      allowedHosts:
-        env.VITE_DEV_ALLOWED_HOSTS?.split(',')
-          .map((h) => h.trim())
-          .filter(Boolean) ?? [],
+      allowedHosts: list(env.VITE_DEV_ALLOWED_HOSTS),
       // Forward auth-service paths through the dev server so requests
       // are same-origin from the browser. The Origin header rewrite
       // matters because ci.kbase.us inspects it for policy decisions
@@ -157,33 +174,8 @@ export default defineConfig(({ mode }) => {
         // A plugin served by its own backend, proxied by the dev server so
         // its remote entry is same-origin and `script-src 'self'` covers it.
         // The built image does not proxy this prefix; a deployment fronts it.
-        // VITE_DEV_SERVICE_PROXY is `<prefix>=<origin>`, comma-separated.
         ...serviceProxies(env.VITE_DEV_SERVICE_PROXY),
-        ...(env.VITE_DEV_AUTH_PROXY
-          ? {
-              '/services/auth': {
-                target: env.VITE_DEV_AUTH_PROXY,
-                changeOrigin: true,
-                secure: true,
-                configure: (proxy) => {
-                  proxy.on('proxyReq', (proxyReq) => {
-                    // Strip the locally-set kbase_session cookie (it
-                    // was set on the dev origin; the auth service
-                    // wouldn't recognize it anyway — Authorization
-                    // header carries the bearer).
-                    proxyReq.removeHeader('cookie');
-                    proxyReq.setHeader('Origin', env.VITE_DEV_AUTH_PROXY);
-                    proxyReq.setHeader('Referer', env.VITE_DEV_AUTH_PROXY + '/');
-                    // Cloudflare's bot manager challenges browser UAs
-                    // without a __cf_bm cookie; that cookie can't
-                    // round-trip through this proxy (Domain mismatch).
-                    // A non-browser UA is on the API allowlist.
-                    proxyReq.setHeader('User-Agent', 'kbase-frontend-dev-proxy');
-                  });
-                },
-              },
-            }
-          : {}),
+        ...authProxy,
       },
     },
     test: {

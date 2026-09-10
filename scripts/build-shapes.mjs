@@ -110,9 +110,12 @@ for (const [prefix, over] of Object.entries(TAKE)) {
   if (!pattern) throw new Error(`${prefix} has no pattern`);
   new RegExp(pattern); // throws on a pattern JavaScript cannot compile
   const synonyms = entry.synonyms ?? [];
-  const aliases = new Set([prefix, ...(over.aliases ?? [])]);
-  if (entry.banana) aliases.add(entry.banana.toLowerCase());
-  for (const s of synonyms) if (ALIAS.test(s.toLowerCase())) aliases.add(s.toLowerCase());
+  const aliases = new Set(
+    [prefix, ...(over.aliases ?? []), entry.banana, ...synonyms]
+      .filter(Boolean)
+      .map((s) => s.toLowerCase())
+      .filter((s) => ALIAS.test(s)),
+  );
   shapes.push({
     prefix,
     name: entry.name,

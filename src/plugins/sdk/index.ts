@@ -2,58 +2,17 @@ export { PanelContext, usePanel, usePanelTitle, usePanelBreadcrumbs, usePanelTer
 export type { Crumb, PanelHandle, PanelKind } from './panel';
 export { HostContext, useHost } from './host';
 export type { PluginHost } from './host';
-export {
-  SDK_VERSION,
-  ACCEPTED_SDK_VERSIONS,
-  MODULES,
-  manifestFor,
-  ManifestSchema,
-  PluginConfigSchema,
-  SlashCommandSchema,
-  CommandCallSchema,
-  ArgDeclSchema,
-  PluginIdSchema,
-  ModuleSchema,
-  parseManifest,
-  definePluginManifest,
-  qualifyCommand,
-} from './contract';
-export type {
-  Manifest,
-  PluginConfig,
-  SlashCommand,
-  CommandCall,
-  ArgDecl,
-  Module,
-  CommandValues,
-} from './contract';
-export {
-  defineBackground,
-  defineRoute,
-  definePane,
-  defineCommands,
-  definePrompt,
-  defineIntent,
-} from './modules';
-export type {
-  Background,
-  Route,
-  Pane,
-  Commands,
-  Prompt,
-  Intent,
-  Suggestion,
-  DeclaredCommand,
-  Modules,
-  Mount,
-  Cleanup,
-  Query,
-  Recommendation,
-  StatusItem,
-  Destination,
-  CommandContext,
-  CommandHandler,
-} from './modules';
+export { SDK_VERSION, ACCEPTED_SDK_VERSIONS, MODULES, manifestFor } from './contract';
+export { ManifestSchema, PluginConfigSchema, SlashCommandSchema } from './contract';
+export { CommandCallSchema, ArgDeclSchema, PluginIdSchema, ModuleSchema } from './contract';
+export { parseManifest, definePluginManifest, qualifyCommand } from './contract';
+export type { Manifest, PluginConfig, SlashCommand, CommandCall, ArgDecl } from './contract';
+export type { Module, CommandValues } from './contract';
+export { defineBackground, defineRoute, definePane, defineCommands } from './modules';
+export { definePrompt, defineIntent } from './modules';
+export type { Background, Route, Pane, Commands, Prompt, Intent, Suggestion } from './modules';
+export type { DeclaredCommand, Modules, Mount, Cleanup, Query, Recommendation } from './modules';
+export type { StatusItem, Destination, CommandContext, CommandHandler } from './modules';
 export { fromReact } from './fromReact';
 export { AppFrame } from './AppFrame';
 export type { AppFrameProps } from './AppFrame';

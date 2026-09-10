@@ -3,9 +3,6 @@ import { qualifyCommand } from '@kbase/plugin-sdk';
 import type { Tag } from './tag';
 import { namespaceOf, shapeFor } from './tag';
 
-// Ranking every declared command against typed text, and filling their
-// arguments from the terms the text carries.
-//
 // A command is indexed by what its declaration says about it: the plugin,
 // the name, the title, the descriptions, the semantics section, the examples.
 // Text is scored against that by character n-gram cosine, which is what
@@ -20,14 +17,6 @@ import { namespaceOf, shapeFor } from './tag';
 // No shared vocabulary is assumed between the plugin that mints a prefix
 // and the one whose argument takes it: a description that says what it
 // takes, in words, is enough.
-//
-// A command a plugin offered for a term it recognised is a candidate like
-// any other, with a small lift, since the plugin recognising its own
-// identifier is evidence the command applies; the row keeps the plugin's
-// label and arguments. The lift is not a judgement of the sentence: an
-// offer for an identifier that is a coincidence in context scores by the
-// letters around it like anything else, and with this scorer that is
-// usually above the floor. Dropping it needs a scorer that reads context.
 
 export interface RankedCall {
   plugin: string;
@@ -42,11 +31,8 @@ export interface RankedCall {
 }
 
 interface Entry {
-  plugin: string;
-  pluginTitle: string;
-  name: string;
+  decl: DeclaredCommand;
   command: string;
-  title: string;
   args: ArgDecl[];
   vector: Map<string, number>;
   // Each argument's description as a vector, for binding.
@@ -56,6 +42,8 @@ interface Entry {
 export interface CommandIndex {
   entries: Entry[];
   idf: Map<string, number>;
+  // The idf of a gram no document has.
+  unseen: number;
 }
 
 // Below this cosine a match is letters in common, not a command in mind.
@@ -65,42 +53,39 @@ export interface CommandIndex {
 export const FLOOR = 0.2;
 // Below this an argument's description does not say it takes the term.
 export const BIND_FLOOR = 0.15;
-// Added to a command a plugin offered for a term in the text.
+// Added to a command a plugin offered for a term in the text: the plugin
+// recognising its own identifier is evidence the command applies. The lift
+// is not a judgement of the sentence; an offer for an identifier that is a
+// coincidence in context still scores by the letters around it.
 export const OFFER_LIFT = 0.1;
 
 const N_MIN = 2;
 const N_MAX = 5;
 
-// Character n-grams within word boundaries, each word padded with a space.
-function grams(text: string): string[] {
-  const out: string[] = [];
+// Character n-grams within word boundaries, each word padded with a space,
+// as a multiset.
+function counts(text: string): Map<string, number> {
+  const c = new Map<string, number>();
   for (const word of text.toLowerCase().split(/\s+/)) {
     if (!word) continue;
     const padded = ` ${word} `;
     for (let n = N_MIN; n <= N_MAX; n++) {
-      for (let i = 0; i + n <= padded.length; i++) out.push(padded.slice(i, i + n));
+      for (let i = 0; i + n <= padded.length; i++) {
+        const g = padded.slice(i, i + n);
+        c.set(g, (c.get(g) ?? 0) + 1);
+      }
     }
   }
-  return out;
-}
-
-function counts(text: string): Map<string, number> {
-  const c = new Map<string, number>();
-  for (const g of grams(text)) c.set(g, (c.get(g) ?? 0) + 1);
   return c;
 }
 
 // Sublinear tf, smoothed idf, unit length: sklearn's defaults, which the
 // numbers were measured with.
-function vectorize(
-  text: string,
-  idf: Map<string, number>,
-  fallbackIdf: number,
-): Map<string, number> {
+function vectorize(text: string, idf: Map<string, number>, unseen: number): Map<string, number> {
   const v = new Map<string, number>();
   let norm = 0;
   for (const [g, tf] of counts(text)) {
-    const w = (1 + Math.log(tf)) * (idf.get(g) ?? fallbackIdf);
+    const w = (1 + Math.log(tf)) * (idf.get(g) ?? unseen);
     v.set(g, w);
     norm += w * w;
   }
@@ -118,39 +103,28 @@ function cosine(a: Map<string, number>, b: Map<string, number>): number {
 
 const argText = (arg: ArgDecl) => `${arg.name} ${arg.description ?? ''}`;
 
-function docOf(decl: DeclaredCommand): string {
-  return [
-    decl.plugin,
-    decl.pluginTitle,
-    decl.name,
-    decl.title,
-    decl.description ?? '',
-    decl.semantics?.description ?? '',
-    ...(decl.semantics?.examples ?? []),
-    ...(decl.args ?? []).map(argText),
-  ].join(' ');
-}
+const docOf = (d: DeclaredCommand) =>
+  [d.plugin, d.pluginTitle, d.name, d.title, d.description ?? '', d.semantics?.description ?? '']
+    .concat(d.semantics?.examples ?? [], (d.args ?? []).map(argText))
+    .join(' ');
 
 export function buildCommandIndex(commands: DeclaredCommand[]): CommandIndex {
   const docs = commands.map((decl) => ({ decl, text: docOf(decl) }));
   const df = new Map<string, number>();
   for (const { text } of docs) {
-    for (const g of new Set(grams(text))) df.set(g, (df.get(g) ?? 0) + 1);
+    for (const g of counts(text).keys()) df.set(g, (df.get(g) ?? 0) + 1);
   }
   const n = docs.length;
   const idf = new Map([...df].map(([g, d]) => [g, Math.log((1 + n) / (1 + d)) + 1]));
-  const unseen = Math.log((1 + n) / 1) + 1;
+  const unseen = Math.log(1 + n) + 1;
   const entries = docs.map(({ decl, text }) => ({
-    plugin: decl.plugin,
-    pluginTitle: decl.pluginTitle,
-    name: decl.name,
+    decl,
     command: qualifyCommand(decl.name, decl.plugin),
-    title: decl.title,
     args: decl.args ?? [],
     vector: vectorize(text, idf, unseen),
     argVectors: (decl.args ?? []).map((a) => vectorize(argText(a), idf, unseen)),
   }));
-  return { entries, idf };
+  return { entries, idf, unseen };
 }
 
 // The text with each tagged span read as the kind of thing it is.
@@ -170,20 +144,20 @@ function reading(text: string, tags: Tag[]): string {
 // takes fills nothing.
 function bind(entry: Entry, index: CommandIndex, terms: string[]): Record<string, string> {
   const args: Record<string, string> = {};
-  const unseen = Math.log((1 + index.entries.length) / 1) + 1;
   for (const term of terms) {
     const ns = namespaceOf(term);
     if (!ns) continue;
-    const query = vectorize(ns.words.join(' '), index.idf, unseen);
-    let best: { arg: string; score: number } | undefined;
+    const query = vectorize(ns.words.join(' '), index.idf, index.unseen);
+    let best = -1;
+    let bestScore = -Infinity;
     entry.argVectors.forEach((v, i) => {
-      const arg = entry.args[i].name;
       const score = cosine(query, v);
-      if (!(arg in args) && score >= BIND_FLOOR && (!best || score > best.score)) {
-        best = { arg, score };
+      if (!(entry.args[i].name in args) && score >= BIND_FLOOR && score > bestScore) {
+        best = i;
+        bestScore = score;
       }
     });
-    if (best) args[best.arg] = ns.id;
+    if (best >= 0) args[entry.args[best].name] = ns.id;
   }
   return args;
 }
@@ -198,8 +172,7 @@ export function rankCommands(
 ): RankedCall[] {
   const trimmed = text.trim();
   if (trimmed.length < 2 || !index.entries.length) return [];
-  const unseen = Math.log((1 + index.entries.length) / 1) + 1;
-  const query = vectorize(reading(trimmed, tags), index.idf, unseen);
+  const query = vectorize(reading(trimmed, tags), index.idf, index.unseen);
   const pool = [...new Set([...tags.map((t) => t.term), ...terms])];
   const offered = new Map<string, CommandCall>();
   for (const offer of offers) if (!offered.has(offer.command)) offered.set(offer.command, offer);
@@ -212,11 +185,9 @@ export function rankCommands(
       // A plugin's own offer is the plugin saying it recognised the text; it
       // is ranked by the letters like the rest, never dropped by them.
       .filter(({ offer, score }) => offer || score >= FLOOR)
-      .map(({ entry, offer, score }) => ({
-        entry,
-        offer,
-        score,
-        args: offer ? (offer.args ?? {}) : bind(entry, index, pool),
+      .map((row) => ({
+        ...row,
+        args: row.offer ? (row.offer.args ?? {}) : bind(row.entry, index, pool),
       }))
       // A row runs when pressed, so a command is offered only with every
       // required argument filled: "kill the running job" names no job, and a
@@ -224,11 +195,11 @@ export function rankCommands(
       .filter(({ entry, args }) => entry.args.every((a) => !a.required || a.name in args))
       .sort((a, b) => b.score - a.score || a.entry.command.localeCompare(b.entry.command))
       .slice(0, limit)
-      .map(({ entry, offer, score, args }) => ({
-        plugin: entry.plugin,
-        pluginTitle: entry.pluginTitle,
-        command: entry.command,
-        title: entry.title,
+      .map(({ entry: { decl, command }, offer, score, args }) => ({
+        plugin: decl.plugin,
+        pluginTitle: decl.pluginTitle,
+        command,
+        title: decl.title,
         label: offer?.label,
         args,
         score,

@@ -2,9 +2,7 @@ import { createContext, useContext } from 'react';
 import type { Cart } from './cart';
 import type { CommandValues } from './contract';
 
-// What a plugin may ask the workbench to do: open its own route, run a
-// command — its own by bare name, another plugin's by "plugin:name" — say
-// something when nothing on screen changed, and set things aside in the cart.
+// A command is the plugin's own by bare name, another's by "plugin:name".
 export interface PluginHost {
   // This plugin's page at a path. A panel already showing the same page,
   // as the route's `normalize` judges it, is focused instead of a second
@@ -14,12 +12,10 @@ export interface PluginHost {
   // travels as terms and cart items, not as return values.
   execute: (command: string, args?: CommandValues) => Promise<void>;
   hasCommand: (command: string) => boolean;
-  // A toast. For the outcome only the plugin can see: a command that ran and
-  // changed nothing visible, a neighbour that is not installed.
+  // A toast, for an outcome only the plugin can see: a command that changed
+  // nothing visible, a neighbour that is not installed.
   notify: (text: string) => void;
-  // The cart is the host's; a plugin adds to it and reads whether a thing of
-  // its own is in it. Reached through `useCart()` rather than directly, so a
-  // plugin does not have to hold the handle.
+  // Reached through `useCart()`, which also re-renders on change.
   cart: Cart;
 }
 

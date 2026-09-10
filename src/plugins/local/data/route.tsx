@@ -33,19 +33,18 @@ function DatasetPage() {
           </Tr>
         </Thead>
         <Tbody>
-          <Tr>
-            <Td>Source</Td>
-            <Td>{d.source}</Td>
-          </Tr>
-          <Tr>
-            <Td>Size</Td>
-            <Td>{d.size}</Td>
-          </Tr>
-          {d.narrative && (
-            <Tr>
-              <Td>Narrative</Td>
-              <Td>{d.narrative}</Td>
-            </Tr>
+          {[
+            ['Source', d.source],
+            ['Size', d.size],
+            ['Narrative', d.narrative],
+          ].map(
+            ([k, v]) =>
+              v && (
+                <Tr key={k}>
+                  <Td>{k}</Td>
+                  <Td>{v}</Td>
+                </Tr>
+              ),
           )}
         </Tbody>
       </Table>

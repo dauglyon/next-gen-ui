@@ -12,11 +12,7 @@ export default definePrompt({
     koros.steer(
       slug,
       text ?? '',
-      attachments.map((item) => ({
-        id: item.id,
-        name: item.name,
-        subject: item.subject,
-      })),
+      attachments.map(({ id, name, subject }) => ({ id, name, subject })),
     );
     host.openRoute(`/${slug}`);
   },

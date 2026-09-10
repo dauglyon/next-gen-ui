@@ -5,20 +5,14 @@ import type { Module, PluginConfig } from './contract';
 import { MODULES, manifestFor } from './contract';
 import { SHARED_SINGLETONS } from './shared';
 
-// A plugin's vite.config:
-//
-//   import config from './plugin.config';
-//   plugins: [pluginFederation({ config, route: './src/route.tsx' }), react()]
-//
-// Each named file becomes a federation module under its own name —
-// `./route`, `./background` — and the build writes manifest.json beside
-// remoteEntry.js: the config, this SDK's contract version, and the modules
-// that were named. A file not named here is not part of the plugin,
-// whatever it exports.
+// Each named file becomes a federation module under its own name, and the
+// build writes manifest.json beside remoteEntry.js. A file not named here is
+// not part of the plugin, whatever it exports.
 export type PluginFederationOptions = { config: PluginConfig } & { [K in Module]?: string };
 
 export function pluginFederation({ config, ...paths }: PluginFederationOptions): Plugin[] {
   const named = MODULES.filter((m) => paths[m] !== undefined);
+  const declared = declaredDependencies();
   const manifest = manifestFor(config, named);
   return [
     ...federation({
@@ -26,7 +20,11 @@ export function pluginFederation({ config, ...paths }: PluginFederationOptions):
       filename: 'remoteEntry.js',
       manifest: true,
       exposes: Object.fromEntries(named.map((m) => [`./${m}`, paths[m]!])),
-      shared: sharedFor(declaredDependencies()),
+      // Only the singletons the plugin depends on: listing one it does not
+      // import would make the build look for a copy that is not there.
+      shared: Object.fromEntries(
+        Object.entries(SHARED_SINGLETONS).filter(([name]) => declared.has(name)),
+      ),
       dts: false,
     }),
     {
@@ -43,28 +41,12 @@ export function pluginFederation({ config, ...paths }: PluginFederationOptions):
   ];
 }
 
-// The host's singletons, as a plugin shares them: those the plugin depends
-// on. One it does not depend on — the router, for a plugin that draws no
-// routes — is left out; the plugin imports nothing from it, so there is
-// nothing to share, and listing it would make the build look for a copy
-// that is not there.
-function sharedFor(declared: ReadonlySet<string>) {
-  return Object.fromEntries(
-    Object.entries(SHARED_SINGLETONS).filter(([name]) => declared.has(name)),
-  );
-}
-
 function declaredDependencies(): Set<string> {
   try {
-    const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as Record<
-      'dependencies' | 'devDependencies' | 'peerDependencies',
-      Record<string, string> | undefined
-    >;
-    return new Set([
-      ...Object.keys(pkg.dependencies ?? {}),
-      ...Object.keys(pkg.devDependencies ?? {}),
-      ...Object.keys(pkg.peerDependencies ?? {}),
-    ]);
+    const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as Record<string, object>;
+    return new Set(
+      Object.keys({ ...pkg.dependencies, ...pkg.devDependencies, ...pkg.peerDependencies }),
+    );
   } catch {
     return new Set();
   }
