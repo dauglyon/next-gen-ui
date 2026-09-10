@@ -1,6 +1,5 @@
 import { KBaseSymbol, Menu, Menubar } from '@kbase/design-system';
-import type { Side } from '../core';
-import { groupOf } from '../core';
+import { SIDES, groupOf } from '../core';
 import { useDispatch, useLayout, useRun, useServices } from './context';
 import styles from './Workbench.module.css';
 
@@ -74,14 +73,7 @@ export function WorkbenchMenubar() {
               Close
             </Menu.Item>
             <Menu.Separator />
-            {(
-              [
-                ['left', 'Split left'],
-                ['right', 'Split right'],
-                ['top', 'Split up'],
-                ['bottom', 'Split down'],
-              ] as Array<[Side, string]>
-            ).map(([side, label]) => (
+            {SIDES.map(([side, label]) => (
               <Menu.Item
                 key={side}
                 disabled={!canSplit}

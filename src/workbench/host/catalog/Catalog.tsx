@@ -60,57 +60,62 @@ export function CatalogDocument() {
         </ul>
       </section>
 
-      <section aria-labelledby="catalog-assistant" className={styles.section}>
-        <h2 id="catalog-assistant" className="h4">
-          Assistant
-        </h2>
-        <p className="caption">Which plugin answers free text typed in the prompt bar.</p>
-        <Radio.Group
-          aria-labelledby="catalog-assistant"
-          value={current.assistant ?? 'none'}
-          onValueChange={(value) =>
-            settings.set({ assistant: value === 'none' ? null : String(value) })
-          }
-          style={{ display: 'grid', gap: 'var(--s-2)' }}
-        >
-          {assistants.map((m) => (
-            <label key={m.id} className={styles.assistantRow}>
-              <Radio.Radio value={m.id} />
-              <span className="body">{m.title}</span>
-            </label>
-          ))}
-          <label className={styles.assistantRow}>
-            <Radio.Radio value="none" />
-            <span className="body">None</span>
-          </label>
-        </Radio.Group>
-      </section>
+      <PluginChoice
+        id="catalog-assistant"
+        title="Assistant"
+        caption="Which plugin answers free text typed in the prompt bar."
+        options={assistants}
+        value={current.assistant}
+        onChange={(assistant) => settings.set({ assistant })}
+      />
 
-      <section aria-labelledby="catalog-intent" className={styles.section}>
-        <h2 id="catalog-intent" className="h4">
-          Suggestions
-        </h2>
-        <p className="caption">Which plugin suggests commands for text typed in the prompt bar.</p>
-        <Radio.Group
-          aria-labelledby="catalog-intent"
-          value={current.intent ?? 'none'}
-          onValueChange={(value) =>
-            settings.set({ intent: value === 'none' ? null : String(value) })
-          }
-          style={{ display: 'grid', gap: 'var(--s-2)' }}
-        >
-          {intents.map((m) => (
-            <label key={m.id} className={styles.assistantRow}>
-              <Radio.Radio value={m.id} />
-              <span className="body">{m.title}</span>
-            </label>
-          ))}
-          <label className={styles.assistantRow}>
-            <Radio.Radio value="none" />
-            <span className="body">None</span>
-          </label>
-        </Radio.Group>
-      </section>
+      <PluginChoice
+        id="catalog-intent"
+        title="Suggestions"
+        caption="Which plugin suggests commands for text typed in the prompt bar."
+        options={intents}
+        value={current.intent}
+        onChange={(intent) => settings.set({ intent })}
+      />
     </div>
+  );
+}
+
+// One plugin chosen for a host role, or none.
+function PluginChoice({
+  id,
+  title,
+  caption,
+  options,
+  value,
+  onChange,
+}: {
+  id: string;
+  title: string;
+  caption: string;
+  options: { id: string; title: string }[];
+  value: string | null | undefined;
+  onChange: (plugin: string | null) => void;
+}) {
+  return (
+    <section aria-labelledby={id} className={styles.section}>
+      <h2 id={id} className="h4">
+        {title}
+      </h2>
+      <p className="caption">{caption}</p>
+      <Radio.Group
+        aria-labelledby={id}
+        value={value ?? 'none'}
+        onValueChange={(v) => onChange(v === 'none' ? null : String(v))}
+        style={{ display: 'grid', gap: 'var(--s-2)' }}
+      >
+        {[...options, { id: 'none', title: 'None' }].map((m) => (
+          <label key={m.id} className={styles.assistantRow}>
+            <Radio.Radio value={m.id} />
+            <span className="body">{m.title}</span>
+          </label>
+        ))}
+      </Radio.Group>
+    </section>
   );
 }

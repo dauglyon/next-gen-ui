@@ -10,6 +10,7 @@ import type { PluginInfo } from '../host/installed';
 import { useDispatch, useLayout, useServices, useTitle } from './context';
 import { PanelHost } from './PanelHost';
 import { SplitView } from './SplitView';
+import { useClaimFocus } from './useClaimFocus';
 import { useDragPanel, useDragging, useDropTarget } from './useDnd';
 import styles from './Workbench.module.css';
 
@@ -48,6 +49,9 @@ export function Sidebar() {
   const onDismissPreview = () => previewHandle.set(null);
   // Anchors the collapsed preview flyout to the ⋯ icon that opened it.
   const moreAnchorRef = useRef<HTMLSpanElement>(null);
+  const previewInfo = previewing ? infoOf(previewing) : undefined;
+  const previewTitle = previewInfo?.title ?? previewing ?? '';
+  const PreviewGlyph = previewInfo?.icon ?? PushPin;
 
   // Both states stay mounted. One width animates — the container's — and
   // the two layers crossfade: the rail is a fixed-width overlay (its icons
@@ -70,9 +74,20 @@ export function Sidebar() {
           const label = info?.title ?? plugin;
           const Icon = info?.icon ?? PushPin;
           return (
-            <PopoutIcon key={plugin} plugin={plugin} label={label}>
-              <Icon size={18} aria-hidden="true" />
-            </PopoutIcon>
+            <PanePopout
+              key={plugin}
+              plugin={plugin}
+              label={label}
+              trigger={
+                <Toolbar.Button
+                  render={
+                    <NavIcon aria-label={label}>
+                      <Icon size={18} aria-hidden="true" />
+                    </NavIcon>
+                  }
+                />
+              }
+            />
           );
         })}
         {unpinned.length > 0 && (
@@ -85,10 +100,17 @@ export function Sidebar() {
       {/* Collapsed, a preview flies out beside the ⋯ icon like the pinned
           popouts; the layout — and the collapsed state — are untouched. */}
       {sidebar.collapsed && previewing && (
-        <PreviewPopout
+        <PanePopout
           plugin={previewing}
-          info={infoOf(previewing)}
+          label={previewTitle}
+          ariaLabel={`${previewTitle} preview`}
           anchor={moreAnchorRef}
+          icon={
+            <span className={styles.blockIcon} aria-hidden="true">
+              <PreviewGlyph size={14} />
+            </span>
+          }
+          actions={<PinButton plugin={previewing} onDone={onDismissPreview} />}
           onDismiss={onDismissPreview}
         />
       )}
@@ -153,6 +175,7 @@ function Block({ panel, info }: { panel: Panel; info: PluginInfo | undefined }) 
   const layout = useLayout();
   const dispatch = useDispatch();
   const { focusIntentRef } = useServices();
+  const claimFocus = useClaimFocus();
   const title = useTitle(panel);
   const Icon = info?.icon ?? PushPin;
   const folded = layout.sidebar.folded.includes(panel.id);
@@ -245,20 +268,7 @@ function Block({ panel, info }: { panel: Panel; info: PluginInfo | undefined }) 
         <div
           className={styles.blockBody}
           data-panel={panel.id}
-          // Pointer as well as focus: clicking plain text fires no focus
-          // event, so the workbench focus would stay where it last was.
-          onPointerDownCapture={() => {
-            if (layout.focus !== panel.id) {
-              focusIntentRef.current = 'user';
-              dispatch({ type: 'focus', panel: panel.id });
-            }
-          }}
-          onFocusCapture={() => {
-            if (layout.focus !== panel.id) {
-              focusIntentRef.current = 'user';
-              dispatch({ type: 'focus', panel: panel.id });
-            }
-          }}
+          {...claimFocus(panel.id)}
         >
           <PanelHost panel={panel} />
         </div>
@@ -346,7 +356,6 @@ function PreviewBlock({
   info: PluginInfo | undefined;
   onDismiss: () => void;
 }) {
-  const dispatch = useDispatch();
   const title = info?.title ?? plugin;
   const Icon = info?.icon ?? PushPin;
   const { dragRef, dragHandlers, isDragging } = useDragPanel({
@@ -371,16 +380,7 @@ function PreviewBlock({
           <span className={styles.previewTitle}>{title}</span>
         </span>
         <div className={styles.spacer} />
-        <Button
-          size="xs"
-          variant="outline"
-          onClick={() => {
-            dispatch({ type: 'pin', plugin });
-            onDismiss();
-          }}
-        >
-          Pin
-        </Button>
+        <PinButton plugin={plugin} onDone={onDismiss} />
         <Button
           size="xs"
           variant="ghost"
@@ -397,26 +397,58 @@ function PreviewBlock({
   );
 }
 
-// The collapsed form of the preview: the chosen navigator in a flyout
-// beside the rail, with the same Pin offer the preview block makes.
-function PreviewPopout({
+// Pins a plugin's navigator into the sidebar and closes the preview that
+// offered it.
+function PinButton({ plugin, onDone }: { plugin: PluginId; onDone: () => void }) {
+  const dispatch = useDispatch();
+  return (
+    <Button
+      size="xs"
+      variant="outline"
+      onClick={() => {
+        dispatch({ type: 'pin', plugin });
+        onDone();
+      }}
+    >
+      Pin
+    </Button>
+  );
+}
+
+// A plugin's navigator in a flyout beside the collapsed rail; the layout is
+// untouched. Two callers: a pinned plugin's rail icon, which is the trigger
+// and stands in for a header glyph, and the collapsed preview, which is
+// anchored to the ⋯ icon, carries its own glyph and offers Pin.
+function PanePopout({
   plugin,
-  info,
+  label,
+  ariaLabel = label,
+  trigger,
   anchor,
+  icon,
+  actions,
   onDismiss,
 }: {
   plugin: PluginId;
-  info: PluginInfo | undefined;
-  anchor: RefObject<HTMLElement | null>;
-  onDismiss: () => void;
+  label: string;
+  ariaLabel?: string;
+  trigger?: React.ReactElement;
+  anchor?: RefObject<HTMLElement | null>;
+  icon?: React.ReactNode;
+  actions?: React.ReactNode;
+  onDismiss?: () => void;
 }) {
-  const dispatch = useDispatch();
   const width = useLayout().sidebar.width;
+  // A content-fit pane's flyout hugs its content too.
   const fit = useServices().source.loaded(plugin, 'pane')?.fit;
-  const title = info?.title ?? plugin;
-  const Icon = info?.icon ?? PushPin;
   return (
-    <Popover.Root open onOpenChange={(open) => !open && onDismiss()}>
+    <Popover.Root
+      open={onDismiss ? true : undefined}
+      onOpenChange={onDismiss && ((open) => !open && onDismiss())}
+    >
+      {trigger && <Popover.Trigger render={trigger} />}
+      {/* Beside the rail with its top at the icon: the default bottom-
+          centered placement would cover the icons under the clicked one. */}
       <Popover.Popup
         anchor={anchor}
         side="right"
@@ -425,74 +457,17 @@ function PreviewPopout({
         alignOffset={6}
         className={styles.popout}
         style={{ width, height: fit === 'content' ? 'auto' : undefined }}
-        aria-label={`${title} preview`}
+        aria-label={ariaLabel}
       >
         <div className={styles.popoutBody}>
           <div className={styles.popoutHeader}>
-            <span className={styles.blockIcon} aria-hidden="true">
-              <Icon size={14} />
-            </span>
-            <span className={styles.popoutTitle}>{title}</span>
-            <div className={styles.spacer} />
-            <Button
-              size="xs"
-              variant="outline"
-              onClick={() => {
-                dispatch({ type: 'pin', plugin });
-                onDismiss();
-              }}
-            >
-              Pin
-            </Button>
+            {icon}
+            <span className={styles.popoutTitle}>{label}</span>
+            {actions && <div className={styles.spacer} />}
+            {actions}
           </div>
           <div className={styles.blockBody}>
             <PanelHost panel={makePane(plugin)} />
-          </div>
-        </div>
-      </Popover.Popup>
-    </Popover.Root>
-  );
-}
-
-// A pinned plugin's icon while the sidebar is collapsed: its navigator pops
-// out beside the icon, and the layout is untouched.
-function PopoutIcon({
-  plugin,
-  label,
-  children,
-}: {
-  plugin: PluginId;
-  label: string;
-  children: React.ReactNode;
-}) {
-  const panel = makePane(plugin);
-  const width = useLayout().sidebar.width;
-  // A content-fit pane's flyout hugs its content too.
-  const fit = useServices().source.loaded(plugin, 'pane')?.fit;
-  return (
-    <Popover.Root>
-      <Popover.Trigger
-        render={<Toolbar.Button render={<NavIcon aria-label={label}>{children}</NavIcon>} />}
-      />
-      {/* Beside the rail with its top at the icon: the default bottom-
-          centered placement would cover the icons under the clicked one. */}
-      <Popover.Popup
-        side="right"
-        sideOffset={8}
-        align="start"
-        alignOffset={6}
-        className={styles.popout}
-        style={{ width, height: fit === 'content' ? 'auto' : undefined }}
-        aria-label={label}
-      >
-        <div className={styles.popoutBody}>
-          {/* No leading glyph: the rail icon this flew out from is right
-              beside the header and already is one. */}
-          <div className={styles.popoutHeader}>
-            <span className={styles.popoutTitle}>{label}</span>
-          </div>
-          <div className={styles.blockBody}>
-            <PanelHost panel={panel} />
           </div>
         </div>
       </Popover.Popup>

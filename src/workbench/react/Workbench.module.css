@@ -187,7 +187,8 @@
   padding: var(--s-1) var(--s-2) var(--s-1) var(--s-3);
 }
 
-.previewTitle {
+.previewTitle,
+.popoutTitle {
   font-size: var(--fs-4);
   font-weight: var(--fw-bold);
   color: var(--c-ink);
@@ -213,8 +214,11 @@
 
 /* The design system's accordion header: bold ink title, leading icon in
    ink3, chevron on the right rotating open/closed. */
-.blockToggle {
-  flex: 1;
+/* The same row for a block's header and the More row under the blocks: a
+   section header names the section, so it sits back in ink3 and comes
+   forward on hover. */
+.blockToggle,
+.moreRow {
   display: flex;
   align-items: center;
   gap: var(--s-3);
@@ -222,10 +226,7 @@
      glyphs and the brand logo. The vertical is the sidebar's row tier: the
      sidebar declares itself compact, since it stacks four of these. */
   padding: var(--row-py) var(--ctl-px) var(--row-py) var(--s-3);
-  background: none;
   border: none;
-  /* The More row's treatment: a section header names the section, so it
-     sits back in ink3 and comes forward on hover. */
   color: var(--c-ink3);
   font-family: inherit;
   font-size: var(--ctl-fs);
@@ -234,7 +235,13 @@
   cursor: pointer;
 }
 
-.blockToggle:hover {
+.blockToggle {
+  flex: 1;
+  background: none;
+}
+
+.blockToggle:hover,
+.moreRow:hover {
   color: var(--c-ink);
 }
 
@@ -258,7 +265,8 @@
 }
 
 /* Surface, not raised: the header itself is raised now. */
-.blockToggle:focus-visible {
+.blockToggle:focus-visible,
+.moreRow:focus-visible {
   outline: none;
   background: var(--c-surface);
   box-shadow: inset 0 0 0 2px var(--c-focus);
@@ -305,12 +313,6 @@
   padding: var(--s-2) var(--s-4);
   background: var(--c-raised);
   border-bottom: 1px solid var(--c-border);
-}
-
-.popoutTitle {
-  font-size: var(--fs-4);
-  font-weight: var(--fw-bold);
-  color: var(--c-ink);
 }
 
 /* Main area */
@@ -408,30 +410,9 @@
 
 /* The accordion's footer: shaped like a section header, but an action. */
 .moreRow {
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
   width: 100%;
-  padding: var(--row-py) var(--ctl-px) var(--row-py) var(--s-3);
   background: var(--c-raised);
-  border: none;
   border-top: 1px solid var(--c-border);
-  font-family: inherit;
-  font-size: var(--ctl-fs);
-  font-weight: var(--fw-bold);
-  color: var(--c-ink3);
-  text-align: left;
-  cursor: pointer;
-}
-
-.moreRow:hover {
-  color: var(--c-ink);
-}
-
-.moreRow:focus-visible {
-  outline: none;
-  background: var(--c-surface);
-  box-shadow: inset 0 0 0 2px var(--c-focus);
 }
 
 /* What the row opens onto, shown where a header would show its chevron. */
@@ -526,12 +507,6 @@
   color: var(--c-ink2);
 }
 
-.tabClose:focus-visible {
-  outline: none;
-  background: var(--c-raised);
-  box-shadow: 0 0 0 2px var(--c-focus);
-}
-
 .tabpanel {
   flex: 1;
   min-height: 0;
@@ -619,12 +594,6 @@
   color: var(--c-ink);
 }
 
-.promptTarget:focus-visible {
-  outline: none;
-  background: var(--c-raised);
-  box-shadow: 0 0 0 2px var(--c-focus);
-}
-
 .statusBar {
   display: flex;
   align-items: center;
@@ -650,15 +619,12 @@
   opacity: 0.4;
 }
 
-.tab[data-over] {
-  box-shadow: inset 2px 0 0 var(--c-primary);
-}
-
 .tabEnd {
   flex: 1;
   min-width: var(--s-6);
 }
 
+.tab[data-over],
 .tabEnd[data-over] {
   box-shadow: inset 2px 0 0 var(--c-primary);
 }
@@ -777,6 +743,8 @@
   color: var(--c-ink);
 }
 
+.tabClose:focus-visible,
+.promptTarget:focus-visible,
 .statusItem:focus-visible {
   outline: none;
   background: var(--c-raised);
