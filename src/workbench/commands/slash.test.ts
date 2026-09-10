@@ -31,6 +31,11 @@ function contested() {
 }
 
 describe('parse', () => {
+  it('matches a command name in any case, and leaves the arguments alone', () => {
+    const p = parse('/Cancel P0AEX9');
+    expect(p).toMatchObject({ kind: 'command', name: 'cancel', tokens: ['P0AEX9'] });
+  });
+
   it('treats text without a leading slash as a prompt', () => {
     expect(parse('what is nitrogenase')).toEqual({ kind: 'prompt', text: 'what is nitrogenase' });
   });

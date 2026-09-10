@@ -17,7 +17,9 @@ export function parse(input: string): Parsed {
   if (!input.startsWith('/')) return { kind: 'prompt', text: input };
   const body = input.slice(1);
   const tokens = tokenize(body);
-  const name = tokens.shift() ?? '';
+  // Names are declared lowercase; what was typed is matched regardless of
+  // case. Arguments keep theirs: an accession is case-sensitive.
+  const name = (tokens.shift() ?? '').toLowerCase();
   return { kind: 'command', name, tokens, trailingSpace: /\s$/.test(body) };
 }
 

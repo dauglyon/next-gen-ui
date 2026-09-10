@@ -93,8 +93,8 @@ export function HomeDocument() {
 //
 // A walkthrough, not an explanation: each step says what to do and what will
 // happen, and the reason is one clause at most. The four steps are the path a
-// first visit takes — ask, open, collect, send. What the workbench can also
-// do sits after them, in the same voice.
+// first visit takes — say, open, collect, ask. What the workbench can also do
+// sits after them, in the same voice.
 function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
   return (
     <section className={styles.tour} aria-labelledby="home-tour">
@@ -111,11 +111,13 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
             1
           </span>
           <div className={styles.stepBody}>
-            <h3 className={styles.stepTitle}>Type what you are after</h3>
+            <h3 className={styles.stepTitle}>Say what you want</h3>
             <p className={styles.stepText}>
-              Type <Key>P0AEX9</Key> into the box at the bottom. A short list appears above it:
-              Function Junction is offering you a dossier on that protein. Every installed plugin
-              saw what you typed, and the ones that recognised it answered.{' '}
+              Type <Key>dossier for P0AEX9</Key> into the box at the bottom. Rows appear above it:
+              sending the words to KOROS, and Function Junction opening a dossier on that protein.
+              The workbench matched your sentence against what every installed plugin can do and
+              filled in the protein for you. <Key>cancel job 12</Key> and <Key>browse</Key> work the
+              same way.{' '}
               <button type="button" className={styles.tourLink} onClick={onFocusPrompt}>
                 Put the cursor there
               </button>
@@ -130,8 +132,9 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
           <div className={styles.stepBody}>
             <h3 className={styles.stepTitle}>Take the offer</h3>
             <p className={styles.stepText}>
-              Press it. The dossier opens as a tab in the middle. Function Junction was not here a
-              moment ago: its code was fetched from its own server when you asked for it.
+              Press the dossier row. It opens as a tab in the middle, fetched from Function
+              Junction&apos;s own server the moment you asked. The Related panel on the left fills
+              with what other plugins have to say about the page you are on.
             </p>
           </div>
         </li>
@@ -141,11 +144,12 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
             3
           </span>
           <div className={styles.stepBody}>
-            <h3 className={styles.stepTitle}>Add what matters to the cart</h3>
+            <h3 className={styles.stepTitle}>Collect what matters</h3>
             <p className={styles.stepText}>
-              On the dossier, press Add on the report, or on any single line of it. It lands in the
-              cart at the bottom. The cart is the workbench&apos;s own, so anything you open can put
-              things in it and anything you send to can read them.
+              Press Add to cart on the report, on any single line of it, or on a Related row. It
+              lands in the cart at the bottom, and Related now also answers for what you collected.
+              The cart is the workbench&apos;s own, so anything you open can fill it and anything
+              you ask can read it.
             </p>
           </div>
         </li>
@@ -155,10 +159,13 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
             4
           </span>
           <div className={styles.stepBody}>
-            <h3 className={styles.stepTitle}>Send it with a question</h3>
+            <h3 className={styles.stepTitle}>Ask KOROS</h3>
             <p className={styles.stepText}>
-              Type a question and press Enter. What you typed goes to the assistant, KOROS, with the
-              cart attached, and its answer opens as a tab.
+              Press New question in Shortcuts. A fresh page opens and the box at the bottom now
+              points at it. Type your research question and press Enter: the cart goes with it,
+              KOROS frames the question and hands you a plan to approve, and from then on whatever
+              you type steers that arc. The KOROS panel on the left lists every arc and which ones
+              are waiting on you.
             </p>
           </div>
         </li>
@@ -168,6 +175,11 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
         <h3 className={styles.tourMoreTitle}>Then, whenever</h3>
         <ul className={styles.tourMoreList}>
           <li>
+            <b>Commands.</b> Type <Key>/</Key> and a name for the exact command:{' '}
+            <Key>/cancel 12</Key>, <Key>/browse</Key>. Tab completes a name, and the hint under the
+            box shows what the command takes.
+          </li>
+          <li>
             <b>Rearrange.</b> Drag a panel from the left column into the middle to give it a tab, or
             drop a tab beside another one for the two side by side.
           </li>
@@ -176,8 +188,8 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
             pinned. Drag its dashed frame in to keep it; leave it and it is gone on reload.
           </li>
           <li>
-            <b>Settings.</b> Choose which panels sit in the left column, and which assistant gets
-            your text when you press Enter.
+            <b>Settings.</b> Choose which panels sit in the left column, which assistant answers
+            your questions, and what ranks the rows under the box.
           </li>
           <li>
             <b>Reload.</b> Everything comes back where you left it, down to what you were reading.
@@ -187,8 +199,8 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
       </div>
 
       <p className={`caption ${styles.tourNote}`}>
-        The data is made up and none of it leaves this browser — a working sketch of how the pieces
-        fit together, not the pieces themselves.
+        KOROS, Jobs and Data are mock-ups and nothing they hold leaves this browser. Function
+        Junction and genKnown are the real apps, reading the KBase lakehouse.
       </p>
     </section>
   );
