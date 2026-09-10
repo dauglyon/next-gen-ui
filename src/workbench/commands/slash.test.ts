@@ -95,23 +95,26 @@ describe('complete', () => {
     expect(options[0].label).toBe('/cancel <id>');
   });
 
-  it('offers the qualified forms where the bare name is contested', async () => {
-    expect((await complete(contested(), '/o')).map((o) => o.value)).toEqual([
-      '/fj:open',
-      '/workbench:open',
-    ]);
-    expect((await complete(contested(), '/fj:')).map((o) => o.value)).toEqual(['/fj:open']);
-    expect((await complete(contested(), '/workbench:o')).map((o) => o.value)).toEqual([
-      '/workbench:open',
-    ]);
+  it.each([
+    [
+      'the qualified forms where the bare name is contested',
+      contested,
+      '/o',
+      ['/fj:open', '/workbench:open'],
+    ],
+    ['one qualified form for a qualified prefix', contested, '/fj:', ['/fj:open']],
+    ['one qualified form for the other prefix', contested, '/workbench:o', ['/workbench:open']],
+    [
+      'argument values once the name is complete',
+      registry,
+      '/cancel ',
+      ['/cancel 12', '/cancel 13', '/cancel 20'],
+    ],
+  ])('offers %s', async (_, make, input, values) => {
+    expect((await complete(make(), input)).map((o) => o.value)).toEqual(values);
   });
 
-  it('offers argument values once the name is complete', async () => {
-    expect((await complete(registry(), '/cancel ')).map((o) => o.value)).toEqual([
-      '/cancel 12',
-      '/cancel 13',
-      '/cancel 20',
-    ]);
+  it('labels an argument value by the value alone', async () => {
     expect((await complete(registry(), '/cancel 1')).map((o) => o.label)).toEqual(['12', '13']);
   });
 

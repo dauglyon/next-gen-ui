@@ -110,23 +110,13 @@ export function emptyGroup(id: GroupId): Group {
   return { kind: 'group', id, tabs: [], active: null };
 }
 
-export interface DefaultLayoutOptions {
-  pinned?: PluginId[];
-  rootGroupId?: GroupId;
-}
-
 export function defaultLayout({
   pinned = [],
   rootGroupId = 'root',
-}: DefaultLayoutOptions = {}): Layout {
-  const panels: Record<PanelId, Panel> = {};
-  for (const plugin of pinned) {
-    const panel = makePane(plugin);
-    panels[panel.id] = panel;
-  }
+}: { pinned?: PluginId[]; rootGroupId?: GroupId } = {}): Layout {
   return {
     version: 2,
-    panels,
+    panels: Object.fromEntries(pinned.map((plugin) => [paneId(plugin), makePane(plugin)])),
     main: emptyGroup(rootGroupId),
     sidebar: {
       pinned: [...pinned],

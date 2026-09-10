@@ -5,9 +5,6 @@ import { useDispatch, useLayout, useServices } from '../../react/context';
 import { iconFor } from '../icons';
 import styles from './Catalog.module.css';
 
-// The host's own page: what is installed, what is pinned, which plugin
-// answers the prompt bar and which suggests commands for it. Reaches host services directly, which no plugin
-// over the SDK can.
 export function CatalogDocument() {
   usePanelTitle('Settings');
   const { source, settings } = useServices();

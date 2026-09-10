@@ -47,9 +47,8 @@ export interface CreateWorkbenchOptions {
   defaultIntent?: PluginId | null;
 }
 
-// Builds the store, the command registry and their companions once, before
-// React mounts. The layout is read from storage here so the first render is
-// already the restored one.
+// The layout is read from storage here so the first render is already the
+// restored one.
 export function createWorkbench({
   installed,
   storage,
@@ -139,8 +138,7 @@ export function createWorkbench({
   registry.register(openCommand(services));
   source.registerCommands(registry, (plugin) => pluginHostFor(services, plugin));
 
-  // status() is asked at startup — once each background module arrives —
-  // and after every command; the answer shows until the next ask.
+  // The answer shows until the next ask.
   source.subscribe(() => status.refresh());
   registry.onRun(() => status.refresh());
   status.refresh();
@@ -175,8 +173,6 @@ export function createWorkbench({
 // alone, so it completes before any plugin code has loaded.
 function openCommand(services: WorkbenchServices): Command {
   const { source, announcer } = services;
-  const openable = () =>
-    source.manifests().filter((m) => source.has(m.id, 'route') || source.has(m.id, 'pane'));
   return {
     name: 'open',
     title: 'Open a plugin panel',
@@ -187,7 +183,9 @@ function openCommand(services: WorkbenchServices): Command {
         type: 'string',
         required: true,
         complete: (prefix) =>
-          openable()
+          source
+            .manifests()
+            .filter((m) => source.has(m.id, 'route') || source.has(m.id, 'pane'))
             .map((m) => m.id)
             .filter((id) => id.startsWith(prefix)),
       },
@@ -210,6 +208,7 @@ function openCommand(services: WorkbenchServices): Command {
 
 // What a plugin's code may do to the workbench, scoped to that plugin.
 export function pluginHostFor(services: WorkbenchServices, plugin: PluginId): PluginHost {
+  const own = () => services.cart.items().filter((i) => i.plugin === plugin);
   return {
     openRoute: (path, options) => void openRoute(services, plugin, path, options),
     // A bare name is this plugin's own command; another plugin's is named in
@@ -226,12 +225,11 @@ export function pluginHostFor(services: WorkbenchServices, plugin: PluginId): Pl
     cart: {
       add: (item) => services.cart.add({ ...item, plugin, addedAt: Date.now() }),
       remove: (id) => {
-        const own = services.cart.items().find((i) => i.id === id && i.plugin === plugin);
-        if (own) services.cart.remove(id);
+        if (own().some((i) => i.id === id)) services.cart.remove(id);
       },
-      items: () => services.cart.items().filter((i) => i.plugin === plugin),
-      has: (id) => services.cart.items().some((i) => i.id === id && i.plugin === plugin),
-      count: () => services.cart.items().filter((i) => i.plugin === plugin).length,
+      items: own,
+      has: (id) => own().some((i) => i.id === id),
+      count: () => own().length,
       subscribe: (listener) => services.cart.subscribe(listener),
     },
   };

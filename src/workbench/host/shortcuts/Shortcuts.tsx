@@ -8,10 +8,7 @@ import { useBusy, useRun, useServices } from '../../react/context';
 import { allShortcuts } from './list';
 import styles from './Shortcuts.module.css';
 
-// The host's shortcut panel: every installed plugin's manifest `shortcuts`,
-// as buttons. Reads the host index directly, which no plugin over the SDK
-// can; runs through the registry, which loads the owning plugin's module on
-// first use.
+// Runs through the registry, which loads the owning plugin's module on first use.
 export function ShortcutsNavigator() {
   usePanelTitle('Shortcuts');
   const { source, registry } = useServices();

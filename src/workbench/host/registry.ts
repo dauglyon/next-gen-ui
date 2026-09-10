@@ -64,10 +64,7 @@ export function remotePlugin(manifest: Manifest, base: string = SERVICES_BASE): 
       if (!value) throw new Error(`plugin ${manifest.id} exposed nothing at ./${kind}`);
       return value;
     };
-  const modules: ModuleLoaders = {};
-  for (const kind of manifest.modules) {
-    (modules as Record<Module, () => Promise<unknown>>)[kind] = loader(kind);
-  }
+  const modules = Object.fromEntries(manifest.modules.map((k) => [k, loader(k)])) as ModuleLoaders;
   return { manifest, modules };
 }
 

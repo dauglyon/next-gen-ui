@@ -71,22 +71,10 @@ export const ICONS: Readonly<Record<string, ComponentType<IconProps>>> = {
 // names none draws in the ink of whatever it sits in, which is what the
 // host's own panels do.
 //
-// These are the --ct-* values, the ramp meant to be read against the page
-// background at AA 4.5:1, with a dark-mode pair. The raw brand colours are
-// tints for sitting behind text and go grey at 14px.
-export const ICON_COLORS: Readonly<Record<string, string>> = {
-  blue: 'var(--ct-primary)',
-  green: 'var(--ct-green)',
-  teal: 'var(--ct-teal)',
-  purple: 'var(--ct-purple)',
-  orange: 'var(--ct-orange)',
-  red: 'var(--ct-red)',
-};
-
-// The same six names, as the tiers meant for surfaces rather than glyphs:
-// `bg-*` is the page tint a hue is allowed to fill with, `bo-*` the border
-// that goes with it, `ct-*` the only tier that may carry text. A plugin names
-// one colour in its manifest; this is how far that one name reaches.
+// `ct-*` is the ramp meant to be read against the page background at AA
+// 4.5:1, with a dark-mode pair, and the only tier that may carry text or a
+// glyph; the raw brand colours go grey at 14px. `bg-*` is the page tint a
+// hue may fill with, `bo-*` the border that goes with it.
 export interface Hue {
   ink: string;
   tint: string;
@@ -106,10 +94,6 @@ export function hueFor(color: string | undefined): Hue | undefined {
   return color ? HUES[color] : undefined;
 }
 
-// Duotone draws the glyph over a wash of itself, so one colour gives both
-// tones and the icon keeps working against either background.
-const WEIGHT = 'duotone' as const;
-
 // Components are cached because a fresh component type on every render
 // remounts the SVG, losing nothing visible but doing the work again.
 const cache = new Map<string, ComponentType<IconProps>>();
@@ -119,9 +103,11 @@ export function iconFor(name: string | undefined, color?: string): ComponentType
   const have = cache.get(key);
   if (have) return have;
   const Base = (name && ICONS[name]) || PushPin;
-  const tint = color ? ICON_COLORS[color] : undefined;
+  const tint = hueFor(color)?.ink;
+  // Duotone draws the glyph over a wash of itself, so one colour gives both
+  // tones and the icon keeps working against either background.
   const Icon = (props: IconProps) =>
-    createElement(Base, { weight: WEIGHT, ...(tint ? { color: tint } : {}), ...props });
+    createElement(Base, { weight: 'duotone', ...(tint ? { color: tint } : {}), ...props });
   Icon.displayName = `Icon(${name ?? 'pin'})`;
   cache.set(key, Icon);
   return Icon;

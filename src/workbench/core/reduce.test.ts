@@ -7,13 +7,9 @@ import { reduce } from './reduce';
 import { validate } from './serialize';
 import { groups } from './tree';
 
-function counter() {
-  let n = 0;
-  return { newId: () => `id${++n}` };
-}
-
 function run(start: Layout, ...ops: Operation[]): Layout {
-  const ctx = counter();
+  let n = 0;
+  const ctx = { newId: () => `id${++n}` };
   const end = ops.reduce((l, op) => reduce(l, op, ctx), start);
   expect(validate(end)).toEqual([]);
   return end;

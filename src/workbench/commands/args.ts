@@ -44,31 +44,20 @@ export function validateArgs(specs: ArgSpec[], tokens: string[]): ArgResult {
       if (spec.required) return fail('missing', spec.name, `${spec.name} is required`);
       continue;
     }
-    switch (spec.type) {
-      case 'string':
-        values[spec.name] = token;
-        break;
-      case 'number': {
-        const n = Number(token);
-        if (!Number.isFinite(n)) {
-          return fail('not-a-number', spec.name, `${spec.name} must be a number`);
-        }
-        values[spec.name] = n;
-        break;
-      }
-      case 'choice': {
-        const choices = choicesOf(spec);
-        if (!choices.includes(token)) {
-          return fail(
-            'not-a-choice',
-            spec.name,
-            `${spec.name} must be one of ${choices.join(', ')}`,
-          );
-        }
-        values[spec.name] = token;
-        break;
+    if (spec.type === 'number') {
+      const n = Number(token);
+      if (!Number.isFinite(n))
+        return fail('not-a-number', spec.name, `${spec.name} must be a number`);
+      values[spec.name] = n;
+      continue;
+    }
+    if (spec.type === 'choice') {
+      const choices = choicesOf(spec);
+      if (!choices.includes(token)) {
+        return fail('not-a-choice', spec.name, `${spec.name} must be one of ${choices.join(', ')}`);
       }
     }
+    values[spec.name] = token;
   }
   return { ok: true, values };
 }

@@ -10,8 +10,7 @@ import type {
   PluginHost,
 } from '../../plugins/sdk';
 import type { PluginId } from '../core';
-import type { ArgSpec, Command, CommandRegistry } from '../commands';
-import type { ArgDecl } from '../../plugins/sdk';
+import type { Command, CommandRegistry } from '../commands';
 import { createEmitter } from '../../plugins/sdk';
 import { iconFor } from './icons';
 
@@ -38,7 +37,6 @@ export interface HostIndex {
   plugins: () => PluginInfo[];
   manifest: (id: PluginId) => Manifest | undefined;
   manifests: () => Manifest[];
-  // Every manifest's commands, each with the plugin that declares it.
   declaredCommands: () => DeclaredCommand[];
   // Whether the manifest lists the module — what the host may offer before
   // fetching anything.
@@ -46,10 +44,10 @@ export interface HostIndex {
   // Resolves to the module, loading it once. Rejects if the plugin is not
   // installed, does not list the module, or fails to load it.
   module: <K extends Module>(id: PluginId, kind: K) => Promise<Modules[K]>;
-  // The module if it has already loaded; never triggers a load.
+  // Never triggers a load.
   loaded: <K extends Module>(id: PluginId, kind: K) => Modules[K] | undefined;
   anyLoaded: (id: PluginId) => boolean;
-  // Every background module that has arrived, in registration order.
+  // In registration order.
   backgrounds: () => { plugin: PluginId; title: string; background: Background }[];
   subscribe: (listener: () => void) => () => void;
   // Bumps when a module finishes loading; pairs with subscribe for React.
@@ -157,7 +155,9 @@ export function createHostIndex(installed: InstalledPlugin[]): HostIndex {
             title: decl.title,
             description: decl.description,
             source: manifest.id,
-            args: (decl.args ?? []).map(toArgSpec),
+            // Typed by the handler once it runs; the bar only needs the
+            // count and which are required.
+            args: (decl.args ?? []).map((a) => ({ ...a, type: 'string' as const })),
             run: async (values, caller) => {
               const commands = await module(manifest.id, 'commands');
               const fn = commands[decl.name];
@@ -173,16 +173,5 @@ export function createHostIndex(installed: InstalledPlugin[]): HostIndex {
         }
       }
     },
-  };
-}
-
-// A manifest argument is typed by the handler once it runs; the bar only
-// needs to know how many there are and which are required.
-function toArgSpec(decl: ArgDecl): ArgSpec {
-  return {
-    name: decl.name,
-    description: decl.description,
-    required: decl.required,
-    type: 'string',
   };
 }

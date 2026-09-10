@@ -1,4 +1,4 @@
-import type { GroupId, Layout, PanelId } from './layout';
+import type { Layout, PanelId } from './layout';
 import { makePane, paneId } from './layout';
 import type { Operation, MainTarget } from './operations';
 import { placementOf } from './placement';
@@ -27,12 +27,7 @@ export const defaultContext: ReduceContext = {
 
 // What a locked layout refuses: changes to the arrangement itself. Usage
 // (open, close, focus, fold, bars, collapse) stays free.
-const STRUCTURAL: ReadonlySet<Operation['type']> = new Set<Operation['type']>([
-  'move',
-  'resize',
-  'pin',
-  'unpin',
-]);
+const STRUCTURAL = new Set<Operation['type']>(['move', 'resize', 'pin', 'unpin']);
 
 export function reduce(layout: Layout, op: Operation, ctx: ReduceContext = defaultContext): Layout {
   if (layout.locked && STRUCTURAL.has(op.type)) return layout;
@@ -78,19 +73,15 @@ export function reduce(layout: Layout, op: Operation, ctx: ReduceContext = defau
   }
 }
 
-// The group a new tab lands in when the caller names none: the focused
-// panel's group, else the first group in reading order.
-function defaultGroup(layout: Layout): GroupId {
-  const focused = layout.focus ? groupOf(layout.main, layout.focus) : undefined;
-  return (focused ?? groups(layout.main)[0]).id;
-}
-
 function place(layout: Layout, panel: PanelId, target: MainTarget | undefined, ctx: ReduceContext) {
   let main = removeTab(layout.main, panel);
   if (target && 'side' in target) {
     main = splitGroup(main, target.group, target.side, panel, ctx.newId(), ctx.newId());
   } else {
-    const group = target?.group ?? defaultGroup(layout);
+    // No group named: the focused panel's, else the first in reading order.
+    const group =
+      target?.group ??
+      ((layout.focus && groupOf(layout.main, layout.focus)) || groups(layout.main)[0]).id;
     let index = target?.index;
     // A same-group move gives its index in pre-removal terms.
     const from = groupOf(layout.main, panel);

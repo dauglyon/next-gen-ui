@@ -1,19 +1,17 @@
-import type { CartItem, CommandCall, Intent, Query, Suggestion } from '../../../plugins/sdk';
+import type {
+  Background,
+  CartItem,
+  CommandCall,
+  Intent,
+  Query,
+  Suggestion,
+} from '../../../plugins/sdk';
 import { qualifyCommand } from '../../../plugins/sdk';
 import type { Answer, QuerySource, QueryStore } from '../../core';
 import type { HostIndex } from '../installed';
 
 // Asking every plugin about a source of terms, and the chosen intent about
-// the text.
-//
-// Each source has its own clock. Setting one runs every `terms` at once —
-// they are synchronous and cheap — pools what comes back with the terms
-// given, and lets each plugin expand the pool once. The page and cart
-// sources then wait for the settle and call every `recommend` with the
-// pool; a source set again before the settle restarts it. The typing source
-// waits for nothing: every `recommend.commands` is asked on the keystroke,
-// and the intent is asked with the offers that came back at once, then
-// again as a slower plugin's offer lands. An answer that arrives for a
+// the text. Each source has its own clock; an answer that arrives for a
 // question no longer being asked is dropped.
 //
 // What the reader sees follows the omnibox rule rather than the clear-and-
@@ -39,19 +37,12 @@ export interface QueryInput {
   // The plugin whose own front tab produced these terms: never asked about
   // them, so a plugin cannot recommend the page it has open.
   owner?: string;
-  // What the heading says the answers were computed from.
   label?: string;
 }
 
 export interface QueryRunner {
   set: (source: QuerySource, input: QueryInput) => void;
   stop: () => void;
-}
-
-export interface RunnerOptions {
-  // The intent module Settings names, once loaded. Read on every keystroke,
-  // so a change of setting takes effect on the next one.
-  intent?: () => Intent | undefined;
 }
 
 const sameCall = (a: CommandCall, b: CommandCall) =>
@@ -78,7 +69,9 @@ function merged(prev: Answer | undefined, next: Answer): Answer {
 export function createQueryRunner(
   index: HostIndex,
   store: QueryStore,
-  options: RunnerOptions = {},
+  // `intent` is the module Settings names, once loaded. Read on every
+  // keystroke, so a change of setting takes effect on the next one.
+  options: { intent?: () => Intent | undefined } = {},
 ): QueryRunner {
   const timers = new Map<QuerySource, number>();
   const inflight = new Map<QuerySource, AbortController>();
@@ -87,9 +80,8 @@ export function createQueryRunner(
   // from one that changed.
   const asked = new Map<QuerySource, { owner?: string; text?: string; pool: string[] }>();
 
-  // Every plugin's terms for the text, then one pass in which each plugin
-  // may expand a term it recognises into others. A `terms` that throws is
-  // that plugin's problem: it contributes nothing this round.
+  // A `terms` that throws is that plugin's problem: it contributes nothing
+  // this round.
   const pool = (input: QueryInput): string[] => {
     const found = new Set(input.terms ?? []);
     const signal = new AbortController().signal;
@@ -139,39 +131,64 @@ export function createQueryRunner(
     }
   };
 
-  // The typing source, on the keystroke: every plugin's `commands` at once,
-  // then the intent with the offers that came back synchronously. A plugin
-  // that answers later lands when it does, and the intent is asked again
-  // with the offers so far; nothing waits on a slow plugin. What is typed is
-  // answered with commands only: the prompt bar shows them, and the Related
-  // pane, which shows items, does not read this source.
-  const askTyping = (input: QueryInput, terms: string[]) => {
-    inflight.get('typing')?.abort();
+  // What both rounds set up before asking: a controller that ends the
+  // previous round, the plugins in registry order, the answers carried over
+  // from the last round, and a publish that writes them in that order until
+  // the question moves on.
+  const round = (
+    source: QuerySource,
+    input: QueryInput,
+    terms: string[],
+    fullPool: string[],
+    asks: (background: Background) => unknown,
+    carry: (previous: Answer) => Answer,
+  ) => {
+    inflight.get(source)?.abort();
     const controller = new AbortController();
-    inflight.set('typing', controller);
+    inflight.set(source, controller);
     const query: Query = { text: input.text, terms, signal: controller.signal };
     const label = input.label ?? input.text ?? '';
     const plugins = index
       .backgrounds()
-      .filter(({ plugin, background }) => background.recommend?.commands && plugin !== input.owner);
+      .filter(({ plugin, background }) => asks(background) && plugin !== input.owner);
     const order = new Map(plugins.map(({ plugin }, i) => [plugin, i]));
     const answers = new Map<string, Answer>();
-    for (const a of store.get('typing').answers) {
-      if (order.has(a.plugin)) answers.set(a.plugin, { ...a, stale: true });
+    for (const a of store.get(source).answers) {
+      if (order.has(a.plugin)) answers.set(a.plugin, carry(a));
     }
     const pending = new Set(plugins.map(({ plugin }) => plugin));
     let settled = false;
     const publish = () => {
       if (controller.signal.aborted) return;
-      store.set('typing', {
+      store.set(source, {
         label,
-        pool: terms,
+        pool: fullPool,
         answers: [...answers.values()].sort((a, b) => order.get(a.plugin)! - order.get(b.plugin)!),
         pending: [...pending],
         loading: !settled && pending.size > 0,
-        suggestions: store.get('typing').suggestions,
+        suggestions: store.get(source).suggestions,
       });
     };
+    const settle = () => {
+      settled = true;
+      publish();
+    };
+    return { controller, query, plugins, answers, pending, publish, settle };
+  };
+
+  // The typing source waits for nothing: nothing waits on a slow plugin, and
+  // the intent is asked again as each late offer lands. What is typed is
+  // answered with commands only: the prompt bar shows them, and the Related
+  // pane, which shows items, does not read this source.
+  const askTyping = (input: QueryInput, terms: string[]) => {
+    const { controller, query, plugins, answers, pending, publish, settle } = round(
+      'typing',
+      input,
+      terms,
+      terms,
+      (b) => b.recommend?.commands,
+      (a) => ({ ...a, stale: true }),
+    );
     // The offers in hand for this text: a stale answer is for the last text.
     const offers = (): CommandCall[] =>
       [...answers.values()]
@@ -218,14 +235,10 @@ export function createQueryRunner(
     publish();
     suggest(input.text, terms, offers());
     if (pending.size) {
-      const budget = window.setTimeout(() => {
-        settled = true;
-        publish();
-      }, BUDGET_MS);
+      const budget = window.setTimeout(settle, BUDGET_MS);
       void Promise.all(later).then(() => {
         window.clearTimeout(budget);
-        settled = true;
-        publish();
+        settle();
       });
     }
   };
@@ -240,40 +253,18 @@ export function createQueryRunner(
     fullPool: string[],
     grow: boolean,
   ) => {
-    inflight.get(source)?.abort();
-    const controller = new AbortController();
-    inflight.set(source, controller);
-    const query: Query = { text: input.text, terms, signal: controller.signal };
-    const label = input.label ?? input.text ?? '';
-    const plugins = index
-      .backgrounds()
-      .filter(({ plugin, background }) => background.recommend && plugin !== input.owner);
-    const order = new Map(plugins.map(({ plugin }, i) => [plugin, i]));
-
     // Previous answers stay, stale, until each plugin's new one replaces
-    // them; an answer from a plugin no longer asked goes now.
-    const answers = new Map<string, Answer>();
-    for (const a of store.get(source).answers) {
-      if (order.has(a.plugin)) answers.set(a.plugin, grow ? a : { ...a, stale: true });
-    }
-    const pending = new Set(plugins.map(({ plugin }) => plugin));
-    let settled = false;
-    const publish = () => {
-      if (controller.signal.aborted) return;
-      store.set(source, {
-        label,
-        pool: fullPool,
-        answers: [...answers.values()].sort((a, b) => order.get(a.plugin)! - order.get(b.plugin)!),
-        pending: [...pending],
-        loading: !settled && pending.size > 0,
-        suggestions: store.get(source).suggestions,
-      });
-    };
+    // them; for a pool that grew they stay as they are.
+    const { controller, query, plugins, answers, pending, publish, settle } = round(
+      source,
+      input,
+      terms,
+      fullPool,
+      (b) => b.recommend,
+      (a) => (grow ? a : { ...a, stale: true }),
+    );
     publish();
-    const budget = window.setTimeout(() => {
-      settled = true;
-      publish();
-    }, BUDGET_MS);
+    const budget = window.setTimeout(settle, BUDGET_MS);
 
     await Promise.all(
       plugins.map(async ({ plugin, background }) => {
@@ -303,8 +294,7 @@ export function createQueryRunner(
       }),
     );
     window.clearTimeout(budget);
-    settled = true;
-    publish();
+    settle();
   };
 
   return {

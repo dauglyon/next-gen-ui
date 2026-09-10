@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Background, CommandCall, Query, Suggestion } from '../../../plugins/sdk';
+import type { Background, CommandCall, Intent, Query, Suggestion } from '../../../plugins/sdk';
 import { createQueryStore } from '../../core';
 import type { HostIndex } from '../installed';
 import { BUDGET_MS, SETTLE_MS, createQueryRunner } from './runner';
@@ -14,6 +14,20 @@ function index(backgrounds: Record<string, Background>): HostIndex {
         background,
       })),
   } as unknown as HostIndex;
+}
+
+const setup = (backgrounds: Record<string, Background>, options?: { intent: () => Intent }) => {
+  const store = createQueryStore();
+  return { store, runner: createQueryRunner(index(backgrounds), store, options) };
+};
+
+// A plugin whose answer waits until the test releases it.
+function slowPlugin(answer: CommandCall[]) {
+  let release: (() => void) | undefined;
+  const background: Background = {
+    recommend: { commands: () => new Promise((resolve) => (release = () => resolve(answer))) },
+  };
+  return { background, release: () => release?.() };
 }
 
 const fj: Background = {
@@ -43,8 +57,7 @@ afterEach(() => vi.useRealTimers());
 
 describe('the query runner', () => {
   it('pools terms at once, expands them once, and asks recommend on the keystroke', () => {
-    const store = createQueryStore();
-    const runner = createQueryRunner(index({ fj }), store);
+    const { store, runner } = setup({ fj });
     runner.set('typing', { text: 'P0AEX9' });
     expect(store.get('typing').pool).toEqual(['uniprot:P0AEX9', 'taxon:83333']);
     // A synchronous answer is in hand before set() returns.
@@ -57,8 +70,7 @@ describe('the query runner', () => {
   });
 
   it('asks for items on the sources the Related pane reads', async () => {
-    const store = createQueryStore();
-    const runner = createQueryRunner(index({ fj }), store);
+    const { store, runner } = setup({ fj });
     runner.set('page', { terms: ['uniprot:P0AEX9'], label: 'P0AEX9' });
     await vi.advanceTimersByTimeAsync(SETTLE_MS);
     const [answer] = store.get('page').answers;
@@ -66,8 +78,7 @@ describe('the query runner', () => {
   });
 
   it('never sends a plugin the terms of its own front tab', async () => {
-    const store = createQueryStore();
-    const runner = createQueryRunner(index({ fj }), store);
+    const { store, runner } = setup({ fj });
     runner.set('page', { terms: ['uniprot:P0AEX9'], owner: 'fj', label: 'P0AEX9' });
     await vi.advanceTimersByTimeAsync(SETTLE_MS);
     expect(store.get('page').answers).toEqual([]);
@@ -76,8 +87,7 @@ describe('the query runner', () => {
 
   it('a page set again before the settle asks once, about the newer terms', async () => {
     const commands = vi.fn<(q: Query) => CommandCall[]>(() => []);
-    const store = createQueryStore();
-    const runner = createQueryRunner(index({ p: { recommend: { commands } } }), store);
+    const { runner } = setup({ p: { recommend: { commands } } });
     runner.set('page', { terms: ['a:1'] });
     runner.set('page', { terms: ['b:2'] });
     await vi.advanceTimersByTimeAsync(SETTLE_MS);
@@ -92,8 +102,7 @@ describe('the query runner', () => {
     const commands = vi.fn<(q: Query) => Promise<CommandCall[]>>(
       () => new Promise((resolve) => (release = resolve)),
     );
-    const store = createQueryStore();
-    const runner = createQueryRunner(index({ p: { recommend: { commands } } }), store);
+    const { store, runner } = setup({ p: { recommend: { commands } } });
     runner.set('typing', { text: 'a' });
     const first = release!;
     runner.set('typing', { text: 'ab' });
@@ -107,8 +116,7 @@ describe('the query runner', () => {
   });
 
   it('clears a source that has nothing to ask about', async () => {
-    const store = createQueryStore();
-    const runner = createQueryRunner(index({ fj }), store);
+    const { store, runner } = setup({ fj });
     runner.set('typing', { text: 'P0AEX9' });
     await vi.advanceTimersByTimeAsync(SETTLE_MS);
     expect(store.get('typing').answers).toHaveLength(1);
@@ -117,17 +125,8 @@ describe('the query runner', () => {
   });
 
   it('shows a fast answer while a slow plugin is still working, and lands the slow one after the budget', async () => {
-    let release: (() => void) | undefined;
-    const slow: Background = {
-      recommend: {
-        commands: () =>
-          new Promise<CommandCall[]>((resolve) => {
-            release = () => resolve([{ label: 'late', command: 'x' }]);
-          }),
-      },
-    };
-    const store = createQueryStore();
-    const runner = createQueryRunner(index({ slow, fj }), store);
+    const { background: slow, release } = slowPlugin([{ label: 'late', command: 'x' }]);
+    const { store, runner } = setup({ slow, fj });
     runner.set('typing', { text: 'P0AEX9' });
     await vi.advanceTimersByTimeAsync(SETTLE_MS);
     expect(store.get('typing').answers.map((a) => a.plugin)).toEqual(['fj']);
@@ -137,7 +136,7 @@ describe('the query runner', () => {
     // The pane stops saying it is asking; the question is still open.
     expect(store.get('typing').loading).toBe(false);
     expect(store.get('typing').pending).toEqual(['slow']);
-    release?.();
+    release();
     await vi.advanceTimersByTimeAsync(0);
     // Registry order, not arrival order.
     expect(store.get('typing').answers.map((a) => a.plugin)).toEqual(['slow', 'fj']);
@@ -157,8 +156,7 @@ describe('the query runner', () => {
           }),
       },
     };
-    const store = createQueryStore();
-    const runner = createQueryRunner(index({ p }), store);
+    const { store, runner } = setup({ p });
     runner.set('typing', { text: 'a' });
     await vi.advanceTimersByTimeAsync(SETTLE_MS);
     expect(store.get('typing').answers[0].commands[0].label).toBe('for a');
@@ -178,8 +176,7 @@ describe('the query runner', () => {
     const commands = vi.fn<(q: Query) => CommandCall[]>(({ terms = [] }) =>
       terms.map((t) => ({ label: `open ${t}`, command: 'x', args: { q: t } })),
     );
-    const store = createQueryStore();
-    const runner = createQueryRunner(index({ p: { recommend: { commands } } }), store);
+    const { store, runner } = setup({ p: { recommend: { commands } } });
     runner.set('page', { terms: ['uniprot:P0AEX9'], label: 'P0AEX9' });
     await vi.advanceTimersByTimeAsync(SETTLE_MS);
     runner.set('page', { terms: ['uniprot:P0AEX9', 'taxon:83333'], label: 'P0AEX9' });
@@ -201,8 +198,7 @@ describe('the query runner', () => {
       },
       recommend: { commands: () => Promise.reject(new Error('no')) },
     };
-    const store = createQueryStore();
-    const runner = createQueryRunner(index({ broken, fj }), store);
+    const { store, runner } = setup({ broken, fj });
     runner.set('typing', { text: 'P0AEX9' });
     await vi.advanceTimersByTimeAsync(SETTLE_MS);
     expect(store.get('typing').answers.map((a) => a.plugin)).toEqual(['fj']);
@@ -216,9 +212,8 @@ describe('the chosen intent', () => {
   });
 
   it('is asked on the keystroke and a sync answer lands at once', () => {
-    const store = createQueryStore();
     const intent = { index: vi.fn(), suggest: vi.fn(() => [suggestion('Cancel a job: 12')]) };
-    const runner = createQueryRunner(index({ fj }), store, { intent: () => intent });
+    const { store, runner } = setup({ fj }, { intent: () => intent });
     runner.set('typing', { text: 'cancel job 12' });
     expect(intent.suggest).toHaveBeenCalledTimes(1);
     expect(intent.suggest).toHaveBeenCalledWith(
@@ -228,14 +223,13 @@ describe('the chosen intent', () => {
   });
 
   it('keeps the previous answer until an async one lands, and drops one for older text', async () => {
-    const store = createQueryStore();
     let resolveFirst!: (s: ReturnType<typeof suggestion>[]) => void;
     const answers = [
       new Promise<ReturnType<typeof suggestion>[]>((r) => (resolveFirst = r)),
       Promise.resolve([suggestion('second')]),
     ];
     const intent = { index: vi.fn(), suggest: vi.fn(() => answers.shift()!) };
-    const runner = createQueryRunner(index({ fj }), store, { intent: () => intent });
+    const { store, runner } = setup({ fj }, { intent: () => intent });
     runner.set('typing', { text: 'cancel' });
     expect(store.get('typing').suggestions).toEqual([]);
     runner.set('typing', { text: 'cancel job' });
@@ -247,8 +241,7 @@ describe('the chosen intent', () => {
   });
 
   it('is not asked without an intent, and a throwing one contributes nothing', () => {
-    const store = createQueryStore();
-    const runner = createQueryRunner(index({ fj }), store);
+    const { store, runner } = setup({ fj });
     runner.set('typing', { text: 'cancel' });
     expect(store.get('typing').suggestions).toEqual([]);
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -258,30 +251,23 @@ describe('the chosen intent', () => {
         throw new Error('no');
       },
     };
-    const other = createQueryRunner(index({ fj }), createQueryStore(), { intent: () => broken });
+    const other = setup({ fj }, { intent: () => broken }).runner;
     expect(() => other.set('typing', { text: 'cancel' })).not.toThrow();
     warn.mockRestore();
   });
 
   it('is given the offers in hand, qualified, and asked again when a slow one lands', async () => {
-    let release: (() => void) | undefined;
-    const slow: Background = {
-      recommend: {
-        commands: () =>
-          new Promise<CommandCall[]>((resolve) => {
-            release = () => resolve([{ label: 'late', command: 'x', args: { q: 'P0AEX9' } }]);
-          }),
-      },
-    };
-    const store = createQueryStore();
+    const { background: slow, release } = slowPlugin([
+      { label: 'late', command: 'x', args: { q: 'P0AEX9' } },
+    ]);
     const intent = { index: vi.fn(), suggest: vi.fn<(q: Query) => Suggestion[]>(() => []) };
-    const runner = createQueryRunner(index({ fj, slow }), store, { intent: () => intent });
+    const { runner } = setup({ fj, slow }, { intent: () => intent });
     runner.set('typing', { text: 'P0AEX9' });
     expect(intent.suggest).toHaveBeenCalledTimes(1);
     expect(intent.suggest.mock.calls[0][0].offers).toEqual([
       { label: 'Dossier for P0AEX9', command: 'fj:open', args: { q: 'P0AEX9' } },
     ]);
-    release?.();
+    release();
     await vi.advanceTimersByTimeAsync(0);
     expect(intent.suggest).toHaveBeenCalledTimes(2);
     expect(intent.suggest.mock.calls[1][0].offers?.map((o) => o.command)).toEqual([
@@ -291,9 +277,8 @@ describe('the chosen intent', () => {
   });
 
   it('is cleared with the text', () => {
-    const store = createQueryStore();
     const intent = { index: vi.fn(), suggest: () => [suggestion('x')] };
-    const runner = createQueryRunner(index({ fj }), store, { intent: () => intent });
+    const { store, runner } = setup({ fj }, { intent: () => intent });
     runner.set('typing', { text: 'cancel' });
     runner.set('typing', { text: '' });
     expect(store.get('typing').suggestions).toEqual([]);

@@ -60,7 +60,10 @@ export function introduce(layout: Layout, blocks: readonly string[]): Layout {
     ...layout,
     sidebar: {
       ...layout.sidebar,
-      pinned: [...layout.sidebar.pinned, ...fresh.filter((id) => !layout.sidebar.pinned.includes(id))],
+      pinned: [
+        ...layout.sidebar.pinned,
+        ...fresh.filter((id) => !layout.sidebar.pinned.includes(id)),
+      ],
     },
     introduced: [...layout.introduced, ...fresh],
   };
