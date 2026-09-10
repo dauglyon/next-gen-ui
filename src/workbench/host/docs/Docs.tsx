@@ -613,6 +613,7 @@ function definePrompt(p: {
 
 interface Suggestion {
   call: CommandCall;             // command qualified as "plugin:name"
+  detail?: string;               // the row's caption, in place of the plugin's title
   score: number;                 // higher is closer; rows keep the order returned
 }
 

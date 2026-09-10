@@ -31,6 +31,7 @@ import { namespaceOf, shapeFor } from './tag';
 
 export interface RankedCall {
   plugin: string;
+  pluginTitle: string;
   // Qualified: "plugin:name".
   command: string;
   title: string;
@@ -42,6 +43,7 @@ export interface RankedCall {
 
 interface Entry {
   plugin: string;
+  pluginTitle: string;
   name: string;
   command: string;
   title: string;
@@ -140,6 +142,7 @@ export function buildCommandIndex(commands: DeclaredCommand[]): CommandIndex {
   const unseen = Math.log((1 + n) / 1) + 1;
   const entries = docs.map(({ decl, text }) => ({
     plugin: decl.plugin,
+    pluginTitle: decl.pluginTitle,
     name: decl.name,
     command: qualifyCommand(decl.name, decl.plugin),
     title: decl.title,
@@ -210,6 +213,7 @@ export function rankCommands(
     .slice(0, limit)
     .map(({ entry, offer, score }) => ({
       plugin: entry.plugin,
+      pluginTitle: entry.pluginTitle,
       command: entry.command,
       title: entry.title,
       label: offer?.label,

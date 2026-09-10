@@ -114,6 +114,9 @@ export interface Suggestion {
   // `command` qualified as "plugin:name": the plugin suggesting is seldom
   // the one that declared it.
   call: CommandCall;
+  // The row's caption, in place of the plugin's title: what the row does,
+  // when the label is what it does it to.
+  detail?: string;
   // Higher is a closer match; rows are shown in the order returned.
   score: number;
 }

@@ -15,14 +15,22 @@ export default defineIntent({
   },
   suggest: ({ text, terms, offers }) => {
     if (!index || !text) return [];
+    // A plugin's offer is worded by its author. A row of this plugin's own
+    // leads with what it acts on and says what it does in the caption: the
+    // identifier is what the reader is looking for, and a title written for
+    // the command list is long.
     return rankCommands(index, text, tagText(text), terms ?? [], offers ?? []).map((r) => {
-      const filled = Object.values(r.args);
+      const filled = Object.values(r.args).map(String);
+      if (r.label !== undefined) {
+        return { call: { label: r.label, command: r.command, args: r.args }, score: r.score };
+      }
       return {
         call: {
-          label: r.label ?? (filled.length ? `${r.title}: ${filled.join(', ')}` : r.title),
+          label: filled.length ? filled.join(', ') : r.title,
           command: r.command,
           args: r.args,
         },
+        detail: filled.length ? `${r.title} · ${r.pluginTitle}` : undefined,
         score: r.score,
       };
     });
