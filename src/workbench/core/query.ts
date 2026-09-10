@@ -1,4 +1,5 @@
 import type { CartItem, CommandCall, Suggestion } from '../../plugins/sdk';
+import { createEmitter } from '../../plugins/sdk';
 
 // What every plugin's `recommend` said about each source of terms.
 //
@@ -58,27 +59,19 @@ export interface QueryStore {
 export function createQueryStore(): QueryStore {
   const states = new Map<QuerySource, SourceState>();
   const gone = new Set<string>();
-  const listeners = new Set<() => void>();
-  let version = 0;
-  const changed = () => {
-    version += 1;
-    listeners.forEach((l) => l());
-  };
+  const { subscribe, version, notify } = createEmitter();
   return {
+    subscribe,
+    version,
     get: (source) => states.get(source) ?? EMPTY_SOURCE,
     set(source, state) {
       states.set(source, state);
-      changed();
+      notify();
     },
     dismiss(key) {
       gone.add(key);
-      changed();
+      notify();
     },
     dismissed: (key) => gone.has(key),
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-    version: () => version,
   };
 }

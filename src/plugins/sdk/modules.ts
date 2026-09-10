@@ -1,5 +1,5 @@
 import type { CartItem } from './cart';
-import type { CommandCall, SlashCommand } from './contract';
+import type { CommandCall, CommandValues, Module, SlashCommand } from './contract';
 import type { PluginHost } from './host';
 import type { PanelHandle } from './panel';
 
@@ -66,8 +66,6 @@ export interface Background {
   // At startup and after every command; shown until the next call.
   status?: () => StatusItem[];
 }
-
-export type CommandValues = Record<string, string | number>;
 
 // What a command handler runs against. `caller` is the plugin that called
 // `execute`, or 'user' for the prompt bar and every button.
@@ -145,6 +143,12 @@ export interface Modules {
   prompt: Prompt;
   intent: Intent;
 }
+
+// MODULES in contract.ts and this interface name the same set; adding to one
+// without the other fails here.
+type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : never) : never;
+const _modulesAgree: Same<Module, keyof Modules> = true;
+void _modulesAgree;
 
 export const defineBackground = (b: Background): Background => b;
 export const defineRoute = (r: Route): Route => r;

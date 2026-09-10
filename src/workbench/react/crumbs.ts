@@ -1,4 +1,5 @@
 import type { Crumb } from '../../plugins/sdk';
+import { createEmitter } from '../../plugins/sdk';
 import type { PanelId } from '../core';
 
 // A panel's trail, like its title, is known only once the panel renders,
@@ -20,21 +21,16 @@ const same = (a: Crumb[], b: Crumb[]) =>
 
 export function createCrumbStore(): CrumbStore {
   const trails = new Map<PanelId, Crumb[]>();
-  let version = 0;
-  const listeners = new Set<() => void>();
+  const { subscribe, version, notify } = createEmitter();
   return {
+    subscribe,
+    version,
     get: (id) => trails.get(id) ?? NONE,
     set(id, crumbs) {
       const current = trails.get(id);
       if (current && same(current, crumbs)) return;
       trails.set(id, crumbs);
-      version += 1;
-      listeners.forEach((l) => l());
-    },
-    version: () => version,
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
+      notify();
     },
   };
 }

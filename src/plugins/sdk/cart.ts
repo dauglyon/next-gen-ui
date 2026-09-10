@@ -1,4 +1,6 @@
-import { useCallback, useContext, useSyncExternalStore } from 'react';
+import { useContext, useSyncExternalStore } from 'react';
+import { z } from 'zod';
+import { CommandValuesSchema } from './contract';
 import { HostContext } from './host';
 
 // Adding something to the cart, from inside a plugin.
@@ -41,24 +43,31 @@ import { HostContext } from './host';
 
 // A path on the adding plugin's route, or one of its commands with the
 // arguments that produce the item. A bare command name is the plugin's own.
-export type CartSource =
-  | { path: string }
-  | { command: string; args?: Record<string, string | number> };
+export const CartSourceSchema = z.union([
+  z.object({ path: z.string() }),
+  z.object({
+    command: z.string(),
+    args: CommandValuesSchema.optional(),
+  }),
+]);
+export type CartSource = z.infer<typeof CartSourceSchema>;
 
-export interface CartItem {
-  id: string;
-  name: string;
-  subject?: string;
-  summary?: string;
-  // Namespaced keys other plugins may recognise — `uniprot:P0AEX9`,
-  // `taxon:562`. Optional and unpoliced: a plugin answers on the prefixes it
-  // knows and stays silent on the rest, the same way `terms` does. This is
-  // what lets a second plugin say something about an item without knowing
-  // anything about the plugin that added it.
-  terms?: string[];
-  source?: CartSource;
-  context?: Record<string, unknown>;
-}
+// The schema is what the host validates a stored item against; the host
+// extends it with what it stamps on (the adding plugin, the time).
+export const CartItemSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  subject: z.string().optional(),
+  summary: z.string().optional(),
+  // Optional and unpoliced: a plugin answers on the prefixes it knows and
+  // stays silent on the rest, the same way `terms` does. This is what lets
+  // a second plugin say something about an item without knowing anything
+  // about the plugin that added it.
+  terms: z.array(z.string()).optional(),
+  source: CartSourceSchema.optional(),
+  context: z.record(z.string(), z.unknown()).optional(),
+});
+export type CartItem = z.infer<typeof CartItemSchema>;
 
 // The slice of the host's cart a plugin can see. It cannot read other
 // plugins' items: what is in the cart is the user's business and the
@@ -75,25 +84,21 @@ export interface Cart {
   subscribe: (listener: () => void) => () => void;
 }
 
+// Outside a workbench panel: nothing in, nothing added.
+const NO_CART: Cart = {
+  add: () => {},
+  remove: () => {},
+  items: () => [],
+  has: () => false,
+  count: () => 0,
+  subscribe: () => () => {},
+};
+
 // The host's cart handle, re-rendering the caller on change so a button
 // that reads `has()` updates when the user removes the item from the tray
 // rather than from the button.
 export function useCart(): Cart {
-  const host = useContext(HostContext);
-  const cart = host?.cart;
-  useSyncExternalStore(
-    useCallback((cb: () => void) => cart?.subscribe(cb) ?? (() => {}), [cart]),
-    () => cart?.count() ?? 0,
-    () => 0,
-  );
-  const add = useCallback((item: CartItem) => cart?.add(item), [cart]);
-  const remove = useCallback((id: string) => cart?.remove(id), [cart]);
-  const items = useCallback(() => cart?.items() ?? [], [cart]);
-  const has = useCallback((id: string) => cart?.has(id) ?? false, [cart]);
-  const count = useCallback(() => cart?.count() ?? 0, [cart]);
-  const subscribe = useCallback(
-    (listener: () => void) => cart?.subscribe(listener) ?? (() => {}),
-    [cart],
-  );
-  return { add, remove, items, has, count, subscribe };
+  const cart = useContext(HostContext)?.cart ?? NO_CART;
+  useSyncExternalStore(cart.subscribe, cart.count, () => 0);
+  return cart;
 }

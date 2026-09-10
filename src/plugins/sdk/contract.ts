@@ -50,11 +50,14 @@ export type SlashCommand = z.infer<typeof SlashCommandSchema>;
 
 // A call to a command with its arguments filled in: what a launcher, a
 // shortcut button, a recommendation or a status line runs when pressed.
+export const CommandValuesSchema = z.record(z.string(), z.union([z.string(), z.number()]));
+export type CommandValues = z.infer<typeof CommandValuesSchema>;
+
 export const CommandCallSchema = z.object({
   label: z.string().min(1),
   // "plugin:name"; a bare "name" is the declaring plugin's own.
   command: z.string().regex(/^(?:[a-z][a-z0-9-]*:)?[a-z][a-z0-9-]*$/),
-  args: z.record(z.string(), z.union([z.string(), z.number()])).optional(),
+  args: CommandValuesSchema.optional(),
 });
 export type CommandCall = z.infer<typeof CommandCallSchema>;
 

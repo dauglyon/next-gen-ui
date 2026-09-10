@@ -18,15 +18,7 @@ export function useLayout(): Layout {
 }
 
 export function useDispatch(): (op: Operation) => boolean {
-  const { store, announcer } = useServices();
-  return useCallback(
-    (op: Operation) => {
-      const result = store.dispatch(op);
-      if (result.changed) announcer.announce(result.announcement);
-      return result.changed;
-    },
-    [store, announcer],
-  );
+  return useServices().dispatch;
 }
 
 // Runs a command on the user's behalf. The invoking control can watch

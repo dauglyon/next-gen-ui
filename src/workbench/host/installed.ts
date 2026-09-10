@@ -12,6 +12,7 @@ import type {
 import type { PluginId } from '../core';
 import type { ArgSpec, Command, CommandRegistry } from '../commands';
 import type { ArgDecl } from '../../plugins/sdk';
+import { createEmitter } from '../../plugins/sdk';
 import { iconFor } from './icons';
 
 // The host's index of installed plugins: manifests now, modules on demand.
@@ -62,13 +63,7 @@ export function createHostIndex(installed: InstalledPlugin[]): HostIndex {
   const byId = new Map(installed.map((p) => [p.manifest.id, p]));
   const loaded = new Map<string, unknown>();
   const loading = new Map<string, Promise<unknown>>();
-  const listeners = new Set<() => void>();
-  let version = 0;
-
-  const bump = () => {
-    version += 1;
-    listeners.forEach((l) => l());
-  };
+  const { subscribe, version, notify: bump } = createEmitter();
 
   const has = (id: PluginId, kind: Module) =>
     byId.get(id)?.manifest.modules.includes(kind) ?? false;
@@ -152,11 +147,8 @@ export function createHostIndex(installed: InstalledPlugin[]): HostIndex {
         const background = loaded.get(`${manifest.id}/background`) as Background | undefined;
         return background ? [{ plugin: manifest.id, title: manifest.title, background }] : [];
       }),
-    version: () => version,
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
+    version,
+    subscribe,
     registerCommands(registry, host) {
       for (const { manifest } of installed) {
         for (const decl of manifest.commands ?? []) {

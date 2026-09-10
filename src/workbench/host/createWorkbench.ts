@@ -26,6 +26,7 @@ import { openPane, openRoute } from './open';
 import { hostPlugins } from './pages';
 import { createQueryRunner } from './query/runner';
 import { createSettingsStore } from './settings';
+import { readStorage, writeStorage } from './storage';
 import { createStatusStore } from './status';
 
 export const LAYOUT_STORAGE_KEY = 'workbench.layout.v2';
@@ -68,19 +69,13 @@ export function createWorkbench({
     assistant: defaultAssistant,
     intent: defaultIntent,
   });
-  for (const key of RETIRED_STORAGE_KEYS) {
-    try {
-      storage?.removeItem(key);
-    } catch {
-      // Privacy mode; there is nothing there to retire.
-    }
-  }
+  for (const key of RETIRED_STORAGE_KEYS) writeStorage(storage, key, null);
   // The cart is host state, not layout: it survives a layout reset, and it is
   // the thing most likely to move to the account later.
-  const cart = createCartStore(readCart(storage?.getItem(CART_STORAGE_KEY) ?? null));
+  const cart = createCartStore(readCart(readStorage(storage, CART_STORAGE_KEY)));
 
   const fallback = () => defaultLayout({ pinned: defaultPinned });
-  const saved = deserialize(read(storage), fallback);
+  const saved = deserialize(readStorage(storage, LAYOUT_STORAGE_KEY), fallback);
   // `introduce` is what makes a newly added host block appear for someone
   // whose layout predates it; the saved layout is otherwise restored verbatim,
   // and defaultPinned only ever builds a fresh one.
@@ -131,6 +126,7 @@ export function createWorkbench({
 
   workbenchCommands({
     store,
+    dispatch,
     announce: announcer.announce,
     plugins: () => source.plugins().map((p) => p.id),
     // An explicit ask for the prompt bar outranks the focus that follows a
@@ -160,34 +156,16 @@ export function createWorkbench({
   }
 
   if (storage) {
+    const saveLayout = () => writeStorage(storage, LAYOUT_STORAGE_KEY, serialize(store.get()));
     // Written now, not on the next change: the record of which blocks have
     // been offered is part of the layout, and if nothing else happens to save
     // it the same block is introduced again on every load — which looks like
     // the workbench re-pinning something the user just removed.
-    if (initial !== saved) {
-      try {
-        storage.setItem(LAYOUT_STORAGE_KEY, serialize(store.get()));
-      } catch {
-        // Quota or privacy mode; the introduction simply repeats next time.
-      }
-    }
-    store.subscribe(() => {
-      try {
-        storage.setItem(LAYOUT_STORAGE_KEY, serialize(store.get()));
-      } catch {
-        // Quota or privacy mode: the session still works, it just won't persist.
-      }
-    });
+    if (initial !== saved) saveLayout();
+    store.subscribe(saveLayout);
     // Written separately from the layout: a cart outlives an arrangement, and
     // a corrupt layout should not take the user's collected work with it.
-    cart.subscribe(() => {
-      try {
-        storage.setItem(CART_STORAGE_KEY, JSON.stringify(cart.items()));
-      } catch {
-        // A payload can be large. Losing persistence is better than losing the
-        // session, so a full quota is not an error the user has to handle.
-      }
-    });
+    cart.subscribe(() => writeStorage(storage, CART_STORAGE_KEY, JSON.stringify(cart.items())));
   }
   return services;
 }
@@ -257,12 +235,4 @@ export function pluginHostFor(services: WorkbenchServices, plugin: PluginId): Pl
       subscribe: (listener) => services.cart.subscribe(listener),
     },
   };
-}
-
-function read(storage: Storage | null): string | null {
-  try {
-    return storage?.getItem(LAYOUT_STORAGE_KEY) ?? null;
-  } catch {
-    return null;
-  }
 }

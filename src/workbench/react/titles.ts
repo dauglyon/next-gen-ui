@@ -1,3 +1,4 @@
+import { createEmitter } from '../../plugins/sdk';
 import type { PanelId } from '../core';
 
 // Panel titles arrive from the panels themselves after they render, so they
@@ -11,20 +12,15 @@ export interface TitleStore {
 
 export function createTitleStore(): TitleStore {
   const titles = new Map<PanelId, string>();
-  let version = 0;
-  const listeners = new Set<() => void>();
+  const { subscribe, version, notify } = createEmitter();
   return {
+    subscribe,
+    version,
     get: (id) => titles.get(id),
     set(id, title) {
       if (titles.get(id) === title) return;
       titles.set(id, title);
-      version += 1;
-      listeners.forEach((l) => l());
-    },
-    version: () => version,
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
+      notify();
     },
   };
 }

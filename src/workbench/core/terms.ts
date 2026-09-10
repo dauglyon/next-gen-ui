@@ -1,3 +1,5 @@
+import { createEmitter } from '../../plugins/sdk';
+
 // What each open panel says it is about.
 //
 // Panels push; the host does not pull. A panel already holds whatever it took
@@ -14,27 +16,19 @@ export interface TermStore {
 
 export function createTermStore(): TermStore {
   const byPanel = new Map<string, string[]>();
-  const listeners = new Set<() => void>();
-  let version = 0;
-  const changed = () => {
-    version += 1;
-    listeners.forEach((l) => l());
-  };
+  const { subscribe, version, notify } = createEmitter();
   return {
+    subscribe,
+    version,
     get: (panel) => byPanel.get(panel) ?? [],
     set(panel, terms) {
       const have = byPanel.get(panel);
       if (have && have.length === terms.length && have.every((t, i) => t === terms[i])) return;
       byPanel.set(panel, terms);
-      changed();
+      notify();
     },
     forget(panel) {
-      if (byPanel.delete(panel)) changed();
+      if (byPanel.delete(panel)) notify();
     },
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-    version: () => version,
   };
 }

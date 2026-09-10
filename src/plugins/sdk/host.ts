@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { Cart } from './cart';
+import type { CommandValues } from './contract';
 
 // What a plugin may ask the workbench to do: open its own route, run a
 // command — its own by bare name, another plugin's by "plugin:name" — say
@@ -11,7 +12,7 @@ export interface PluginHost {
   openRoute: (path: string, options?: { duplicate?: boolean }) => void;
   // Resolves when the handler resolves, with nothing: data between plugins
   // travels as terms and cart items, not as return values.
-  execute: (command: string, args?: Record<string, string | number>) => Promise<void>;
+  execute: (command: string, args?: CommandValues) => Promise<void>;
   hasCommand: (command: string) => boolean;
   // A toast. For the outcome only the plugin can see: a command that ran and
   // changed nothing visible, a neighbour that is not installed.

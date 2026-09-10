@@ -1,4 +1,4 @@
-import type { Layout, PanelId, Side, WorkbenchStore } from '../core';
+import type { Layout, Operation, PanelId, Side, WorkbenchStore } from '../core';
 import { groupOf, groups, placementOf } from '../core';
 import type { Command } from './registry';
 
@@ -7,6 +7,8 @@ import type { Command } from './registry';
 
 export interface WorkbenchCommandDeps {
   store: WorkbenchStore;
+  // dispatch is the store's, announcing what changed.
+  dispatch: (op: Operation) => boolean;
   announce: (text: string) => void;
   // Ids of installed plugins, for `/pin` and `/unpin` completion.
   plugins: () => string[];
@@ -38,15 +40,11 @@ function groupNeighbour(layout: Layout, offset: 1 | -1): PanelId | null {
 
 export function workbenchCommands({
   store,
+  dispatch,
   announce,
   plugins,
   focusPrompt,
 }: WorkbenchCommandDeps): Command[] {
-  const dispatch = (op: Parameters<WorkbenchStore['dispatch']>[0]) => {
-    const result = store.dispatch(op);
-    if (result.changed) announce(result.announcement);
-    return result.changed;
-  };
   const focusTo = (target: PanelId | null) => {
     if (target) dispatch({ type: 'focus', panel: target });
   };

@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { createEmitter } from '../../plugins/sdk';
+import { readStorage, writeStorage } from './storage';
 
 // User settings that are not layout: which plugin answers the prompt bar,
 // and which suggests commands for what is typed there. Persisted separately
@@ -20,29 +22,22 @@ export interface SettingsStore {
 
 export function createSettingsStore(storage: Storage | null, defaults: Settings): SettingsStore {
   let current: Settings = { ...defaults, ...(read(storage) ?? {}) };
-  const listeners = new Set<() => void>();
+  const { subscribe, notify } = createEmitter();
   return {
+    subscribe,
     get: () => current,
     set(patch) {
       current = { ...current, ...patch };
-      try {
-        storage?.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(current));
-      } catch {
-        // Persistence is best-effort.
-      }
-      listeners.forEach((l) => l());
-    },
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
+      writeStorage(storage, SETTINGS_STORAGE_KEY, JSON.stringify(current));
+      notify();
     },
   };
 }
 
 function read(storage: Storage | null): Settings | null {
+  const text = readStorage(storage, SETTINGS_STORAGE_KEY);
+  if (!text) return null;
   try {
-    const text = storage?.getItem(SETTINGS_STORAGE_KEY);
-    if (!text) return null;
     const parsed = SettingsSchema.safeParse(JSON.parse(text));
     return parsed.success ? parsed.data : null;
   } catch {

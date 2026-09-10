@@ -1,4 +1,5 @@
 import type { ToastManager } from '@kbase/design-system';
+import { createEmitter } from '../../plugins/sdk';
 import type {
   CartStore,
   Operation,
@@ -46,17 +47,14 @@ export interface PreviewHandle {
 
 export function createPreviewHandle(): PreviewHandle {
   let plugin: PluginId | null = null;
-  const listeners = new Set<() => void>();
+  const { subscribe, notify } = createEmitter();
   return {
+    subscribe,
     get: () => plugin,
     set(next) {
       if (next === plugin) return;
       plugin = next;
-      listeners.forEach((l) => l());
-    },
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
+      notify();
     },
   };
 }

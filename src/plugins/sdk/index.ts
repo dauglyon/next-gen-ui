@@ -25,6 +25,7 @@ export type {
   CommandCall,
   ArgDecl,
   Module,
+  CommandValues,
 } from './contract';
 export {
   defineBackground,
@@ -50,7 +51,6 @@ export type {
   Recommendation,
   StatusItem,
   Destination,
-  CommandValues,
   CommandContext,
   CommandHandler,
 } from './modules';
@@ -59,7 +59,9 @@ export { AppFrame } from './AppFrame';
 export type { AppFrameProps } from './AppFrame';
 export { FrameLayerContext, useFrameLayer } from './frames';
 export type { FrameLayer, FrameSpec } from './frames';
-export { useCart } from './cart';
-export type { Cart, CartItem } from './cart';
+export { createEmitter } from './emitter';
+export type { Emitter } from './emitter';
+export { useCart, CartItemSchema, CartSourceSchema } from './cart';
+export type { Cart, CartItem, CartSource } from './cart';
 export { CartButton } from './CartButton';
 export type { CartButtonProps } from './CartButton';

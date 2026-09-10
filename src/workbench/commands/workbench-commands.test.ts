@@ -10,9 +10,15 @@ function setup() {
   const store = createWorkbenchStore({ initial: defaultLayout({ pinned: ['koros'] }) });
   const announced: string[] = [];
   const registry = createCommandRegistry();
+  const announce = (t: string) => announced.push(t);
   workbenchCommands({
     store,
-    announce: (t) => announced.push(t),
+    dispatch: (op) => {
+      const result = store.dispatch(op);
+      if (result.changed) announce(result.announcement);
+      return result.changed;
+    },
+    announce,
     plugins: () => ['koros', 'data', 'jobs'],
     focusPrompt: () => announced.push('<prompt>'),
   }).forEach((c) => registry.register(c));

@@ -1,4 +1,5 @@
 import type { StatusItem } from '../../plugins/sdk';
+import { createEmitter } from '../../plugins/sdk';
 import type { PluginId } from '../core';
 import type { HostIndex } from './installed';
 
@@ -15,9 +16,10 @@ export interface StatusStore {
 
 export function createStatusStore(source: HostIndex): StatusStore {
   const current = new Map<PluginId, StatusItem[]>();
-  const listeners = new Set<() => void>();
-  let version = 0;
+  const { subscribe, version, notify } = createEmitter();
   return {
+    subscribe,
+    version,
     all: () => [...current.entries()].map(([plugin, items]) => ({ plugin, items })),
     refresh() {
       let changed = false;
@@ -33,14 +35,7 @@ export function createStatusStore(source: HostIndex): StatusStore {
         else current.delete(plugin);
         changed = true;
       }
-      if (!changed) return;
-      version += 1;
-      listeners.forEach((l) => l());
+      if (changed) notify();
     },
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-    version: () => version,
   };
 }

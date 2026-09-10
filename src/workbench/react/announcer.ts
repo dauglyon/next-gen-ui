@@ -1,3 +1,5 @@
+import { createEmitter } from '../../plugins/sdk';
+
 // One place every announcement goes; the LiveRegion component reads it.
 // The nonce lets the same sentence be announced twice in a row.
 export interface Announcement {
@@ -13,17 +15,14 @@ export interface Announcer {
 
 export function createAnnouncer(): Announcer {
   let current: Announcement = { text: '', nonce: 0 };
-  const listeners = new Set<() => void>();
+  const { subscribe, notify } = createEmitter();
   return {
+    subscribe,
     announce(text) {
       if (!text) return;
       current = { text, nonce: current.nonce + 1 };
-      listeners.forEach((l) => l());
+      notify();
     },
     get: () => current,
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
   };
 }
