@@ -7,3 +7,4 @@ package-lock.json
 src/routeTree.gen.ts
 .claude
 submodule
+src/plugins/local/intent/shapes.json

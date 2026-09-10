@@ -9,7 +9,6 @@
 //
 //   node scripts/build-shapes.mjs
 
-import { execFileSync } from 'node:child_process';
 import { writeFile } from 'node:fs/promises';
 
 const TAG = 'v0.14.5';
@@ -129,8 +128,11 @@ for (const local of LOCAL) {
 }
 shapes.sort((a, b) => a.prefix.localeCompare(b.prefix));
 
-await writeFile(OUT, JSON.stringify({ bioregistry: TAG, shapes }, null, 2) + '\n');
-// Laid out the way the repo's formatter would, so a regeneration diffs only
-// where the registry changed.
-execFileSync('npx', ['prettier', '--write', OUT.pathname], { stdio: 'ignore' });
+// One shape per line, so a regeneration diffs only where the registry
+// changed. Listed in .prettierignore, which would spread each over ten.
+const rows = shapes.map((s) => `    ${JSON.stringify(s)}`);
+await writeFile(
+  OUT,
+  `{\n  "bioregistry": ${JSON.stringify(TAG)},\n  "shapes": [\n${rows.join(',\n')}\n  ]\n}\n`,
+);
 console.log(`${shapes.length} shapes from Bioregistry ${TAG} → ${OUT.pathname}`);
