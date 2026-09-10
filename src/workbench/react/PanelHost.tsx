@@ -148,17 +148,20 @@ function Failed({ error }: { error: Error }): never {
 function GhostPanel({ panel }: { panel: Panel }) {
   const { dispatch } = useServices();
   return (
-    <div className={styles.panelMessage} role="group" aria-label="Unavailable panel">
-      <p className="body">
-        The plugin <strong>{panel.plugin}</strong> is not installed, so this panel cannot be shown.
-      </p>
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={() => dispatch({ type: 'close', panel: panel.id })}
-      >
-        Close
-      </Button>
+    <div role="group" aria-label="Unavailable panel">
+      <EmptyState
+        title="This panel cannot be shown"
+        description={`The plugin ${panel.plugin} is not installed.`}
+        action={
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => dispatch({ type: 'close', panel: panel.id })}
+          >
+            Close
+          </Button>
+        }
+      />
     </div>
   );
 }
@@ -181,12 +184,18 @@ export class PanelBoundary extends Component<{ children: ReactNode }, BoundarySt
   render() {
     if (!this.state.error) return this.props.children;
     return (
-      <div className={styles.panelMessage} role="alert">
-        <p className="body">This panel crashed.</p>
-        <p className={`caption ${styles.errorText}`}>{this.state.error.message}</p>
-        <Button size="sm" variant="outline" onClick={() => this.setState({ error: null })}>
-          Try again
-        </Button>
+      <div role="alert">
+        <EmptyState
+          title="This panel crashed"
+          action={
+            <>
+              <p className={`caption ${styles.errorText}`}>{this.state.error.message}</p>
+              <Button size="sm" variant="outline" onClick={() => this.setState({ error: null })}>
+                Try again
+              </Button>
+            </>
+          }
+        />
       </div>
     );
   }

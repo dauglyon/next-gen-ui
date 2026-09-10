@@ -32,11 +32,14 @@ export function SplitView({
 }: SplitViewProps) {
   const container = useRef<HTMLDivElement>(null);
 
-  const trade = (index: number, delta: number) => {
-    const next = [...sizes];
-    const a = Math.max(MIN, Math.min(next[index] + next[index + 1] - MIN, next[index] + delta));
-    next[index + 1] = next[index] + next[index + 1] - a;
+  // Moves `delta` of the pair's total from pane index+1 to pane index,
+  // neither going below MIN.
+  const applyDelta = (base: readonly number[], index: number, delta: number) => {
+    const next = [...base];
+    const pair = base[index] + base[index + 1];
+    const a = Math.max(MIN, Math.min(pair - MIN, base[index] + delta));
     next[index] = a;
+    next[index + 1] = pair - a;
     onSizes(next);
   };
 
@@ -51,13 +54,7 @@ export function SplitView({
     handle.setPointerCapture(event.pointerId);
     const onMove = (e: globalThis.PointerEvent) => {
       const pos = dir === 'row' ? e.clientX : e.clientY;
-      const delta = (pos - origin) / total;
-      const next = [...startSizes];
-      const pair = startSizes[index] + startSizes[index + 1];
-      const a = Math.max(MIN, Math.min(pair - MIN, startSizes[index] + delta));
-      next[index] = a;
-      next[index + 1] = pair - a;
-      onSizes(next);
+      applyDelta(startSizes, index, (pos - origin) / total);
     };
     const onUp = () => {
       handle.removeEventListener('pointermove', onMove);
@@ -70,8 +67,8 @@ export function SplitView({
   const onKey = (index: number) => (event: KeyboardEvent<HTMLDivElement>) => {
     const grow = dir === 'row' ? 'ArrowRight' : 'ArrowDown';
     const shrink = dir === 'row' ? 'ArrowLeft' : 'ArrowUp';
-    if (event.key === grow) trade(index, STEP);
-    else if (event.key === shrink) trade(index, -STEP);
+    if (event.key === grow) applyDelta(sizes, index, STEP);
+    else if (event.key === shrink) applyDelta(sizes, index, -STEP);
     else return;
     event.preventDefault();
   };

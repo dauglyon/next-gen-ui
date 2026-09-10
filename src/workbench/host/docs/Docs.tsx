@@ -490,7 +490,8 @@ function definePluginManifest(m: Manifest): Manifest;`}</Sig>
   };
   status?: () => StatusItem[];
 }): Background;`}</Sig>
-            <Export
+            <Entry
+              level={4}
               id="r-terms"
               name="terms"
               when="Called on every keystroke with the text, then once more with all terms found so far. Also called with the open page's terms and the cart's terms when they change. Synchronous."
@@ -500,9 +501,10 @@ function definePluginManifest(m: Manifest): Manifest;`}</Sig>
   terms?: string[];              // the terms found so far, on the second
   signal: AbortSignal;
 }`}</Sig>
-            </Export>
+            </Entry>
 
-            <Export
+            <Entry
+              level={4}
               id="r-recommend"
               name="recommend"
               when="commands: on every keystroke, with the typed text's terms, and 250 ms after the open page's terms or the cart last changed. cartItems: 250 ms after the page's terms or the cart changed, never for typed text. Each plugin's answer replaces its own section as it arrives; the previous answer stays, dimmed, until then. The signal aborts when the source changes again. After 2 s the pane stops saying it is asking, but a later answer still lands. A page or cart pool that only grew is asked about the new terms, and the answers join the sections already shown."
@@ -520,9 +522,10 @@ function definePluginManifest(m: Manifest): Manifest;`}</Sig>
                 Commands are shown for the typed text only, at most four. Cart items already in the
                 cart, or dismissed from Related, are not shown.
               </p>
-            </Export>
+            </Entry>
 
-            <Export
+            <Entry
+              level={4}
               id="r-status"
               name="status"
               when="Called at startup, after any module loads, and after every command. The result is shown until the next call."
@@ -531,7 +534,7 @@ function definePluginManifest(m: Manifest): Manifest;`}</Sig>
   text: string;
   action?: CommandCall;          // run when the line is pressed
 }`}</Sig>
-            </Export>
+            </Entry>
           </Entry>
 
           <Entry
@@ -806,50 +809,34 @@ function Part({ id, title, children }: { id: string; title: string; children: Re
   );
 }
 
-// One module of the contract: its name, when the host reaches it, the types it
-// consumes, and the constraints as prose.
+// A named thing in the contract with its own schedule: a module (an h3
+// entry) or one member of a module whose default export holds several (an
+// h4 export nested in the entry).
 function Entry({
   id,
   name,
   when,
+  level = 3,
   children,
 }: {
   id: string;
   name: string;
   when: string;
+  level?: 3 | 4;
   children: ReactNode;
 }) {
+  const Heading = `h${level}` as const;
+  const nested = level === 4;
   return (
-    <section className={styles.entry} id={id} aria-labelledby={`${id}-h`}>
+    <section
+      className={nested ? styles.export : styles.entry}
+      id={id}
+      aria-labelledby={`${id}-h`}
+    >
       <div className={styles.entryHead}>
-        <h3 id={`${id}-h`} className={styles.entryName}>
+        <Heading id={`${id}-h`} className={nested ? styles.exportName : styles.entryName}>
           {name}
-        </h3>
-        <p className={styles.when}>{when}</p>
-      </div>
-      {children}
-    </section>
-  );
-}
-
-// One member of a module whose default export holds several, each with its own schedule.
-function Export({
-  id,
-  name,
-  when,
-  children,
-}: {
-  id: string;
-  name: string;
-  when: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className={styles.export} id={id} aria-labelledby={`${id}-h`}>
-      <div className={styles.entryHead}>
-        <h4 id={`${id}-h`} className={styles.exportName}>
-          {name}
-        </h4>
+        </Heading>
         <p className={styles.when}>{when}</p>
       </div>
       {children}

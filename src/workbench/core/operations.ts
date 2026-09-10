@@ -5,6 +5,14 @@ import type { Side } from './tree';
 // these; `reduce` applies them and `describe` announces them. Undo does not
 // invert operations, it restores snapshots, so nothing here needs an inverse.
 
+// The four sides a panel can be split to, with the words the menus use.
+export const SIDES: ReadonlyArray<[Side, string]> = [
+  ['left', 'Split left'],
+  ['right', 'Split right'],
+  ['top', 'Split up'],
+  ['bottom', 'Split down'],
+];
+
 export type MainTarget = { group: GroupId; index?: number } | { group: GroupId; side: Side };
 // A sidebar index is a pin position, in pre-removal terms like a
 // same-group tab index; absent, a pinned plugin keeps its place and a new

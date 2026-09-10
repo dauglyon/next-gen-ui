@@ -1,13 +1,15 @@
 import type { KeyboardEvent, MouseEvent } from 'react';
 import { House, X } from '@phosphor-icons/react';
 import { Button, ContextMenu, EmptyState, Tabs } from '@kbase/design-system';
-import type { Group, Panel, PanelId, Side } from '../core';
+import type { Group, Panel, PanelId } from '../core';
+import { SIDES } from '../core';
 import { openRoute } from '../host/open';
 import { useDispatch, useLayout, useServices, useTitle } from './context';
 import { Breadcrumbs } from './Breadcrumbs';
 import { useGroupLabels } from './useGroupLabels';
 import { panelDomId, tabDomId } from './domIds';
 import { PanelHost } from './PanelHost';
+import { useClaimFocus } from './useClaimFocus';
 import { useDragPanel, useDropTarget } from './useDnd';
 import { GroupDropZones } from './WorkbenchDnd';
 import styles from './Workbench.module.css';
@@ -23,6 +25,7 @@ export function TabGroup({ group }: { group: Group }) {
   // A tab's label depends on its neighbours, so it is settled for the
   // group rather than by each tab for itself.
   const labels = useGroupLabels(group.tabs);
+  const claimFocus = useClaimFocus();
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!group.active || event.ctrlKey || event.altKey || event.metaKey) return;
@@ -105,21 +108,7 @@ export function TabGroup({ group }: { group: Group }) {
               hidden={group.active !== id}
               className={styles.tabpanel}
               data-panel={id}
-              // Pointer as well as focus: most of a panel is plain text,
-              // and clicking it fires no focus event, so the workbench
-              // focus would stay wherever it last was.
-              onPointerDownCapture={() => {
-                if (layout.focus !== id) {
-                  focusIntentRef.current = 'user';
-                  dispatch({ type: 'focus', panel: id });
-                }
-              }}
-              onFocusCapture={() => {
-                if (layout.focus !== id) {
-                  focusIntentRef.current = 'user';
-                  dispatch({ type: 'focus', panel: id });
-                }
-              }}
+              {...claimFocus(id)}
             >
               {panel && <PanelHost panel={panel} />}
             </div>
@@ -130,13 +119,6 @@ export function TabGroup({ group }: { group: Group }) {
     </div>
   );
 }
-
-const SIDES: Array<[Side, string]> = [
-  ['left', 'Split left'],
-  ['right', 'Split right'],
-  ['top', 'Split up'],
-  ['bottom', 'Split down'],
-];
 
 function Tab({
   group,
