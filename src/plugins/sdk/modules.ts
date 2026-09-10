@@ -37,10 +37,16 @@ export interface Pane {
 export interface Query {
   text?: string;
   terms?: string[];
+  // For an intent: what plugins offered for the terms so far, each
+  // `command` qualified. The intent orders these with its own candidates.
+  offers?: CommandCall[];
   signal: AbortSignal;
 }
 
 export interface Recommendation {
+  // What this plugin would do with the terms: called on every keystroke for
+  // typed text, so answer from the terms alone, without I/O. A lookup
+  // belongs in `cartItems`, which is asked once the text settles.
   commands?: (q: Query) => CommandCall[] | Promise<CommandCall[]>;
   cartItems?: (q: Query) => CartItem[] | Promise<CartItem[]>;
 }
@@ -119,9 +125,12 @@ export interface Intent {
   // Once when the module arrives, with every installed plugin's commands,
   // so that no keystroke has to see the catalog.
   index: (commands: DeclaredCommand[]) => void;
-  // Every keystroke, with the text and the terms every background found in
-  // it. Sync or async; what arrives is shown, and an answer to text that has
-  // since changed is dropped by the signal.
+  // Every keystroke, with the text, the terms every background found in it,
+  // and the commands plugins offered for those terms. The answer is the
+  // whole list, offers included in whatever order and number the intent
+  // judges; the host shows the offers as they are only when there is no
+  // answer. Sync or async; what arrives is shown, and an answer to text that
+  // has since changed is dropped by the signal.
   suggest: (q: Query) => Suggestion[] | Promise<Suggestion[]>;
 }
 

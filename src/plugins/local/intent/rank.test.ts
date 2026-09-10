@@ -105,3 +105,37 @@ describe('ranking commands against typed text', () => {
     expect(rank('open').length).toBeLessThanOrEqual(4);
   });
 });
+
+describe('what plugins offered', () => {
+  const offer = {
+    label: 'Dossier for P0AEX9',
+    command: 'function-junction:open',
+    args: { q: 'P0AEX9' },
+  };
+  const withOffers = (text: string, offers = [offer]) =>
+    rankCommands(index, text, tagText(text), [], offers);
+
+  it("is a row in the plugin's own words, lifted for the term it recognised", () => {
+    const [top] = withOffers('P0AEX9');
+    expect(top.command).toBe('function-junction:open');
+    expect(top.label).toBe('Dossier for P0AEX9');
+    expect(top.args).toEqual({ q: 'P0AEX9' });
+    expect(top.score).toBeGreaterThan(rank('P0AEX9')[0]?.score ?? 0);
+  });
+
+  it('is ordered by the sentence, not by being an offer', () => {
+    const taxon = { label: 'Taxon 562', command: 'genknown:open', args: { q: '562' } };
+    const [top, second] = withOffers('compare taxon:562 with taxon:1423', [taxon]);
+    expect(top.command).toBe('genknown:compare');
+    expect(second.command).toBe('genknown:open');
+    expect(second.label).toBe('Taxon 562');
+  });
+
+  // The scorer reads letters, not context: an identifier that happens to
+  // match a shape still lifts its command. Dropping it needs a scorer that
+  // reads the sentence.
+  it('cannot tell a coincidence from a match', () => {
+    const rows = withOffers('who is P0AEX9 in the chess database');
+    expect(rows.map((r) => r.command)).toContain('function-junction:open');
+  });
+});

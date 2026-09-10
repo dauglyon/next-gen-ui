@@ -13,13 +13,13 @@ export default defineIntent({
   index: (commands) => {
     index = buildCommandIndex(commands);
   },
-  suggest: ({ text, terms }) => {
+  suggest: ({ text, terms, offers }) => {
     if (!index || !text) return [];
-    return rankCommands(index, text, tagText(text), terms ?? []).map((r) => {
+    return rankCommands(index, text, tagText(text), terms ?? [], offers ?? []).map((r) => {
       const filled = Object.values(r.args);
       return {
         call: {
-          label: filled.length ? `${r.title}: ${filled.join(', ')}` : r.title,
+          label: r.label ?? (filled.length ? `${r.title}: ${filled.join(', ')}` : r.title),
           command: r.command,
           args: r.args,
         },

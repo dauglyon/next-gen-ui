@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Background, CommandCall, Query } from '../../../plugins/sdk';
+import type { Background, CommandCall, Query, Suggestion } from '../../../plugins/sdk';
 import { createQueryStore } from '../../core';
 import type { HostIndex } from '../installed';
 import { BUDGET_MS, SETTLE_MS, createQueryRunner } from './runner';
@@ -42,14 +42,12 @@ beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
 describe('the query runner', () => {
-  it('pools terms at once, expands them once, and asks recommend after the settle', async () => {
+  it('pools terms at once, expands them once, and asks recommend on the keystroke', () => {
     const store = createQueryStore();
     const runner = createQueryRunner(index({ fj }), store);
     runner.set('typing', { text: 'P0AEX9' });
     expect(store.get('typing').pool).toEqual(['uniprot:P0AEX9', 'taxon:83333']);
-    expect(store.get('typing').loading).toBe(true);
-    expect(store.get('typing').answers).toEqual([]);
-    await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    // A synchronous answer is in hand before set() returns.
     const [answer] = store.get('typing').answers;
     expect(answer.plugin).toBe('fj');
     expect(answer.commands.map((c) => c.label)).toEqual(['Dossier for P0AEX9']);
@@ -76,15 +74,36 @@ describe('the query runner', () => {
     expect(store.get('page').label).toBe('P0AEX9');
   });
 
-  it('a source set again before the settle asks once, about the newer text', async () => {
+  it('a page set again before the settle asks once, about the newer terms', async () => {
     const commands = vi.fn<(q: Query) => CommandCall[]>(() => []);
     const store = createQueryStore();
     const runner = createQueryRunner(index({ p: { recommend: { commands } } }), store);
-    runner.set('typing', { text: 'a' });
-    runner.set('typing', { text: 'ab' });
+    runner.set('page', { terms: ['a:1'] });
+    runner.set('page', { terms: ['b:2'] });
     await vi.advanceTimersByTimeAsync(SETTLE_MS);
     expect(commands).toHaveBeenCalledTimes(1);
-    expect(commands.mock.calls[0][0]).toMatchObject({ text: 'ab' });
+    expect(commands.mock.calls[0][0]).toMatchObject({ terms: ['b:2'] });
+  });
+
+  // Typed text waits for nothing: each keystroke asks, and the signal drops
+  // an answer for text that has moved on.
+  it('typing asks on every keystroke and drops an answer for older text', async () => {
+    let release: ((c: CommandCall[]) => void) | undefined;
+    const commands = vi.fn<(q: Query) => Promise<CommandCall[]>>(
+      () => new Promise((resolve) => (release = resolve)),
+    );
+    const store = createQueryStore();
+    const runner = createQueryRunner(index({ p: { recommend: { commands } } }), store);
+    runner.set('typing', { text: 'a' });
+    const first = release!;
+    runner.set('typing', { text: 'ab' });
+    expect(commands).toHaveBeenCalledTimes(2);
+    first([{ label: 'for a', command: 'x' }]);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(store.get('typing').answers).toEqual([]);
+    release!([{ label: 'for ab', command: 'x' }]);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(store.get('typing').answers[0].commands[0].label).toBe('for ab');
   });
 
   it('clears a source that has nothing to ask about', async () => {
@@ -201,8 +220,9 @@ describe('the chosen intent', () => {
     const intent = { index: vi.fn(), suggest: vi.fn(() => [suggestion('Cancel a job: 12')]) };
     const runner = createQueryRunner(index({ fj }), store, { intent: () => intent });
     runner.set('typing', { text: 'cancel job 12' });
+    expect(intent.suggest).toHaveBeenCalledTimes(1);
     expect(intent.suggest).toHaveBeenCalledWith(
-      expect.objectContaining({ text: 'cancel job 12', terms: [] }),
+      expect.objectContaining({ text: 'cancel job 12', terms: [], offers: [] }),
     );
     expect(store.get('typing').suggestions?.map((s) => s.call.label)).toEqual(['Cancel a job: 12']);
   });
@@ -241,6 +261,33 @@ describe('the chosen intent', () => {
     const other = createQueryRunner(index({ fj }), createQueryStore(), { intent: () => broken });
     expect(() => other.set('typing', { text: 'cancel' })).not.toThrow();
     warn.mockRestore();
+  });
+
+  it('is given the offers in hand, qualified, and asked again when a slow one lands', async () => {
+    let release: (() => void) | undefined;
+    const slow: Background = {
+      recommend: {
+        commands: () =>
+          new Promise<CommandCall[]>((resolve) => {
+            release = () => resolve([{ label: 'late', command: 'x', args: { q: 'P0AEX9' } }]);
+          }),
+      },
+    };
+    const store = createQueryStore();
+    const intent = { index: vi.fn(), suggest: vi.fn<(q: Query) => Suggestion[]>(() => []) };
+    const runner = createQueryRunner(index({ fj, slow }), store, { intent: () => intent });
+    runner.set('typing', { text: 'P0AEX9' });
+    expect(intent.suggest).toHaveBeenCalledTimes(1);
+    expect(intent.suggest.mock.calls[0][0].offers).toEqual([
+      { label: 'Dossier for P0AEX9', command: 'fj:open', args: { q: 'P0AEX9' } },
+    ]);
+    release?.();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(intent.suggest).toHaveBeenCalledTimes(2);
+    expect(intent.suggest.mock.calls[1][0].offers?.map((o) => o.command)).toEqual([
+      'fj:open',
+      'slow:x',
+    ]);
   });
 
   it('is cleared with the text', () => {

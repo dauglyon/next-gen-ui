@@ -1,4 +1,4 @@
-import type { ArgDecl, DeclaredCommand } from '@kbase/plugin-sdk';
+import type { ArgDecl, CommandCall, DeclaredCommand } from '@kbase/plugin-sdk';
 import { qualifyCommand } from '@kbase/plugin-sdk';
 import type { Tag } from './tag';
 import { namespaceOf, shapeFor } from './tag';
@@ -20,13 +20,23 @@ import { namespaceOf, shapeFor } from './tag';
 // No shared vocabulary is assumed between the plugin that mints a prefix
 // and the one whose argument takes it: a description that says what it
 // takes, in words, is enough.
+//
+// A command a plugin offered for a term it recognised is a candidate like
+// any other, with a small lift, since the plugin recognising its own
+// identifier is evidence the command applies; the row keeps the plugin's
+// label and arguments. The lift is not a judgement of the sentence: an
+// offer for an identifier that is a coincidence in context scores by the
+// letters around it like anything else, and with this scorer that is
+// usually above the floor. Dropping it needs a scorer that reads context.
 
 export interface RankedCall {
   plugin: string;
   // Qualified: "plugin:name".
   command: string;
   title: string;
-  args: Record<string, string>;
+  // The plugin's own wording, when the row is its offer.
+  label?: string;
+  args: Record<string, string | number>;
   score: number;
 }
 
@@ -53,6 +63,8 @@ export interface CommandIndex {
 export const FLOOR = 0.2;
 // Below this an argument's description does not say it takes the term.
 export const BIND_FLOOR = 0.15;
+// Added to a command a plugin offered for a term in the text.
+export const OFFER_LIFT = 0.1;
 
 const N_MIN = 2;
 const N_MAX = 5;
@@ -178,6 +190,7 @@ export function rankCommands(
   text: string,
   tags: Tag[],
   terms: string[],
+  offers: CommandCall[] = [],
   limit = 4,
 ): RankedCall[] {
   const trimmed = text.trim();
@@ -185,16 +198,22 @@ export function rankCommands(
   const unseen = Math.log((1 + index.entries.length) / 1) + 1;
   const query = vectorize(reading(trimmed, tags), index.idf, unseen);
   const pool = [...new Set([...tags.map((t) => t.term), ...terms])];
+  const offered = new Map<string, CommandCall>();
+  for (const offer of offers) if (!offered.has(offer.command)) offered.set(offer.command, offer);
   return index.entries
-    .map((entry) => ({ entry, score: cosine(query, entry.vector) }))
+    .map((entry) => {
+      const offer = offered.get(entry.command);
+      return { entry, offer, score: cosine(query, entry.vector) + (offer ? OFFER_LIFT : 0) };
+    })
     .filter(({ score }) => score >= FLOOR)
     .sort((a, b) => b.score - a.score || a.entry.command.localeCompare(b.entry.command))
     .slice(0, limit)
-    .map(({ entry, score }) => ({
+    .map(({ entry, offer, score }) => ({
       plugin: entry.plugin,
       command: entry.command,
       title: entry.title,
-      args: bind(entry, index, pool),
+      label: offer?.label,
+      args: offer ? (offer.args ?? {}) : bind(entry, index, pool),
       score,
     }));
 }

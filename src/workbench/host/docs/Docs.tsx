@@ -274,15 +274,18 @@ export default defineBackground({
               set to the typed text, and returns the terms found in it, synchronously.
             </p>
             <p className={styles.para}>
-              <Code>recommend.commands(query)</Code> and <Code>recommend.cartItems(query)</Code> are
-              called 250 ms after typing stops, with <Code>query.terms</Code> set to every term
-              returned by every plugin. They may be async; <Code>query.signal</Code> aborts when the
-              text changes, and a result returned after that is discarded. Returned commands are
-              shown as rows in the prompt bar, above the intent plugin's suggestions. Returned cart
-              items are shown in Related, a sidebar pane, where the user can open one or add it to
-              the cart, the list of items sent with the next message. Both functions are also called
-              250 ms after the front tab's terms change, with those terms, and 250 ms after the cart
-              changes, with its items' terms; a plugin is not called with its own tab's terms.
+              <Code>recommend.commands(query)</Code> is called on every keystroke, with{' '}
+              <Code>query.terms</Code> set to every term returned by every plugin: answer from the
+              terms alone, without I/O. What it returns goes to the intent plugin, which orders it
+              with its own candidates; the prompt bar shows the offers as the plugin made them only
+              when no intent is chosen or the intent answers nothing. It may be async;{' '}
+              <Code>query.signal</Code> aborts when the text changes, a result returned after that
+              is discarded, and a late answer asks the intent again.{' '}
+              <Code>recommend.cartItems</Code> is not called for typed text. Both functions are
+              called 250 ms after the front tab's terms change, with those terms, and 250 ms after
+              the cart changes, with its items' terms; a plugin is not called with its own tab's
+              terms. Returned cart items are shown in Related, a sidebar pane, where the user can
+              open one or add it to the cart, the list of items sent with the next message.
             </p>
             <p className={styles.para}>
               <Code>status()</Code> is called at startup and after every command, and returns lines
@@ -366,17 +369,25 @@ export default defineIntent({
               installed plugin's commands as their manifests declare them, each with the plugin's id
               and title; whatever the plugin builds from them is built here, so that a keystroke
               never sees the catalog. <Code>suggest(query)</Code> is called on every keystroke with{' '}
-              <Code>query.text</Code> and <Code>query.terms</Code>, the terms every background
-              found. It may be synchronous or return a promise; what arrives is shown, the previous
-              suggestions stay until it does, and <Code>query.signal</Code> aborts when the text
-              changes. Each suggestion is a command call with its <Code>command</Code> qualified as{' '}
+              <Code>query.text</Code>, <Code>query.terms</Code>, the terms every background found,
+              and <Code>query.offers</Code>, the commands plugins offered for those terms, each{' '}
+              <Code>command</Code> qualified. The answer is the whole list: the intent keeps, moves
+              or leaves out each offer as it judges, alongside its own candidates, and the workbench
+              shows the offers as the plugins made them only when there is no answer. When an offer
+              arrives after the keystroke, <Code>suggest</Code> is called again with it. It may be
+              synchronous or return a promise; what arrives is shown, the previous suggestions stay
+              until it does, and <Code>query.signal</Code> aborts when the text changes. Each
+              suggestion is a command call with its <Code>command</Code> qualified as{' '}
               <Code>plugin:name</Code> and a score; rows are shown in the order returned, at most
               four.
             </p>
             <p className={styles.para}>
               The bundled intent ranks by character n-grams over each declaration, reads an
               identifier in the text as the kind of thing it is, and fills an argument whose
-              description says it takes that kind. Its background is what tags the identifiers.
+              description says it takes that kind. An offer is a candidate with a small lift, shown
+              in the plugin's own words. The lift reads letters, not context: an offer for an
+              identifier that is a coincidence in the sentence is ordered low, not left out. Its
+              background is what tags the identifiers.
             </p>
           </Explainer>
         </Part>
@@ -494,7 +505,7 @@ function definePluginManifest(m: Manifest): Manifest;`}</Sig>
             <Export
               id="r-recommend"
               name="recommend"
-              when="Called 250 ms after the text, the open page's terms, or the cart last changed, with the terms for that source. Each plugin's answer replaces its own section as it arrives; the previous answer stays, dimmed, until then. The signal aborts when the source changes again. After 2 s the pane stops saying it is asking, but a later answer still lands. A pool that only grew is asked about the new terms, and the answers join the sections already shown."
+              when="commands: on every keystroke, with the typed text's terms, and 250 ms after the open page's terms or the cart last changed. cartItems: 250 ms after the page's terms or the cart changed, never for typed text. Each plugin's answer replaces its own section as it arrives; the previous answer stays, dimmed, until then. The signal aborts when the source changes again. After 2 s the pane stops saying it is asking, but a later answer still lands. A page or cart pool that only grew is asked about the new terms, and the answers join the sections already shown."
             >
               <Sig>{`interface CartItem {
   id: string;                    // unique across plugins; prefix with the plugin id
@@ -596,7 +607,7 @@ function definePrompt(p: {
           <Entry
             id="r-intent"
             name="intent"
-            when="Loaded at startup. index is called once the module arrives; suggest on every keystroke that is not a slash command, when Settings names this plugin."
+            when="Loaded at startup. index is called once the module arrives; suggest on every keystroke that is not a slash command, and again when a plugin's offer lands later, when Settings names this plugin."
           >
             <Sig>{`type DeclaredCommand = SlashCommand & { plugin: string; pluginTitle: string };
 
@@ -607,7 +618,7 @@ interface Suggestion {
 
 function defineIntent(i: {
   index: (commands: DeclaredCommand[]) => void;
-  suggest: (q: Query) => Suggestion[] | Promise<Suggestion[]>;   // q.text, q.terms, q.signal
+  suggest: (q: Query) => Suggestion[] | Promise<Suggestion[]>;   // q.text, q.terms, q.offers, q.signal
 }): Intent;`}</Sig>
           </Entry>
 

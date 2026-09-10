@@ -1,4 +1,5 @@
 import type { CartItem, CommandCall, Intent, Query, Suggestion } from '../../../plugins/sdk';
+import { qualifyCommand } from '../../../plugins/sdk';
 import type { Answer, QuerySource, QueryStore } from '../../core';
 import type { HostIndex } from '../installed';
 
@@ -7,10 +8,13 @@ import type { HostIndex } from '../installed';
 //
 // Each source has its own clock. Setting one runs every `terms` at once —
 // they are synchronous and cheap — pools what comes back with the terms
-// given, lets each plugin expand the pool once, and after the settle calls
-// every `recommend` with that source's pool. A source set again before the
-// settle restarts it; an answer that arrives for a question no longer being
-// asked is dropped.
+// given, and lets each plugin expand the pool once. The page and cart
+// sources then wait for the settle and call every `recommend` with the
+// pool; a source set again before the settle restarts it. The typing source
+// waits for nothing: every `recommend.commands` is asked on the keystroke,
+// and the intent is asked with the offers that came back at once, then
+// again as a slower plugin's offer lands. An answer that arrives for a
+// question no longer being asked is dropped.
 //
 // What the reader sees follows the omnibox rule rather than the clear-and-
 // refill one: the previous answers stay on screen, marked stale, until each
@@ -109,7 +113,7 @@ export function createQueryRunner(
   // answer lands at once, an async one when it arrives unless the text has
   // moved on. Until it lands the previous suggestions stay. A `suggest` that
   // throws or rejects is that plugin's problem.
-  const suggest = (text: string | undefined, terms: string[]) => {
+  const suggest = (text: string | undefined, terms: string[], offers: CommandCall[]) => {
     suggesting?.abort();
     const intent = options.intent?.();
     if (!intent || !text) {
@@ -127,11 +131,102 @@ export function createQueryRunner(
         console.warn('the intent plugin: its suggest() threw; ignoring it', err);
     };
     try {
-      const result = intent.suggest({ text, terms, signal: controller.signal });
+      const result = intent.suggest({ text, terms, offers, signal: controller.signal });
       if (result instanceof Promise) result.then(land, fail);
       else land(result);
     } catch (err) {
       fail(err);
+    }
+  };
+
+  // The typing source, on the keystroke: every plugin's `commands` at once,
+  // then the intent with the offers that came back synchronously. A plugin
+  // that answers later lands when it does, and the intent is asked again
+  // with the offers so far; nothing waits on a slow plugin. What is typed is
+  // answered with commands only: the prompt bar shows them, and the Related
+  // pane, which shows items, does not read this source.
+  const askTyping = (input: QueryInput, terms: string[]) => {
+    inflight.get('typing')?.abort();
+    const controller = new AbortController();
+    inflight.set('typing', controller);
+    const query: Query = { text: input.text, terms, signal: controller.signal };
+    const label = input.label ?? input.text ?? '';
+    const plugins = index
+      .backgrounds()
+      .filter(({ plugin, background }) => background.recommend?.commands && plugin !== input.owner);
+    const order = new Map(plugins.map(({ plugin }, i) => [plugin, i]));
+    const answers = new Map<string, Answer>();
+    for (const a of store.get('typing').answers) {
+      if (order.has(a.plugin)) answers.set(a.plugin, { ...a, stale: true });
+    }
+    const pending = new Set(plugins.map(({ plugin }) => plugin));
+    let settled = false;
+    const publish = () => {
+      if (controller.signal.aborted) return;
+      store.set('typing', {
+        label,
+        pool: terms,
+        answers: [...answers.values()].sort((a, b) => order.get(a.plugin)! - order.get(b.plugin)!),
+        pending: [...pending],
+        loading: !settled && pending.size > 0,
+        suggestions: store.get('typing').suggestions,
+      });
+    };
+    // The offers in hand for this text: a stale answer is for the last text.
+    const offers = (): CommandCall[] =>
+      [...answers.values()]
+        .filter((a) => !a.stale)
+        .flatMap((a) =>
+          a.commands.map((c) => ({ ...c, command: qualifyCommand(c.command, a.plugin) })),
+        );
+    const land = (plugin: string, commands: CommandCall[]) => {
+      pending.delete(plugin);
+      if (commands.length) answers.set(plugin, { plugin, commands, cartItems: [] });
+      else answers.delete(plugin);
+    };
+    const later: Promise<void>[] = [];
+    for (const { plugin, background } of plugins) {
+      let result: CommandCall[] | Promise<CommandCall[]>;
+      try {
+        result = background.recommend!.commands!(query);
+      } catch (err) {
+        console.warn(`plugin ${plugin}: its recommend() threw; ignoring it`, err);
+        land(plugin, []);
+        continue;
+      }
+      if (result instanceof Promise) {
+        later.push(
+          result.then(
+            (commands) => {
+              if (controller.signal.aborted) return;
+              land(plugin, commands);
+              publish();
+              suggest(input.text, terms, offers());
+            },
+            (err: unknown) => {
+              if (controller.signal.aborted) return;
+              console.warn(`plugin ${plugin}: its recommend() threw; ignoring it`, err);
+              land(plugin, []);
+              publish();
+            },
+          ),
+        );
+      } else {
+        land(plugin, result);
+      }
+    }
+    publish();
+    suggest(input.text, terms, offers());
+    if (pending.size) {
+      const budget = window.setTimeout(() => {
+        settled = true;
+        publish();
+      }, BUDGET_MS);
+      void Promise.all(later).then(() => {
+        window.clearTimeout(budget);
+        settled = true;
+        publish();
+      });
     }
   };
 
@@ -194,12 +289,9 @@ export function createQueryRunner(
             return [] as T[];
           }
         };
-        // What is typed is answered with commands only: the prompt bar shows
-        // them, and the Related pane, which shows items, does not read this
-        // source. A plugin's item lookup is often a query to the lakehouse.
         const [commands, cartItems] = await Promise.all([
           call(recommend.commands),
-          source === 'typing' ? [] : call(recommend.cartItems),
+          call(recommend.cartItems),
         ]);
         if (controller.signal.aborted) return;
         pending.delete(plugin);
@@ -224,7 +316,11 @@ export function createQueryRunner(
         inflight.get(source)?.abort();
         asked.delete(source);
         store.set(source, { label, pool: [], answers: [], pending: [], loading: false });
-        if (source === 'typing') suggest(undefined, []);
+        if (source === 'typing') suggest(undefined, [], []);
+        return;
+      }
+      if (source === 'typing') {
+        askTyping(input, terms);
         return;
       }
       // A pool that only grew — a page whose terms arrive as it loads, a cart
@@ -252,7 +348,6 @@ export function createQueryRunner(
         source,
         window.setTimeout(() => void ask(source, input, question, terms, grow), SETTLE_MS),
       );
-      if (source === 'typing') suggest(input.text, terms);
     },
     stop() {
       for (const timer of timers.values()) window.clearTimeout(timer);

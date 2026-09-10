@@ -157,28 +157,21 @@ export function PromptBar() {
       .slice(0, 4);
 
   // What the chosen intent suggested for this text: every plugin's commands
-  // ranked by its declaration, arguments filled from the identifiers the text
-  // carries, so "dossier for P0AEX9" reaches Function Junction's open with q
-  // filled whether or not that plugin recognised the text itself. A call a
-  // plugin already offered, with the same arguments, is its offer.
-  const suggested = (text: string): BarSuggestion[] => {
-    const offers = new Set(
-      offered().map(({ command, call }) => `${command}\u0000${JSON.stringify(call.args ?? {})}`),
-    );
-    return (query.get('typing').suggestions ?? [])
-      .filter(({ call }) => !offers.has(`${call.command}\u0000${JSON.stringify(call.args ?? {})}`))
-      .slice(0, 4)
-      .map(({ call }) => {
-        const manifest = source.manifest(call.command.split(':')[0]);
-        return {
-          value: text,
-          label: call.label,
-          detail: manifest?.title,
-          icon: iconFor(manifest?.icon, manifest?.color),
-          run: () => void run(call.command, call.args),
-        };
-      });
-  };
+  // ranked by its declaration and by the sentence, arguments filled from the
+  // identifiers the text carries, and the plugins' own offers in the order
+  // the intent gave them. "dossier for P0AEX9" reaches Function Junction's
+  // open with q filled whether or not that plugin recognised the text.
+  const suggested = (text: string): BarSuggestion[] =>
+    (query.get('typing').suggestions ?? []).slice(0, 4).map(({ call }) => {
+      const manifest = source.manifest(call.command.split(':')[0]);
+      return {
+        value: text,
+        label: call.label,
+        detail: manifest?.title,
+        icon: iconFor(manifest?.icon, manifest?.color),
+        run: () => void run(call.command, call.args),
+      };
+    });
 
   // Row zero is what Enter will do. Nothing is guessed: the assistant
   // stays the default and the alternatives sit under it, visible before
@@ -299,21 +292,22 @@ export function PromptBar() {
           icon: manifest ? iconFor(manifest.icon, manifest.color) : undefined,
         };
       });
-      // Priority order, painted bottom-up: a plugin recognising its own
-      // data beats what the intent suggested, which beats a shortcut's
-      // name, which beats a word shared with a description.
-      // An offer is a plugin saying it recognises this text and what it would
-      // do with it. The rows under it are the intent's suggestions; where it
-      // has none, name and description matches — the same search the Browse
-      // page runs, inline.
-      const offers = list.length ? [] : recommended(value);
+      // Priority order, painted bottom-up: what the intent answered, which
+      // already holds the plugins' offers in the order it judged; without
+      // an intent, or with an empty answer, the offers as the plugins made
+      // them; and where there is neither, a shortcut's name, then a word
+      // shared with a description — the same search the Browse page runs,
+      // inline. An offer is a plugin saying it recognises this text and what
+      // it would do with it; the intent is what reads the rest of the
+      // sentence.
       const suggestions = list.length ? [] : suggested(value);
-      const guesses = list.length
-        ? []
-        : suggestions.length
-          ? suggestions
+      const offers = list.length || suggestions.length ? [] : recommended(value);
+      const answers = suggestions.length ? suggestions : offers;
+      const guesses =
+        list.length || answers.length
+          ? []
           : [...shortcutSuggestions(value), ...appSuggestions(value), ...panelSuggestions(value)];
-      const alternatives = [...offers, ...guesses];
+      const alternatives = [...answers, ...guesses];
       // Nothing worth choosing between: no list, and Enter behaves as if
       // there were none.
       // Browse only where it adds something: no plugin claimed the text, so
@@ -326,7 +320,7 @@ export function PromptBar() {
           ? [
               ...defaultSuggestion(value),
               ...alternatives,
-              ...(offers.length ? [] : [browseSuggestion(value)]),
+              ...(answers.length ? [] : [browseSuggestion(value)]),
             ]
           : [];
       setSuggestions(found);
