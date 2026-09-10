@@ -6,11 +6,9 @@ import { HostContext } from './host';
 import type { Mount } from './modules';
 import { PanelContext } from './panel';
 
-// A React component as a panel body. React is the plugin's choice, not the
-// host's: the host hands over an element and a handle, and this puts a
-// React root in the element with the SDK contexts around the component.
-// The tree is drawn again whenever the handle reports a change — the path,
-// the focus — so `usePanel()` reads the current value on every render.
+// React is the plugin's choice, not the host's: the host hands over an
+// element and a handle, and this puts a root in the element with the SDK
+// contexts around the component.
 export function fromReact(Component: ComponentType): { mount: Mount } {
   return {
     mount(el, { panel, host }) {

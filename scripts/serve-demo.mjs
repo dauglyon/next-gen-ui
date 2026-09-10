@@ -13,8 +13,6 @@
 //
 //   node scripts/serve-demo.mjs [port]
 //
-// Reads the same VITE_DEV_SERVICE_PROXY as the dev server, so a plugin backend
-// is registered by running it, not by editing this file.
 
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
@@ -93,9 +91,9 @@ const server = createServer(async (req, res) => {
   if (prefix) {
     // Streamed with every header, both ways: a framed app sets cookies and
     // reads x-forwarded-proto, and a fetch-and-buffer relay drops both.
-    const t = new URL(proxies[prefix]);
+    const t = target(prefix);
     const up = httpRequest(
-      { host: t.hostname, port: t.port || 80, method: req.method, path: req.url, headers: req.headers },
+      { host: t.hostname, port: t.port, method: req.method, path: req.url, headers: req.headers },
       (answer) => {
         res.writeHead(answer.statusCode ?? 502, answer.headers);
         answer.pipe(res);
@@ -128,14 +126,18 @@ const server = createServer(async (req, res) => {
 });
 
 const prefixOf = (pathname) => Object.keys(proxies).find((p) => pathname.startsWith(p));
+const target = (prefix) => {
+  const t = new URL(proxies[prefix]);
+  return { hostname: t.hostname, port: Number(t.port) || 80 };
+};
 
 // A framed app (Solara, Jupyter) opens a websocket under its own prefix; the
 // upgrade is handed to the backend as raw bytes and the two sockets are tied.
 server.on('upgrade', (req, socket, head) => {
   const prefix = prefixOf(new URL(req.url, `http://127.0.0.1:${PORT}`).pathname);
   if (!prefix) return socket.destroy();
-  const t = new URL(proxies[prefix]);
-  const up = netConnect(Number(t.port) || 80, t.hostname, () => {
+  const t = target(prefix);
+  const up = netConnect(t.port, t.hostname, () => {
     let raw = `${req.method} ${req.url} HTTP/1.1\r\n`;
     for (let i = 0; i < req.rawHeaders.length; i += 2) raw += `${req.rawHeaders[i]}: ${req.rawHeaders[i + 1]}\r\n`;
     up.write(raw + '\r\n');

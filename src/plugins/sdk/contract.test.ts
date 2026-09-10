@@ -3,9 +3,21 @@ import { SDK_VERSION, ManifestSchema, manifestFor, qualifyCommand } from './cont
 
 const base = { id: 'jobs', title: 'Jobs', sdkVersion: SDK_VERSION, modules: [] };
 
+const full = {
+  ...base,
+  icon: 'Gear',
+  modules: ['background', 'route', 'pane', 'commands', 'prompt'],
+  commands: [{ name: 'cancel', title: 'Cancel a job', args: [{ name: 'id', required: true }] }],
+  shortcuts: [{ label: 'Cancel 12', command: 'cancel', args: { id: '12' } }],
+  launcher: { label: 'Jobs', command: 'workbench:open', args: { plugin: 'jobs' } },
+};
+
 describe('ManifestSchema', () => {
-  it('accepts a minimal manifest', () => {
-    expect(ManifestSchema.safeParse(base).success).toBe(true);
+  it.each([
+    ['a minimal manifest', base],
+    ['a full manifest', full],
+  ])('accepts %s', (_label, raw) => {
+    expect(ManifestSchema.safeParse(raw).success).toBe(true);
   });
 
   it.each([
@@ -18,24 +30,6 @@ describe('ManifestSchema', () => {
     ['a call to a command with a slash', { ...base, launcher: { label: 'x', command: '/open' } }],
   ])('rejects %s', (_label, raw) => {
     expect(ManifestSchema.safeParse(raw).success).toBe(false);
-  });
-
-  it('accepts a full manifest', () => {
-    const result = ManifestSchema.safeParse({
-      ...base,
-      icon: 'Gear',
-      modules: ['background', 'route', 'pane', 'commands', 'prompt'],
-      commands: [
-        {
-          name: 'cancel',
-          title: 'Cancel a job',
-          args: [{ name: 'id', required: true }],
-        },
-      ],
-      shortcuts: [{ label: 'Cancel 12', command: 'cancel', args: { id: '12' } }],
-      launcher: { label: 'Jobs', command: 'workbench:open', args: { plugin: 'jobs' } },
-    });
-    expect(result.success).toBe(true);
   });
 });
 

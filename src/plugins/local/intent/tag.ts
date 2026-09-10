@@ -32,8 +32,8 @@ export interface Tag {
 
 interface Compiled extends Shape {
   re: RegExp;
-  // The registry writes the id in one case; typed text comes in any.
-  // A shape whose pattern names only upper-case letters is minted upper.
+  // Typed text comes in any case; a shape whose pattern names only
+  // upper-case letters is minted upper.
   upper: boolean;
 }
 
@@ -48,9 +48,7 @@ const canonical = (shape: Compiled, id: string) => (shape.upper ? id.toUpperCase
 const BARE = SHAPES.filter((s) => s.bare);
 const BY_ALIAS = new Map<string, Compiled[]>();
 for (const shape of SHAPES) {
-  for (const alias of shape.aliases) {
-    BY_ALIAS.set(alias, [...(BY_ALIAS.get(alias) ?? []), shape]);
-  }
+  for (const alias of shape.aliases) BY_ALIAS.set(alias, [...(BY_ALIAS.get(alias) ?? []), shape]);
 }
 const BY_PREFIX = new Map(SHAPES.map((s) => [s.prefix, s]));
 
@@ -77,6 +75,11 @@ const TRAILING = /[)"'\]}.,;:!?]+$/;
 
 export function tagText(text: string): Tag[] {
   const tags: Tag[] = [];
+  const tag = (shape: Compiled, id: string, start: number, end: number) => {
+    if (!shape.re.test(id)) return;
+    const as = canonical(shape, id);
+    tags.push({ term: `${shape.prefix}:${as}`, prefix: shape.prefix, id: as, start, end });
+  };
   for (const match of text.matchAll(TOKEN)) {
     let start = match.index;
     let token = match[0];
@@ -90,18 +93,10 @@ export function tagText(text: string): Tag[] {
     if (colon > 0) {
       const id = token.slice(colon + 1);
       for (const shape of BY_ALIAS.get(token.slice(0, colon).toLowerCase()) ?? []) {
-        if (shape.re.test(id)) {
-          const as = canonical(shape, id);
-          tags.push({ term: `${shape.prefix}:${as}`, prefix: shape.prefix, id: as, start, end });
-        }
+        tag(shape, id, start, end);
       }
-      continue;
-    }
-    for (const shape of BARE) {
-      if (shape.re.test(token)) {
-        const as = canonical(shape, token);
-        tags.push({ term: `${shape.prefix}:${as}`, prefix: shape.prefix, id: as, start, end });
-      }
+    } else {
+      for (const shape of BARE) tag(shape, token, start, end);
     }
   }
   return tags;

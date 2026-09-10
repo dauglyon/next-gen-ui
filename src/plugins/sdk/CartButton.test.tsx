@@ -6,8 +6,7 @@ import { HostContext } from './host';
 import type { PluginHost } from './host';
 import type { CartItem } from './cart';
 
-// A host whose cart is a map: enough for the binding, which reads `has`,
-// calls `add` and `remove`, and re-renders on `subscribe`.
+// A host whose cart is a map: enough for the binding.
 function host(): PluginHost {
   const items = new Map<string, CartItem>();
   const listeners = new Set<() => void>();
@@ -18,21 +17,12 @@ function host(): PluginHost {
     hasCommand: () => false,
     notify: () => {},
     cart: {
-      add: (item) => {
-        items.set(item.id, item);
-        notify();
-      },
-      remove: (id) => {
-        items.delete(id);
-        notify();
-      },
+      add: (item) => void (items.set(item.id, item), notify()),
+      remove: (id) => void (items.delete(id), notify()),
       items: () => [...items.values()],
       has: (id) => items.has(id),
       count: () => items.size,
-      subscribe: (l) => {
-        listeners.add(l);
-        return () => listeners.delete(l);
-      },
+      subscribe: (l) => (listeners.add(l), () => void listeners.delete(l)),
     },
   };
 }

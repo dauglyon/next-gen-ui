@@ -13,9 +13,7 @@ export function createEmitter(): Emitter {
   return {
     subscribe(listener) {
       listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
+      return () => void listeners.delete(listener);
     },
     version: () => version,
     notify() {

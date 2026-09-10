@@ -1,13 +1,13 @@
 import { Tree } from '@kbase/design-system';
 import { definePane, fromReact, useHost, usePanelTitle } from '@kbase/plugin-sdk';
 import { dataset, datasets } from './data';
+import type { Dataset } from './data';
 
 function DataHome() {
   usePanelTitle('Data home');
   const host = useHost();
-  const byNarrative = new Map<string, typeof datasets>();
-  for (const d of datasets) {
-    if (d.source !== 'kbase-1.0') continue;
+  const byNarrative = new Map<string, Dataset[]>();
+  for (const d of datasets.filter((d) => d.source === 'kbase-1.0')) {
     byNarrative.set(d.narrative!, [...(byNarrative.get(d.narrative!) ?? []), d]);
   }
   const leaf = (d: (typeof datasets)[number]) => ({

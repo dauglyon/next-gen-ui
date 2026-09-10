@@ -52,58 +52,41 @@ const commands: DeclaredCommand[] = [
 const index = buildCommandIndex(commands);
 const rank = (text: string, terms: string[] = []) =>
   rankCommands(index, text, tagText(text), terms);
+const offer = {
+  label: 'Dossier for P0AEX9',
+  command: 'function-junction:open',
+  args: { q: 'P0AEX9' },
+};
 
 describe('ranking commands against typed text', () => {
-  it('reads an accession as what it is and fills the argument', () => {
-    const [top] = rank('I want a dossier for P0AEX9');
-    expect(top.command).toBe('function-junction:open');
-    expect(top.args).toEqual({ q: 'P0AEX9' });
+  // In order: an accession read as what it is fills the argument; the
+  // identifier decides between two dossiers; the semantics section ranks
+  // what no title carries; a plugin-minted term binds through its prefix
+  // letters; two terms fill two arguments in order; an argument is left
+  // empty rather than guessed.
+  it.each([
+    ['I want a dossier for P0AEX9', [], 'function-junction:open', { q: 'P0AEX9' }],
+    ['dossier for taxon:562', [], 'genknown:open', { q: '562' }],
+    ['kill the running job', ['job:12'], 'jobs:cancel', { id: '12' }],
+    ['cancel this job', ['job:12'], 'jobs:cancel', { id: '12' }],
+    ['compare taxon:562 with taxon:1423', [], 'genknown:compare', { a: '562', b: '1423' }],
+    ['protein dossier for job:12', ['job:12'], 'function-junction:open', {}],
+  ])('%s', (text, terms, command, args) => {
+    const [top] = rank(text, terms);
+    expect(top.command).toBe(command);
+    expect(top.args).toEqual(args);
   });
 
-  it('lets the identifier decide between two dossiers', () => {
-    const [top] = rank('dossier for taxon:562');
-    expect(top.command).toBe('genknown:open');
-    expect(top.args).toEqual({ q: '562' });
-  });
-
-  it('ranks by the semantics section, which no title carries', () => {
-    const [top] = rank('kill the running job', ['job:12']);
-    expect(top.command).toBe('jobs:cancel');
-  });
-
-  // A row runs when pressed, so a command with a required argument the text
-  // does not fill is not a row.
   it('keeps a plugin offer whose letters say nothing, ranked by the letters', () => {
-    const offer = {
-      label: 'Dossier for P0AEX9',
-      command: 'function-junction:open',
-      args: { q: 'P0AEX9' },
-    };
     const rows = rankCommands(index, 'zzzz', tagText('zzzz'), [], [offer]);
     expect(rows.map((r) => r.command)).toEqual(['function-junction:open']);
   });
 
+  // A row runs when pressed, so a command with a required argument the text
+  // does not fill is not a row.
   it('offers a command only with its required arguments filled', () => {
     expect(rank('kill the running job')).toEqual([]);
     expect(rank('cancel this job', ['job:12'])[0]?.args).toEqual({ id: '12' });
-  });
-
-  it('binds a plugin-minted term through its prefix letters', () => {
-    const [top] = rank('cancel this job', ['job:12']);
-    expect(top.command).toBe('jobs:cancel');
-    expect(top.args).toEqual({ id: '12' });
-  });
-
-  it('fills two arguments from two terms, in order', () => {
-    const [top] = rank('compare taxon:562 with taxon:1423');
-    expect(top.command).toBe('genknown:compare');
-    expect(top.args).toEqual({ a: '562', b: '1423' });
-  });
-
-  it('leaves an argument empty rather than guess it', () => {
-    const [top] = rank('protein dossier for job:12', ['job:12']);
-    expect(top.command).toBe('function-junction:open');
-    expect(top.args).toEqual({});
   });
 
   it('answers nothing for letters in common', () => {
@@ -124,11 +107,6 @@ describe('ranking commands against typed text', () => {
 });
 
 describe('what plugins offered', () => {
-  const offer = {
-    label: 'Dossier for P0AEX9',
-    command: 'function-junction:open',
-    args: { q: 'P0AEX9' },
-  };
   const withOffers = (text: string, offers = [offer]) =>
     rankCommands(index, text, tagText(text), [], offers);
 

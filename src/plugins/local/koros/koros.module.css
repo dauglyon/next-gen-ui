@@ -8,8 +8,7 @@
   white-space: nowrap;
 }
 
-/* A row's words: the arc's title, then its project when that is a different
-   thing. One line that ellipsises; the tree's rows are a fixed height. */
+/* One line that ellipsises; the tree's rows are a fixed height. */
 .row {
   display: block;
   min-inline-size: 0;
@@ -38,7 +37,6 @@
   margin: 0;
 }
 
-/* The four stages in order, the current one lit. */
 .stages {
   display: flex;
   flex-wrap: wrap;

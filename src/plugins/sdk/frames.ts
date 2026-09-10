@@ -19,6 +19,4 @@ export interface FrameLayer {
 
 export const FrameLayerContext = createContext<FrameLayer | null>(null);
 
-export function useFrameLayer(): FrameLayer | null {
-  return useContext(FrameLayerContext);
-}
+export const useFrameLayer = () => useContext(FrameLayerContext);

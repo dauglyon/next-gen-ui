@@ -4,10 +4,8 @@ import { defineRoute, fromReact, usePanel, usePanelTitle } from '@kbase/plugin-s
 import { STAGES, isEmpty, koros, slugOf } from './store';
 import styles from './koros.module.css';
 
-// An arc as KIND*AI's session view shows it: the question, where it stands
-// in the stages, what needs you, and the turns so far. Gates, drift and
-// deliverables are not in the mock. A new question is not a page: it is the
-// prompt bar with its destination set to one.
+// An arc as KIND*AI's session view shows it. Gates, drift and deliverables
+// are not in the mock.
 function ArcPage() {
   const { path, focused } = usePanel();
   useSyncExternalStore(koros.subscribe, koros.version, koros.version);
@@ -21,27 +19,24 @@ function ArcPage() {
   useEffect(() => {
     if (focused && slug) koros.setCurrent(slug);
   }, [focused, slug]);
-  if (!arc) {
+  if (!arc || isEmpty(arc)) {
     return (
       <div className={styles.page}>
-        <p className="body">No arc is called “{slugAsked}”.</p>
+        {arc ? (
+          <div className={styles.head}>
+            <h1 className="h2">New question</h1>
+            <p className="body">
+              Ask KOROS a research question in the prompt bar below. It frames the question first,
+              with what the commons already knows, then a plan for you to approve.
+            </p>
+          </div>
+        ) : (
+          <p className="body">No arc is called “{slugAsked}”.</p>
+        )}
       </div>
     );
   }
-  const project = koros.project(arc.project)?.title ?? arc.project;
-  if (isEmpty(arc)) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.head}>
-          <h1 className="h2">New question</h1>
-          <p className="body">
-            Ask KOROS a research question in the prompt bar below. It frames the question first,
-            with what the commons already knows, then a plan for you to approve.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const project = koros.project(arc.project) ?? arc.project;
   return (
     <div className={styles.page}>
       {/* A standalone arc is a project of its own with the same name, so the
@@ -71,10 +66,8 @@ function ArcPage() {
           <li key={turn.id} className={styles.turn} data-by={turn.by}>
             <p className={styles.by}>{turn.by === 'you' ? 'You' : 'KOROS'}</p>
             <p className="body">{turn.text}</p>
-            {/* What was in the cart when this was sent, on the turn it was
-                sent with. Labels rather than links: an item's pointer names
-                another plugin's page, and the SDK's `openRoute` opens only
-                the calling plugin's own. */}
+            {/* Labels rather than links: an item's pointer names another
+                plugin's page, and `openRoute` opens only the caller's own. */}
             {turn.attached.length > 0 && (
               <ul className={styles.attached}>
                 {turn.attached.map((a) => (
