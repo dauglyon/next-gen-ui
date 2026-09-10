@@ -1,7 +1,4 @@
-/* Reference layout: a rail that stays put and one column of content at
-   reading measure. The panel is the scroller, so the rail is sticky against
-   the panel rather than the window. */
-
+/* The panel is the scroller, so the rail is sticky against the panel rather than the window. */
 .layout {
   display: grid;
   grid-template-columns: 14rem minmax(0, 1fr);
@@ -31,8 +28,6 @@
 
 .railList {
   list-style: none;
-  margin: 0;
-  padding: 0;
   display: grid;
   gap: var(--s-1);
 }
@@ -82,7 +77,6 @@
 /* .narrative is the friendly account of a section, at body size. */
 .para,
 .narrative {
-  margin: 0;
   max-inline-size: 46rem;
 }
 
@@ -104,9 +98,7 @@
   align-content: start;
 }
 
-/* One module of the contract: name, when the host reaches it, types, example,
-   constraints. The rule under the name is what separates two entries in a
-   long page; sections inside an entry are separated by space alone. */
+/* The rule under the name separates entries; sections inside one are separated by space alone. */
 .entry {
   display: grid;
   gap: var(--s-4);
@@ -115,26 +107,24 @@
   border-block-start: 1px solid var(--c-border);
 }
 
-.entryHead {
+.entryHead,
+.symptom {
   display: grid;
   gap: var(--s-1);
 }
 
 .entryName {
-  margin: 0;
   font-family: var(--f-mono);
   font-size: var(--fs-6);
 }
 
 .when {
-  margin: 0;
   max-inline-size: 46rem;
   font-size: var(--fs-3);
   color: var(--c-ink3);
 }
 
-/* A named export inside an entry: same head as the entry, one step smaller,
-   indented so the entry's example file reads as belonging to all of them. */
+/* Indented so the entry's example file reads as belonging to all of its exports. */
 .export {
   display: grid;
   gap: var(--s-3);
@@ -143,13 +133,11 @@
 }
 
 .exportName {
-  margin: 0;
   font-family: var(--f-mono);
   font-size: var(--fs-5);
 }
 
 .file {
-  margin: 0;
   display: grid;
   gap: var(--s-2);
 }
@@ -166,22 +154,14 @@
   overflow-wrap: anywhere;
 }
 
-/* Symptom, cause, fix. A definition list rather than a table: the symptom is
-   short and the fix is a sentence, and a three-column grid would set the fix
-   in a gutter. */
+/* A list, not a table: the fix is a sentence, and a three-column grid would set it in a gutter. */
 .trouble {
   display: grid;
   gap: var(--s-5);
   max-inline-size: 46rem;
 }
 
-.symptom {
-  display: grid;
-  gap: var(--s-1);
-}
-
 .symptomName {
-  margin: 0;
   font-size: var(--fs-4);
 }
 
