@@ -665,7 +665,7 @@ function useCart(): Cart;                 // re-renders on change
 function usePanelTitle(title: string): void;
 function usePanelBreadcrumbs(crumbs: { label: string; path?: string; icon?: string }[]): void;
 function usePanelTerms(terms: string[]): void;
-function CartButton(props: { item: CartItem; tooltip?: string }): JSX.Element;`}</Sig>
+function CartButton(props: { item: CartItem; labelled?: boolean }): JSX.Element;   // the design system's, bound to the cart`}</Sig>
             <p className={styles.para}>
               <Code>setCrumbs</Code> draws a trail above the panel; a crumb with a <Code>path</Code>{' '}
               is a link that moves the panel there. A component that throws is replaced inside its
