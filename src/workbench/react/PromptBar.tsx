@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import type { ComponentType, KeyboardEvent } from 'react';
 import { ArrowUpRight, CaretRight, CaretUpDown, Check } from '@phosphor-icons/react';
 import type { IconProps } from '@phosphor-icons/react';
@@ -7,6 +15,7 @@ import type { Destination, Manifest, Prompt } from '../../plugins/sdk';
 import { qualifyCommand } from '../../plugins/sdk';
 import type { Suggestion } from '../commands';
 import { complete, parse, qualifiedName, resolve, usage } from '../commands';
+import { buildCommandIndex, rankCommands, tagText } from '../core';
 import { pluginHostFor } from '../host/createWorkbench';
 import { openPane, openRoute } from '../host/open';
 import { iconFor } from '../host/icons';
@@ -133,23 +142,53 @@ export function PromptBar() {
   // plugin recognising its own data is a better answer than a plugin
   // whose description happens to share a word. Each row is a command
   // call the plugin filled in; pressing it does what typing it would.
+  const offered = () =>
+    query.get('typing').answers.flatMap((answer) =>
+      answer.commands.map((call) => ({
+        call,
+        plugin: answer.plugin,
+        command: qualifyCommand(call.command, answer.plugin),
+      })),
+    );
   const recommended = (text: string): BarSuggestion[] =>
-    query
-      .get('typing')
-      .answers.flatMap((answer) =>
-        answer.commands.map((call) => {
-          const manifest = source.manifest(answer.plugin);
-          return {
-            value: text,
-            // The call says where you land; the plugin is who takes you.
-            label: call.label,
-            detail: manifest?.title,
-            icon: iconFor(manifest?.icon, manifest?.color),
-            run: () => void run(qualifyCommand(call.command, answer.plugin), call.args),
-          };
-        }),
-      )
+    offered()
+      .map(({ call, plugin, command }) => {
+        const manifest = source.manifest(plugin);
+        return {
+          value: text,
+          // The call says where you land; the plugin is who takes you.
+          label: call.label,
+          detail: manifest?.title,
+          icon: iconFor(manifest?.icon, manifest?.color),
+          run: () => void run(command, call.args),
+        };
+      })
       .slice(0, 4);
+
+  // Every manifest's commands, ranked against the text by what their
+  // manifests say about them, with arguments filled from the identifiers
+  // the text carries: "dossier for P0AEX9" reaches Function Junction's open
+  // with q filled, whether or not that plugin recognised the text itself. A
+  // command a plugin already offered, with the same arguments, is its offer.
+  const index = useMemo(() => buildCommandIndex(source.manifests()), [source]);
+  const rankedSuggestions = (text: string): BarSuggestion[] => {
+    const offers = new Set(
+      offered().map(({ command, call }) => `${command}\u0000${JSON.stringify(call.args ?? {})}`),
+    );
+    return rankCommands(index, text, tagText(text), query.get('typing').pool)
+      .filter((r) => !offers.has(`${r.command}\u0000${JSON.stringify(r.args)}`))
+      .map((r) => {
+        const manifest = source.manifest(r.plugin);
+        const filled = Object.values(r.args);
+        return {
+          value: text,
+          label: filled.length ? `${r.title}: ${filled.join(', ')}` : r.title,
+          detail: manifest?.title,
+          icon: iconFor(manifest?.icon, manifest?.color),
+          run: () => void run(r.command, r.args),
+        };
+      });
+  };
 
   // Row zero is what Enter will do. Nothing is guessed: the assistant
   // stays the default and the alternatives sit under it, visible before
@@ -271,15 +310,19 @@ export function PromptBar() {
         };
       });
       // Priority order, painted bottom-up: a plugin recognising its own
-      // data beats a shortcut's name, which beats a word shared with a
-      // description.
+      // data beats a command ranked by its manifest, which beats a
+      // shortcut's name, which beats a word shared with a description.
       // An offer is a plugin saying it recognises this text and what it would
-      // do with it. The rows under it are name and description matches — the
-      // same search the Browse page runs, inline.
+      // do with it. The rows under it are the ranked commands; where none
+      // clears the floor, name and description matches — the same search the
+      // Browse page runs, inline.
       const offers = list.length ? [] : recommended(value);
+      const ranked = list.length ? [] : rankedSuggestions(value);
       const guesses = list.length
         ? []
-        : [...shortcutSuggestions(value), ...appSuggestions(value), ...panelSuggestions(value)];
+        : ranked.length
+          ? ranked
+          : [...shortcutSuggestions(value), ...appSuggestions(value), ...panelSuggestions(value)];
       const alternatives = [...offers, ...guesses];
       // Nothing worth choosing between: no list, and Enter behaves as if
       // there were none.

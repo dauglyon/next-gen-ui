@@ -29,6 +29,17 @@ export const SlashCommandSchema = z.object({
   description: z.string().optional(),
   // Typed in this order.
   args: z.array(ArgDeclSchema).optional(),
+  // What the prompt bar ranks the command by when the text is not a slash
+  // command: indexed, never shown. Absent, the title and descriptions serve.
+  semantics: z
+    .object({
+      // What the command does, in the words a user would type for it,
+      // synonyms included.
+      description: z.string(),
+      // Phrasings that should reach this command.
+      examples: z.array(z.string()).optional(),
+    })
+    .optional(),
   // A name from the host's icon table, for surfaces that show the command
   // as a button.
   icon: z.string().optional(),

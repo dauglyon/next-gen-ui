@@ -1,5 +1,6 @@
 import type { CartItem, CommandCall, Query } from '../../../plugins/sdk';
 import type { Answer, QuerySource, QueryStore } from '../../core';
+import { tagText } from '../../core';
 import type { HostIndex } from '../installed';
 
 // Asking every plugin about a source of terms.
@@ -71,11 +72,13 @@ export function createQueryRunner(index: HostIndex, store: QueryStore): QueryRun
   // from one that changed.
   const asked = new Map<QuerySource, { owner?: string; text?: string; pool: string[] }>();
 
-  // Every plugin's terms for the text, then one pass in which each plugin
-  // may expand a term it recognises into others. A `terms` that throws is
-  // that plugin's problem: it contributes nothing this round.
+  // The identifiers the workbench recognises in the text, every plugin's
+  // terms for it, then one pass in which each plugin may expand a term it
+  // recognises into others. A `terms` that throws is that plugin's problem:
+  // it contributes nothing this round.
   const pool = (input: QueryInput): string[] => {
     const found = new Set(input.terms ?? []);
+    if (input.text) for (const tag of tagText(input.text)) found.add(tag.term);
     const signal = new AbortController().signal;
     const ask = (q: Omit<Query, 'signal'>) => {
       for (const { plugin, background } of index.backgrounds()) {

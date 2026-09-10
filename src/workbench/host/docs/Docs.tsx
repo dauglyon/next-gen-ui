@@ -149,6 +149,16 @@ npm run dev -- --port 8770`}</File>
               the given arguments.
             </p>
             <p className={styles.para}>
+              Text that is not a slash command is matched against every declared command by what its
+              declaration says: the title, the descriptions, and <Code>semantics</Code>, a section
+              the prompt bar ranks by and never shows. <Code>semantics.description</Code> is what
+              the command does in the words a user would type for it, synonyms included;{' '}
+              <Code>semantics.examples</Code> are phrasings that should reach it. An identifier in
+              the text fills the argument whose description says it takes that kind of thing, so
+              "dossier for P0AEX9" offers <Code>open</Code> with <Code>q</Code> filled. The closest
+              commands are shown as rows under whatever plugins offered.
+            </p>
+            <p className={styles.para}>
               <Code>id</Code> appears in URLs and saved layouts and must not change. Command names
               are namespaced by plugin id: <Code>function-junction:open</Code>. The short form{' '}
               <Code>/open</Code> is accepted when it is unambiguous. If another installed plugin
@@ -217,9 +227,11 @@ export default defineRoute({
           <p className={styles.narrative}>
             The background module lets a plugin join in while the user is typing, before anything of
             the plugin's is open. It can recognise something it understands in the text, an
-            accession or a job id, and offer a command or a piece of data for it. The workbench does
-            not interpret text itself; it passes what plugins recognised to the other plugins, so
-            each can react to what the others found.
+            accession or a job id, and offer a command or a piece of data for it. The workbench tags
+            the identifiers it recognises by shape, under the prefix Bioregistry gives them (
+            <Code>uniprot:P0AEX9</Code>, <Code>ncbitaxon:562</Code>, <Code>go:0008150</Code> when
+            typed as <Code>GO:0008150</Code>; a bare number is never tagged), and passes those and
+            what plugins recognised to every plugin, so each can react to what the others found.
           </p>
           <File
             name="src/background.ts"
@@ -265,11 +277,12 @@ export default defineBackground({
               called 250 ms after typing stops, with <Code>query.terms</Code> set to every term
               returned by every plugin. They may be async; <Code>query.signal</Code> aborts when the
               text changes, and a result returned after that is discarded. Returned commands are
-              shown as rows in the prompt bar. Returned cart items are shown in Related, a sidebar
-              pane, where the user can open one or add it to the cart, the list of items sent with
-              the next message. Both functions are also called 250 ms after the front tab's terms
-              change, with those terms, and 250 ms after the cart changes, with its items' terms; a
-              plugin is not called with its own tab's terms.
+              shown as rows in the prompt bar, above the commands the workbench ranked from their
+              declarations. Returned cart items are shown in Related, a sidebar pane, where the user
+              can open one or add it to the cart, the list of items sent with the next message. Both
+              functions are also called 250 ms after the front tab's terms change, with those terms,
+              and 250 ms after the cart changes, with its items' terms; a plugin is not called with
+              its own tab's terms.
             </p>
             <p className={styles.para}>
               <Code>status()</Code> is called at startup and after every command, and returns lines
@@ -378,6 +391,10 @@ interface SlashCommand {
   description?: string;
   args?: { name: string; description?: string; required?: boolean }[];   // positional, in this order
   icon?: string;
+  semantics?: {                  // ranked by in the prompt bar, never shown
+    description: string;         // what the command does, in the words a user would type
+    examples?: string[];         // phrasings that should reach it
+  };
 }
 
 interface CommandCall {
