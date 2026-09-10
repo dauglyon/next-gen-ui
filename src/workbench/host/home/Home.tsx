@@ -88,13 +88,9 @@ export function HomeDocument() {
 }
 
 // The prototype's own instructions, for someone who has never seen it and does
-// not know the vocabulary: no manifests, navigators or documents, and nothing
-// named after the code. It follows the lists, which are what the page is for.
-//
-// A walkthrough, not an explanation: each step says what to do and what will
-// happen, and the reason is one clause at most. The four steps are the path a
-// first visit takes — say, open, collect, ask. What the workbench can also do
-// sits after them, in the same voice.
+// not know the vocabulary. A tour, not an explainer: every line is a thing to
+// do and what appears; no mechanism, nothing named after the code. It follows
+// the lists, which are what the page is for.
 function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
   return (
     <section className={styles.tour} aria-labelledby="home-tour">
@@ -111,13 +107,10 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
             1
           </span>
           <div className={styles.stepBody}>
-            <h3 className={styles.stepTitle}>Say what you want</h3>
+            <h3 className={styles.stepTitle}>Ask for a protein</h3>
             <p className={styles.stepText}>
-              Type <Key>dossier for P0AEX9</Key> into the box at the bottom. Rows appear above it:
-              sending the words to KOROS, and Function Junction opening a dossier on that protein.
-              The workbench matched your sentence against what every installed plugin can do and
-              filled in the protein for you. <Key>cancel job 12</Key> and <Key>browse</Key> work the
-              same way.{' '}
+              Type <Key>dossier for p0aex9</Key> in the box at the bottom. Press the Function
+              Junction row. A dossier on the protein opens in the middle.{' '}
               <button type="button" className={styles.tourLink} onClick={onFocusPrompt}>
                 Put the cursor there
               </button>
@@ -130,11 +123,10 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
             2
           </span>
           <div className={styles.stepBody}>
-            <h3 className={styles.stepTitle}>Take the offer</h3>
+            <h3 className={styles.stepTitle}>Look left</h3>
             <p className={styles.stepText}>
-              Press the dossier row. It opens as a tab in the middle, fetched from Function
-              Junction&apos;s own server the moment you asked. The Related panel on the left fills
-              with what other plugins have to say about the page you are on.
+              The Related panel has filled in: other tools offering what they know about this
+              protein. Press one to open it beside the first.
             </p>
           </div>
         </li>
@@ -144,12 +136,10 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
             3
           </span>
           <div className={styles.stepBody}>
-            <h3 className={styles.stepTitle}>Collect what matters</h3>
+            <h3 className={styles.stepTitle}>Keep something</h3>
             <p className={styles.stepText}>
-              Press Add to cart on the report, on any single line of it, or on a Related row. It
-              lands in the cart at the bottom, and Related now also answers for what you collected.
-              The cart is the workbench&apos;s own, so anything you open can fill it and anything
-              you ask can read it.
+              Press Add to cart on the report, or on any line in it. It shows up in the cart under
+              the box. Related now offers things for what you kept, too.
             </p>
           </div>
         </li>
@@ -161,46 +151,43 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
           <div className={styles.stepBody}>
             <h3 className={styles.stepTitle}>Ask KOROS</h3>
             <p className={styles.stepText}>
-              Press New question in Shortcuts. A fresh page opens and the box at the bottom now
-              points at it. Type your research question and press Enter: the cart goes with it,
-              KOROS frames the question and hands you a plan to approve, and from then on whatever
-              you type steers that arc. The KOROS panel on the left lists every arc and which ones
-              are waiting on you.
+              Press New question in Shortcuts. Type{' '}
+              <Key>which soil isolates fix nitrogen fastest?</Key> and press Enter. KOROS reads what
+              you kept, frames the question, and hands you a plan. Press Approve plan.
+            </p>
+          </div>
+        </li>
+
+        <li className={styles.step}>
+          <span className={styles.stepNum} aria-hidden="true">
+            5
+          </span>
+          <div className={styles.stepBody}>
+            <h3 className={styles.stepTitle}>Come back to it</h3>
+            <p className={styles.stepText}>
+              Reload the page. Your tabs, your cart and your arc are where you left them. The KOROS
+              panel on the left shows which arcs are waiting on you.
             </p>
           </div>
         </li>
       </ol>
 
       <div className={styles.tourMore}>
-        <h3 className={styles.tourMoreTitle}>Then, whenever</h3>
+        <h3 className={styles.tourMoreTitle}>Also try</h3>
         <ul className={styles.tourMoreList}>
           <li>
-            <b>Commands.</b> Type <Key>/</Key> and a name for the exact command:{' '}
-            <Key>/cancel 12</Key>, <Key>/browse</Key>. Tab completes a name, and the hint under the
-            box shows what the command takes.
+            <Key>cancel job 12</Key> · <Key>browse</Key> · <Key>/</Key> and a command name, Tab to
+            complete it
           </li>
-          <li>
-            <b>Rearrange.</b> Drag a panel from the left column into the middle to give it a tab, or
-            drop a tab beside another one for the two side by side.
-          </li>
-          <li>
-            <b>Peek.</b> Press More at the foot of the left column to look at a panel you have not
-            pinned. Drag its dashed frame in to keep it; leave it and it is gone on reload.
-          </li>
-          <li>
-            <b>Settings.</b> Choose which panels sit in the left column, which assistant answers
-            your questions, and what ranks the rows under the box.
-          </li>
-          <li>
-            <b>Reload.</b> Everything comes back where you left it, down to what you were reading.
-            Workbench → Lock layout keeps things from moving by accident.
-          </li>
+          <li>Dragging a panel from the left into the middle</li>
+          <li>More, at the foot of the left column, to peek at a panel you have not pinned</li>
+          <li>Settings, for which panels you keep and which assistant answers you</li>
         </ul>
       </div>
 
       <p className={`caption ${styles.tourNote}`}>
-        KOROS, Jobs and Data are mock-ups and nothing they hold leaves this browser. Function
-        Junction and genKnown are the real apps, reading the KBase lakehouse.
+        KOROS, Jobs and Data are mock-ups. Function Junction and genKnown are the real apps, reading
+        the KBase lakehouse.
       </p>
     </section>
   );
