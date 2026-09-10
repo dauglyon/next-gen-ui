@@ -265,11 +265,7 @@ function Block({ panel, info }: { panel: Panel; info: PluginInfo | undefined }) 
         </ContextMenu.Popup>
       </ContextMenu.Root>
       {!folded && (
-        <div
-          className={styles.blockBody}
-          data-panel={panel.id}
-          {...claimFocus(panel.id)}
-        >
+        <div className={styles.blockBody} data-panel={panel.id} {...claimFocus(panel.id)}>
           <PanelHost panel={panel} />
         </div>
       )}

@@ -828,11 +828,7 @@ function Entry({
   const Heading = `h${level}` as const;
   const nested = level === 4;
   return (
-    <section
-      className={nested ? styles.export : styles.entry}
-      id={id}
-      aria-labelledby={`${id}-h`}
-    >
+    <section className={nested ? styles.export : styles.entry} id={id} aria-labelledby={`${id}-h`}>
       <div className={styles.entryHead}>
         <Heading id={`${id}-h`} className={nested ? styles.exportName : styles.entryName}>
           {name}
