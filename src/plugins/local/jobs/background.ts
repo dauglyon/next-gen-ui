@@ -2,9 +2,9 @@ import { defineBackground } from '@kbase/plugin-sdk';
 import { jobStore } from './store';
 
 // Jobs answers from an inventory it already holds, so a term is minted only
-// for a job that exists: "job 12" or a bare id, and a name or app fragment
-// of three characters or more. A lone number that names no job is far more
-// often something else.
+// for a job that exists: "job 12" anywhere in the text, a bare id as the
+// whole text, and a name or app fragment of three characters or more. A
+// lone number that names no job is far more often something else.
 const idsIn = (terms: string[] = []) => terms.flatMap((t) => t.match(/^job:(\d+)$/)?.[1] ?? []);
 
 export default defineBackground({
@@ -12,7 +12,7 @@ export default defineBackground({
     const q = text?.trim() ?? '';
     if (!q) return [];
     const jobs = jobStore.all();
-    const id = /^(?:job[: ]?)?(\d{1,6})$/i.exec(q)?.[1];
+    const id = (/\bjob[: #]*(\d{1,6})\b/i.exec(q) ?? /^(\d{1,6})$/.exec(q))?.[1];
     if (id) return jobs.some((j) => j.id === id) ? [`job:${id}`] : [];
     const needle = q.toLowerCase();
     if (needle.length < 3) return [];
