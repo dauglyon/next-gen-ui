@@ -300,6 +300,7 @@ export default defineBackground({
     koros.steer(slug, text, attachments);
     host.openRoute(\`/\${slug}\`);
   },
+  newConversation: ({ host }) => host.openRoute(\`/\${koros.newArc().slug}\`),
   destination: { current: () => koros.destination(), subscribe: koros.subscribe },
 });`}</File>
           <Explainer>
@@ -310,7 +311,9 @@ export default defineBackground({
               <Code>query.terms</Code> the terms found in it, and <Code>ctx.attachments</Code> the
               cart's items. The cart is emptied when <Code>handle</Code> is called. The workbench
               renders nothing for the response; the handler opens the plugin's page with{' '}
-              <Code>host.openRoute</Code> and renders it there.
+              <Code>host.openRoute</Code> and renders it there. <Code>newConversation(ctx)</Code> is
+              called when the user picks New in the prompt bar's destination menu, which every
+              assistant gets: it opens the page a fresh conversation lands on.
             </p>
             <p className={styles.para}>
               <Code>destination.current()</Code> returns what the prompt bar shows above the input:
@@ -520,6 +523,7 @@ function defineCommands(
 
 function definePrompt(p: {
   handle: (q: Query, ctx: { host: PluginHost; attachments: readonly CartItem[] }) => Promise<void>;
+  newConversation: (ctx: { host: PluginHost }) => void | Promise<void>;   // New, in the destination menu
   destination?: {
     current: () => Destination | null;
     subscribe: (onChange: () => void) => () => void;   // call onChange when current() changes; returns an unsubscribe

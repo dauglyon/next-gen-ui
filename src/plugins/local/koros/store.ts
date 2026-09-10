@@ -103,9 +103,6 @@ function arc(a: Omit<Arc, 'needsYou' | 'working' | 'turns'> & { needsYou?: boole
 // Slugs are lowercase, so case never splits one arc into two panels.
 export const slugOf = (path: string) => path.split(/[?#]/)[0].slice(1).toLowerCase();
 
-// The destination option that makes a new arc.
-const NEW = '\u0000new';
-
 let currentArc: string | null = 'nitro';
 let version = 0;
 const listeners = new Set<() => void>();
@@ -136,23 +133,15 @@ export const koros = {
   working: () => [...arcs.values()].filter((a) => a.working).length,
   needingYou: () => [...arcs.values()].filter((a) => a.needsYou).length,
   // Where the next free-text message lands, for the prompt bar: the current
-  // arc's session. New is a switch target too, and opens the page it makes,
-  // so the composer is KIND*AI's New question box and its session composer
-  // in one.
+  // arc's session; every arc is a switch target. New is the bar's own item
+  // and calls `newConversation`.
   destination() {
     const arc = currentArc ? arcs.get(currentArc) : undefined;
     return {
       label: arc ? arc.title : 'New question',
       path: arc ? `/${arc.slug}` : undefined,
-      options: [
-        { key: NEW, label: 'New', icon: 'ChatCirclePlus' },
-        ...[...arcs.values()].map((a) => ({ key: a.slug, label: a.title })),
-      ],
-      select: (key: string, { host }: { host: { openRoute: (path: string) => void } }) => {
-        const slug = key === NEW ? koros.newArc().slug : key;
-        koros.setCurrent(slug);
-        host.openRoute(`/${slug}`);
-      },
+      options: [...arcs.values()].map((a) => ({ key: a.slug, label: a.title })),
+      select: (key: string) => koros.setCurrent(key),
     };
   },
   // New question: an arc with no question yet, its own page, and the place the

@@ -436,7 +436,7 @@ function PromptDestination() {
   }
   const manifest = source.manifest(assistant);
   const title = manifest?.title ?? assistant;
-  const destination = source.loaded(assistant, 'prompt')?.destination;
+  const prompt = source.loaded(assistant, 'prompt');
   return (
     <p className={styles.promptContext}>
       <PluginMark
@@ -447,62 +447,60 @@ function PromptDestination() {
         aria-hidden="true"
       />
       <span className={styles.promptDestination}>{title}</span>
-      {destination && <AssistantContext assistant={assistant} destination={destination} />}
+      {prompt && <AssistantContext assistant={assistant} prompt={prompt} />}
     </p>
   );
 }
 
-// The destination control: a switcher over the assistant's offered
-// targets, and a jump to the destination's page. Read from the prompt
-// module's own store; it re-reads each time the plugin says it changed.
-function AssistantContext({
-  assistant,
-  destination,
-}: {
-  assistant: string;
-  destination: NonNullable<Prompt['destination']>;
-}) {
-  const context = useDestination(destination);
+// New, in the host's own glyph: a chat bubble with a plus.
+const NewIcon = iconFor('ChatCirclePlus');
+
+// The destination control: a menu with New, which every assistant has,
+// then the targets the plugin offers; and a jump to the destination's page.
+// Read from the prompt module's own store; it re-reads each time the plugin
+// says it changed.
+function AssistantContext({ assistant, prompt }: { assistant: string; prompt: Prompt }) {
+  const context = useDestination(prompt.destination);
   const services = useServices();
-  if (!context) return null;
-  const { label, path, options, select } = context;
-  const switchable = !!options?.length && !!select;
+  const label = context?.label ?? 'New conversation';
+  const path = context?.path;
+  const options = context?.options ?? [];
+  const select = context?.select;
   return (
     <>
       <CaretRight size={11} className={styles.promptThread} aria-hidden="true" />
-      {switchable ? (
-        <Menu.Root>
-          <Menu.Trigger
-            render={<button type="button" className={styles.promptTarget} />}
-            aria-label={`Prompt destination: ${label}. Change destination`}
+      <Menu.Root>
+        <Menu.Trigger
+          render={<button type="button" className={styles.promptTarget} />}
+          aria-label={`Prompt destination: ${label}. Change destination`}
+        >
+          {label}
+          <CaretUpDown size={12} aria-hidden="true" />
+        </Menu.Trigger>
+        <Menu.Popup>
+          <Menu.Item
+            onClick={() =>
+              void prompt.newConversation({ host: pluginHostFor(services, assistant) })
+            }
           >
-            {label}
-            <CaretUpDown size={12} aria-hidden="true" />
-          </Menu.Trigger>
-          <Menu.Popup>
-            {options.map((option) => {
-              const Icon = option.icon ? iconFor(option.icon) : undefined;
-              return (
-                <Menu.Item
-                  key={option.key}
-                  onClick={() => select(option.key, { host: pluginHostFor(services, assistant) })}
-                >
-                  <Check
-                    size={14}
-                    weight="bold"
-                    aria-hidden="true"
-                    style={{ visibility: option.label === label ? 'visible' : 'hidden' }}
-                  />
-                  {Icon && <Icon size={14} aria-hidden="true" />}
-                  {option.label}
-                </Menu.Item>
-              );
-            })}
-          </Menu.Popup>
-        </Menu.Root>
-      ) : (
-        <span className={styles.promptDestination}>{label}</span>
-      )}
+            <NewIcon size={14} aria-hidden="true" />
+            New
+          </Menu.Item>
+          {options.length > 0 && select && <Menu.Separator />}
+          {select &&
+            options.map((option) => (
+              <Menu.Item key={option.key} onClick={() => select(option.key)}>
+                <Check
+                  size={14}
+                  weight="bold"
+                  aria-hidden="true"
+                  style={{ visibility: option.label === label ? 'visible' : 'hidden' }}
+                />
+                {option.label}
+              </Menu.Item>
+            ))}
+        </Menu.Popup>
+      </Menu.Root>
       {path !== undefined && (
         <button
           type="button"
@@ -520,20 +518,22 @@ function AssistantContext({
 // `current()` is read once per change the plugin reports, and the value is
 // held until the next: a plugin builds the object afresh on every call,
 // which React's store hook would otherwise take for an endless change.
-function useDestination(destination: NonNullable<Prompt['destination']>): Destination | null {
+function useDestination(destination: Prompt['destination']): Destination | null {
   const cache = useRef<{ of: typeof destination; value: Destination | null } | null>(null);
   const read = useCallback(() => {
-    if (cache.current?.of !== destination) {
-      cache.current = { of: destination, value: destination.current() };
+    if (!cache.current || cache.current.of !== destination) {
+      cache.current = { of: destination, value: destination?.current() ?? null };
     }
     return cache.current.value;
   }, [destination]);
   const subscribe = useCallback(
     (onChange: () => void) =>
-      destination.subscribe(() => {
-        cache.current = { of: destination, value: destination.current() };
-        onChange();
-      }),
+      destination
+        ? destination.subscribe(() => {
+            cache.current = { of: destination, value: destination.current() };
+            onChange();
+          })
+        : () => {},
     [destination],
   );
   return useSyncExternalStore(subscribe, read, read);

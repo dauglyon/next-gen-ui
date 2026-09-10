@@ -79,17 +79,19 @@ export interface Destination {
   label: string;
   // This plugin's route for it; the bar offers a jump there.
   path?: string;
-  // Other places it could land, and how the user picks one. An option's
-  // icon is a manifest icon name. `select` may open a page: a new
-  // conversation is a page as well as a destination.
-  options?: { key: string; label: string; icon?: string }[];
-  select?: (key: string, ctx: { host: PluginHost }) => void;
+  // Other places it could land, and how the user picks one.
+  options?: { key: string; label: string }[];
+  select?: (key: string) => void;
 }
 
 export interface Prompt {
   // Free text the prompt bar did not resolve to a command or a suggestion,
   // with the term pool and the cart as it stood when Enter was pressed.
   handle: (q: Query, ctx: { host: PluginHost; attachments: readonly CartItem[] }) => Promise<void>;
+  // Start a new conversation: every assistant has one to start, so the
+  // prompt bar offers it itself, ahead of the destinations the plugin lists.
+  // Opens the plugin's page for it, and the next message lands there.
+  newConversation: (ctx: { host: PluginHost }) => void | Promise<void>;
   destination?: {
     // What the bar shows; read whenever it redraws.
     current: () => Destination | null;

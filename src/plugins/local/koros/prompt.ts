@@ -21,5 +21,11 @@ export default definePrompt({
     );
     host.openRoute(`/${slug}`);
   },
+  // KIND*AI's + New question: a new arc, its page open, the next message its
+  // question. An empty one already open is reused.
+  newConversation: ({ host }) => {
+    const arc = koros.newArc();
+    host.openRoute(`/${arc.slug}`);
+  },
   destination: { current: () => koros.destination(), subscribe: koros.subscribe },
 });
