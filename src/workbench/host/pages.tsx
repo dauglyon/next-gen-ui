@@ -48,7 +48,7 @@ export function hostPlugins(services: () => WorkbenchServices): InstalledPlugin[
       config: definePluginManifest({
         id: 'docs',
         title: 'Plugin developer documentation',
-        description: 'The manifest, the five modules, and the handles a panel runs against.',
+        description: 'The manifest, the six modules, and the handles a panel runs against.',
         icon: 'Code',
         commands: [
           { name: 'plugin-docs', title: 'Open the plugin developer documentation', icon: 'Code' },

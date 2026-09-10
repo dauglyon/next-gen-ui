@@ -28,15 +28,16 @@ export function DocsDocument() {
           </p>
           <Explainer>
             <p className={styles.para}>
-              A plugin is a config object and up to five modules. The config names the plugin and
+              A plugin is a config object and up to six modules. The config names the plugin and
               declares its slash commands. The workbench's prompt bar is a text input: text
               beginning with <Code>/</Code> runs a slash command; other text, once sent, goes to the
               plugin chosen as the assistant. The modules are <Code>route</Code>, a page;{' '}
               <Code>pane</Code>, a sidebar block (the page's tab and the block are both panels);{' '}
               <Code>commands</Code>, the slash command handlers; <Code>background</Code>, functions
               called as the user types in the prompt bar, to suggest commands and data related to
-              the text; and <Code>prompt</Code>, the handler for sent text when the plugin is the
-              assistant. <Code>pluginFederation</Code>, a Vite plugin from{' '}
+              the text; <Code>prompt</Code>, the handler for sent text when the plugin is the
+              assistant; and <Code>intent</Code>, what suggests commands for the text being typed
+              when the plugin is chosen for that. <Code>pluginFederation</Code>, a Vite plugin from{' '}
               <Code>@kbase/plugin-sdk/vite</Code>, exposes each module over Module Federation and
               writes the config to <Code>manifest.json</Code>. The workbench reads the manifest at
               startup and loads each module the first time it is needed, except{' '}
