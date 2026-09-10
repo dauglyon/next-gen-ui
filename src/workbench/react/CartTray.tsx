@@ -13,22 +13,10 @@ import styles from './Workbench.module.css';
 // same reason: the cart goes with the next message, so it belongs where the
 // message is written and not in a panel that has to be gone and found.
 //
-// One tile per item, following what a composer does with a file: a preview, the
-// name on hover, and a remove control in the corner (Slack, assistant-ui,
-// Claude all land here). What differs is the preview. Those are pictures, and
-// the picture is the identification, which is what lets the name move to hover.
-//
-// Ours are not pictures. A tile with nothing in it is a row of identical grey
-// squares — the failure the Claude teardown names, where attachments without
-// type and size "are harder to scan when you attach multiple files." But an item
-// carries something a photo does not: the subject it is about and the figure it
-// was added for. `P0AEX9` over `74% core`. That goes in the preview slot, and it
+// One tile per item, as a composer shows a file. A photo's preview is the
+// picture; ours is not a picture, so a tile shows the subject the item is
+// about and the figure it was added for, `P0AEX9` over `74% core`, and that
 // identifies the tile the way a thumbnail identifies a photo.
-//
-// The row scrolls sideways rather than wrapping. A cart that grows downward
-// eats the message the user is writing, and it does so worst exactly
-// when they have collected the most — so the composer's height is fixed and the
-// overflow goes where a photo strip's does.
 
 export function CartTray() {
   const { cart, source } = useServices();
@@ -43,23 +31,17 @@ export function CartTray() {
 
   return (
     <Tooltip.Provider delay={300}>
-      {/* The cart names itself and carries its own controls. Hung off the end
-          of the tile row it floated against nothing; put in the composer's
-          footer it read as part of the destination line, which is about where
-          the message goes rather than what goes with it. */}
+      {/* The cart's own caption and controls, on the tile row: the composer's
+          footer is about where the message goes, not what goes with it. */}
       <p className={styles.cartCaption}>
-        {/* The icon says which region this is; the number says how much is in
-            it. The word `Cart` beside a cart is the caption reading itself
-            aloud. */}
+        {/* The word `Cart` beside a cart is the caption reading itself aloud. */}
         <span className={styles.cartMeasure}>
           <ShoppingCartSimple size={14} aria-hidden="true" />
           {items.length}
           <span className={styles.srOnly}>{`in the cart`}</span>
         </span>
         <AlertDialog.Root>
-          {/* The word and the glyph: a trash can alone had to be guessed at,
-              the word alone in a bordered box outweighed the tiles it acts on.
-              The verb is the one on every tile's own control — a cart has one
+          {/* The verb is the one on every tile's own control: a cart has one
               way of taking things out of it, so it has one word for doing so.
               `quiet` for the weight, since this sits on a caption row. */}
           <AlertDialog.Trigger
@@ -98,13 +80,10 @@ export function CartTray() {
           const Mark = iconFor(manifest?.icon, manifest?.color);
           return (
             <li key={item.id} className={styles.cartItem}>
-              {/* The tile opens the item. A summary is a glance; the payload
-                    an assistant will read is the thing worth checking before
-                    sending, and until now there was no way to see it. */}
+              {/* The tile opens the item: the payload an assistant will read is
+                  worth checking before sending. */}
               <button type="button" className={styles.cartOpen} onClick={() => setPreview(item)}>
-                {/* The square is the thumbnail slot a file attachment has,
-                    filled with the plugin's mark. It is what a reader sorts a
-                    strip of these by, and it carries the item's full name. */}
+                {/* The thumbnail slot, filled with the plugin's mark and carrying the full name. */}
                 <Tooltip.Root>
                   <Tooltip.Trigger render={<span className={styles.cartMark} />}>
                     <Mark size={16} weight="fill" aria-hidden="true" />
@@ -161,7 +140,6 @@ export function CartTray() {
 // Everything the item is carrying, in the order a reader needs it: what it is,
 // what an assistant would be told about it, and how to get back to it.
 function Preview({ item, plugin }: { item: CartItem; plugin?: string }) {
-  const json = (value: unknown) => JSON.stringify(value, null, 2);
   const run = useRun();
   const source = item.source;
   return (
@@ -179,7 +157,7 @@ function Preview({ item, plugin }: { item: CartItem; plugin?: string }) {
             language="json"
             collapsible={false}
             className={styles.cartPreviewJson}
-            code={json(item.context)}
+            code={JSON.stringify(item.context, null, 2)}
           />
         </section>
       )}
@@ -207,6 +185,3 @@ function Preview({ item, plugin }: { item: CartItem; plugin?: string }) {
 function countOf(n: number): string {
   return n === 1 ? '1 item' : `${n} items`;
 }
-
-// On the disclosure label, so a reader knows whether opening it costs them the
-// screen before they press it.

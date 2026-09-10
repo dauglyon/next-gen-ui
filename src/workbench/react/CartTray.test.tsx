@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { localPlugins } from '../../plugins/local';
 import { createWorkbench } from '../host';
-import { WorkbenchProvider } from './WorkbenchProvider';
+import { ServicesContext } from './context';
 import { PromptBar } from './PromptBar';
 import { CartTray } from './CartTray';
 
@@ -25,9 +25,9 @@ function mount(
   });
   items.forEach((i, n) => services.cart.add({ ...i, addedAt: n }));
   render(
-    <WorkbenchProvider services={services}>
+    <ServicesContext value={services}>
       <CartTray />
-    </WorkbenchProvider>,
+    </ServicesContext>,
   );
   return services;
 }
@@ -133,9 +133,9 @@ describe('the cart tray', () => {
       defaultAssistant: 'koros',
     });
     const { container } = render(
-      <WorkbenchProvider services={services}>
+      <ServicesContext value={services}>
         <PromptBar />
-      </WorkbenchProvider>,
+      </ServicesContext>,
     );
     expect(container.querySelector('[class*="cartRow"]')).toBeNull();
     expect(container.querySelector('[class*="attachments"]')).toBeNull();

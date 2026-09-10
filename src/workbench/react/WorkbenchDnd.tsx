@@ -42,9 +42,6 @@ export function WorkbenchDnd({ children }: { children: ReactNode }) {
   const { preview } = useServices();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
-  const onDragStart = (event: DragStartEvent) => {
-    setDragging(event.active.data.current as DragData);
-  };
   const onDragEnd = (event: DragEndEvent) => {
     setDragging(null);
     const active = event.active.data.current as DragData | undefined;
@@ -62,7 +59,7 @@ export function WorkbenchDnd({ children }: { children: ReactNode }) {
       sensors={sensors}
       collisionDetection={collision}
       accessibility={silent}
-      onDragStart={onDragStart}
+      onDragStart={(event: DragStartEvent) => setDragging(event.active.data.current as DragData)}
       onDragEnd={onDragEnd}
       onDragCancel={() => setDragging(null)}
     >
@@ -86,30 +83,19 @@ export function GroupDropZones({ group }: { group: string }) {
   return (
     <div className={styles.dropZones}>
       {(['left', 'right', 'top', 'bottom'] as Side[]).map((side) => (
-        <EdgeZone key={side} group={group} side={side} />
+        <Zone key={side} at={side} data={{ type: 'edge', group, side }} />
       ))}
-      <CentreZone group={group} />
+      <Zone at="centre" data={{ type: 'group', group }} />
     </div>
   );
 }
 
-function EdgeZone({ group, side }: { group: string; side: Side }) {
-  const { dropRef, isOver } = useDropTarget({ type: 'edge', group, side });
+function Zone({ at, data }: { at: Side | 'centre'; data: DropData }) {
+  const { dropRef, isOver } = useDropTarget(data);
   return (
     <div
       ref={dropRef}
-      className={`${styles.dropZone} ${styles[`dropZone_${side}`]}`}
-      data-over={isOver || undefined}
-    />
-  );
-}
-
-function CentreZone({ group }: { group: string }) {
-  const { dropRef, isOver } = useDropTarget({ type: 'group', group });
-  return (
-    <div
-      ref={dropRef}
-      className={`${styles.dropZone} ${styles.dropZone_centre}`}
+      className={`${styles.dropZone} ${styles[`dropZone_${at}`]}`}
       data-over={isOver || undefined}
     />
   );

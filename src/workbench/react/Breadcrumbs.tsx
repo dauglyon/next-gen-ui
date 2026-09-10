@@ -35,13 +35,11 @@ export function Breadcrumbs({ panel }: { panel: PanelId }) {
       className={styles.crumbs}
       aria-label="Breadcrumbs"
       style={
-        hue
-          ? ({
-              '--crumb-tint': hue.tint,
-              '--crumb-edge': hue.edge,
-              '--crumb-ink': hue.ink,
-            } as CSSProperties)
-          : undefined
+        {
+          '--crumb-tint': hue?.tint,
+          '--crumb-edge': hue?.edge,
+          '--crumb-ink': hue?.ink,
+        } as CSSProperties
       }
     >
       {crumbs.map((crumb, i) => {

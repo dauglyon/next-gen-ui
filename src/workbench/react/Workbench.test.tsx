@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { localPlugins } from '../../plugins/local';
 import { createWorkbench } from '../host';
-import { WorkbenchProvider } from './WorkbenchProvider';
+import { ServicesContext } from './context';
 import { Workbench } from './Workbench';
 
 // Lazy plugin modules and route loaders both run before a panel appears;
@@ -32,9 +32,9 @@ function mount(storage: Storage | null = null) {
     defaultAssistant: 'koros',
   });
   render(
-    <WorkbenchProvider services={services}>
+    <ServicesContext value={services}>
       <Workbench />
-    </WorkbenchProvider>,
+    </ServicesContext>,
   );
   return services;
 }

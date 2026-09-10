@@ -45,7 +45,6 @@ export function Sidebar() {
     previewHandle.get,
   );
   const previewing = preview && !sidebar.pinned.includes(preview) ? preview : null;
-  const onPreview = previewHandle.set;
   const onDismissPreview = () => previewHandle.set(null);
   // Anchors the collapsed preview flyout to the ⋯ icon that opened it.
   const moreAnchorRef = useRef<HTMLSpanElement>(null);
@@ -92,7 +91,7 @@ export function Sidebar() {
         })}
         {unpinned.length > 0 && (
           <span ref={moreAnchorRef} style={{ display: 'inline-flex' }}>
-            <MoreMenu plugins={unpinned} onPreview={onPreview} />
+            <MoreMenu plugins={unpinned} onPreview={previewHandle.set} />
           </span>
         )}
       </Toolbar.Root>
@@ -155,7 +154,7 @@ export function Sidebar() {
             </SplitView>
           )}
           {unpinned.length > 0 && (
-            <MoreMenu plugins={unpinned} variant="row" onPreview={onPreview} />
+            <MoreMenu plugins={unpinned} variant="row" onPreview={previewHandle.set} />
           )}
         </div>
 
@@ -222,9 +221,7 @@ function Block({ panel, info }: { panel: Panel; info: PluginInfo | undefined }) 
               else dispatch({ type: 'fold', panel: panel.id, folded: true });
             }}
           >
-            {/* The accordion header pattern: icon, title, chevron on the
-                right. The icon repeats the rail's glyph, tying the block
-                to its icon-column entry. */}
+            {/* The icon repeats the rail's glyph, tying the block to its icon-column entry. */}
             <span className={styles.blockIcon} aria-hidden="true">
               <Icon size={14} />
             </span>
@@ -278,7 +275,7 @@ function Block({ panel, info }: { panel: Panel; info: PluginInfo | undefined }) 
 // two clicks to look at a plugin without pinning it. The `row` variant is
 // the accordion's footer row; the icon variant sits in the collapsed
 // column.
-export function MoreMenu({
+function MoreMenu({
   plugins,
   variant = 'icon',
   onPreview,
@@ -304,10 +301,9 @@ export function MoreMenu({
               </span>
               More
               <span className={styles.moreIcons} aria-hidden="true">
-                {plugins.slice(0, 5).map((p) => {
-                  const Icon = p.icon;
-                  return <Icon key={p.id} size={14} />;
-                })}
+                {plugins.slice(0, 5).map(({ id, icon: Icon }) => (
+                  <Icon key={id} size={14} />
+                ))}
                 {plugins.length > 5 && <span>+{plugins.length - 5}</span>}
               </span>
             </button>
@@ -324,15 +320,12 @@ export function MoreMenu({
         }
       />
       <Menu.Popup>
-        {plugins.map((p) => {
-          const Icon = p.icon;
-          return (
-            <Menu.Item key={p.id} onClick={() => onPreview(p.id)}>
-              <Icon size={14} aria-hidden="true" />
-              {p.title}
-            </Menu.Item>
-          );
-        })}
+        {plugins.map(({ id, icon: Icon, title }) => (
+          <Menu.Item key={id} onClick={() => onPreview(id)}>
+            <Icon size={14} aria-hidden="true" />
+            {title}
+          </Menu.Item>
+        ))}
       </Menu.Popup>
     </Menu.Root>
   );
@@ -393,8 +386,6 @@ function PreviewBlock({
   );
 }
 
-// Pins a plugin's navigator into the sidebar and closes the preview that
-// offered it.
 function PinButton({ plugin, onDone }: { plugin: PluginId; onDone: () => void }) {
   const dispatch = useDispatch();
   return (

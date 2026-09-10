@@ -129,31 +129,30 @@ export function PromptBar() {
     }
   };
 
+  // A row wearing the plugin's mark, the shape every source below produces.
+  const row = (
+    text: string,
+    label: string,
+    detail: string | undefined,
+    m: Manifest | undefined,
+    run: () => void,
+  ): BarSuggestion => ({ value: text, label, detail, icon: iconFor(m?.icon, m?.color), run });
+
   // What plugins recommended for this text, ahead of name matches: a
   // plugin recognising its own data is a better answer than a plugin
   // whose description happens to share a word. Each row is a command
   // call the plugin filled in; pressing it does what typing it would.
-  const offered = () =>
-    query.get('typing').answers.flatMap((answer) =>
-      answer.commands.map((call) => ({
-        call,
-        plugin: answer.plugin,
-        command: qualifyCommand(call.command, answer.plugin),
-      })),
-    );
   const recommended = (text: string): BarSuggestion[] =>
-    offered()
-      .map(({ call, plugin, command }) => {
-        const manifest = source.manifest(plugin);
-        return {
-          value: text,
+    query
+      .get('typing')
+      .answers.flatMap((answer) =>
+        answer.commands.map((call) => {
+          const m = source.manifest(answer.plugin);
+          const command = qualifyCommand(call.command, answer.plugin);
           // The call says where you land; the plugin is who takes you.
-          label: call.label,
-          detail: manifest?.title,
-          icon: iconFor(manifest?.icon, manifest?.color),
-          run: () => void run(command, call.args),
-        };
-      })
+          return row(text, call.label, m?.title, m, () => void run(command, call.args));
+        }),
+      )
       .slice(0, 4);
 
   // What the chosen intent suggested for this text: every plugin's commands
@@ -163,33 +162,9 @@ export function PromptBar() {
   // open with q filled whether or not that plugin recognised the text.
   const suggested = (text: string): BarSuggestion[] =>
     (query.get('typing').suggestions ?? []).slice(0, 4).map(({ call, detail }) => {
-      const manifest = source.manifest(call.command.split(':')[0]);
-      return {
-        value: text,
-        label: call.label,
-        detail: detail ?? manifest?.title,
-        icon: iconFor(manifest?.icon, manifest?.color),
-        run: () => void run(call.command, call.args),
-      };
+      const m = source.manifest(call.command.split(':')[0]);
+      return row(text, call.label, detail ?? m?.title, m, () => void run(call.command, call.args));
     });
-
-  // Row zero is what Enter will do. Nothing is guessed: the assistant
-  // stays the default and the alternatives sit under it, visible before
-  // the key is pressed rather than hidden behind knowing to press down.
-  const defaultSuggestion = (text: string): BarSuggestion[] =>
-    assistant
-      ? [
-          {
-            value: text,
-            // `Ask` only fits a question, and most of what is typed here is
-            // an accession or a name. Send is what the row does, and the word
-            // the composer's own button already uses.
-            label: `Send to ${assistantTitle ?? assistant}`,
-            icon: iconFor(source.manifest(assistant)?.icon, source.manifest(assistant)?.color),
-            run: () => void submit(text),
-          },
-        ]
-      : [];
 
   // Every term must appear somewhere in a plugin's name, id or
   // description; a name being typed outranks a description hit. Shared
@@ -216,25 +191,29 @@ export function PromptBar() {
   // Function Junction without knowing it exists. A plugin is an app iff
   // its manifest has a launcher, and the row runs that launcher.
   const appSuggestions = (text: string): BarSuggestion[] =>
-    nameHits(text, (m) => Boolean(m.launcher)).map((m) => ({
-      value: text,
-      label: `Open ${m.title}`,
-      detail: m.description,
-      icon: iconFor(m.icon, m.color),
-      run: () => void run(qualifyCommand(m.launcher!.command, m.id), m.launcher!.args),
-    }));
+    nameHits(text, (m) => Boolean(m.launcher)).map((m) =>
+      row(
+        text,
+        `Open ${m.title}`,
+        m.description,
+        m,
+        () => void run(qualifyCommand(m.launcher!.command, m.id), m.launcher!.args),
+      ),
+    );
 
   // Panels are reached the way Home reaches them: a pinned navigator is
   // focused where it already lives, an unpinned one is previewed. The
   // bar never changes the layout to show you something.
   const panelSuggestions = (text: string): BarSuggestion[] =>
-    nameHits(text, (m) => source.has(m.id, 'pane')).map((m) => ({
-      value: text,
-      label: `Show ${m.title}`,
-      detail: layout.sidebar.pinned.includes(m.id) ? 'In the sidebar' : m.description,
-      icon: iconFor(m.icon, m.color),
-      run: () => showPane(services, m.id),
-    }));
+    nameHits(text, (m) => source.has(m.id, 'pane')).map((m) =>
+      row(
+        text,
+        `Show ${m.title}`,
+        layout.sidebar.pinned.includes(m.id) ? 'In the sidebar' : m.description,
+        m,
+        () => showPane(services, m.id),
+      ),
+    );
 
   // The buttons plugins put on the Shortcuts block, reachable by name as
   // well. A shortcut is a call with its arguments filled in, so the row
@@ -272,30 +251,41 @@ export function PromptBar() {
           icon: manifest ? iconFor(manifest.icon, manifest.color) : undefined,
         };
       });
-      // Priority order, painted bottom-up: what the intent answered, which
-      // already holds the plugins' offers in the order it judged; without
-      // an intent, or with an empty answer, the offers as the plugins made
-      // them; and where there is neither, a shortcut's name, then a word
-      // shared with a description — the same search the Browse page runs,
-      // inline. An offer is a plugin saying it recognises this text and what
-      // it would do with it; the intent is what reads the rest of the
-      // sentence.
-      const suggestions = list.length ? [] : suggested(value);
-      const offers = list.length || suggestions.length ? [] : recommended(value);
-      const answers = suggestions.length ? suggestions : offers;
-      const guesses =
-        list.length || answers.length
-          ? []
-          : [...shortcutSuggestions(value), ...appSuggestions(value), ...panelSuggestions(value)];
-      const alternatives = [...answers, ...guesses];
-      // Nothing worth choosing between: no list, and Enter behaves as if
-      // there were none. Browse is not appended as an escape: it is Home's
-      // own command, ranked like any other when the text asks for it.
+      // Priority order: the intent's answer, which already holds the plugins'
+      // offers in the order it judged; else the offers as the plugins made
+      // them; else a shortcut's name, then the Browse page's search inline.
+      // An offer is a plugin saying it recognises this text; the intent is
+      // what reads the rest of the sentence.
+      let alternatives = list.length ? [] : suggested(value);
+      if (!list.length && !alternatives.length) alternatives = recommended(value);
+      if (!list.length && !alternatives.length)
+        alternatives = [
+          ...shortcutSuggestions(value),
+          ...appSuggestions(value),
+          ...panelSuggestions(value),
+        ];
+      // Row zero is what Enter will do: the assistant stays the default and
+      // the alternatives sit under it, visible before the key is pressed.
+      // `Send` is the word the composer's own button already uses. Nothing
+      // worth choosing between: no list, and Enter behaves as if there were
+      // none. Browse is not appended as an escape: it is Home's own command,
+      // ranked like any other when the text asks for it.
+      const send =
+        assistant &&
+        row(
+          value,
+          `Send to ${assistantTitle ?? assistant}`,
+          undefined,
+          source.manifest(assistant),
+          () => void submit(value),
+        );
       const found = list.length
         ? commands
-        : alternatives.length
-          ? [...defaultSuggestion(value), ...alternatives]
-          : [];
+        : !alternatives.length
+          ? []
+          : send
+            ? [send, ...alternatives]
+            : alternatives;
       setSuggestions(found);
       // Row zero is always the default action, so it is always selected;
       // arrowing away from it changes what Enter does, visibly.
@@ -452,7 +442,6 @@ function PromptDestination() {
   );
 }
 
-// New, in the host's own glyph: a chat bubble with a plus.
 const NewIcon = iconFor('ChatCirclePlus');
 
 // The destination control: a menu with New, which every assistant has,

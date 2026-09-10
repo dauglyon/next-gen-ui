@@ -1,12 +1,4 @@
-import {
-  Component,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from 'react';
+import { Component, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { Button, EmptyState, Loader } from '@kbase/design-system';
 import type { Crumb, Mount, PanelHandle, PluginHost } from '../../plugins/sdk';
@@ -94,7 +86,11 @@ export function PanelHost({ panel }: { panel: Panel }) {
       ) : module ? (
         <Mounted mount={module.mount} handle={handle} host={host} />
       ) : (
-        <Loading title={title} />
+        // Named, so a spinner in a blank pane reads as this panel loading.
+        <EmptyState
+          icon={<Loader size={36} label={`Loading ${title}`} />}
+          title={`Loading ${title}…`}
+        />
       )}
     </PanelBoundary>
   );
@@ -107,35 +103,19 @@ export function PanelHost({ panel }: { panel: Panel }) {
 // the panel body gives it.
 function Mounted({ mount, handle, host }: { mount: Mount; handle: PanelHandle; host: PluginHost }) {
   const ref = useRef<HTMLDivElement>(null);
-  const mountOnce = useCallback(
-    (el: HTMLElement) => mount(el, { panel: handle, host }) ?? undefined,
-    [mount, handle, host],
-  );
   useEffect(() => {
     const body = ref.current;
     if (!body) return;
     const el = document.createElement('div');
     el.style.display = 'contents';
     body.appendChild(el);
-    const cleanup = mountOnce(el);
+    const cleanup = mount(el, { panel: handle, host });
     return () => {
       cleanup?.();
       el.remove();
     };
-  }, [mountOnce]);
+  }, [mount, handle, host]);
   return <div ref={ref} style={{ display: 'contents' }} data-panel-body={handle.id} />;
-}
-
-// The panel's own empty state until its code arrives, named: a bare
-// spinner in the corner of a blank pane says nothing about what is
-// coming, and reads as a stray graphic rather than the panel loading.
-function Loading({ title }: { title: string }) {
-  return (
-    <EmptyState
-      icon={<Loader size={36} label={`Loading ${title}`} />}
-      title={`Loading ${title}…`}
-    />
-  );
 }
 
 // Thrown from render so the boundary below shows it the way a crash is shown.
@@ -166,14 +146,10 @@ function GhostPanel({ panel }: { panel: Panel }) {
   );
 }
 
-interface BoundaryState {
-  error: Error | null;
-}
+class PanelBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null as Error | null };
 
-export class PanelBoundary extends Component<{ children: ReactNode }, BoundaryState> {
-  state: BoundaryState = { error: null };
-
-  static getDerivedStateFromError(error: Error): BoundaryState {
+  static getDerivedStateFromError(error: Error) {
     return { error };
   }
 

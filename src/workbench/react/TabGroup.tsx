@@ -1,7 +1,7 @@
 import type { KeyboardEvent, MouseEvent } from 'react';
 import { House, X } from '@phosphor-icons/react';
 import { Button, ContextMenu, EmptyState, Tabs } from '@kbase/design-system';
-import type { Group, Panel, PanelId } from '../core';
+import type { Group, PanelId } from '../core';
 import { SIDES } from '../core';
 import { openRoute } from '../host/open';
 import { useDispatch, useLayout, useServices, useTitle } from './context';
@@ -20,7 +20,6 @@ export function TabGroup({ group }: { group: Group }) {
   const layout = useLayout();
   const dispatch = useDispatch();
   const services = useServices();
-  const { focusIntentRef } = services;
   const focused = layout.focus !== null && group.tabs.includes(layout.focus);
   // A tab's label depends on its neighbours, so it is settled for the
   // group rather than by each tab for itself.
@@ -78,20 +77,7 @@ export function TabGroup({ group }: { group: Group }) {
         onKeyDown={onKeyDown}
       >
         {group.tabs.map((id, index) => (
-          <Tab
-            key={id}
-            group={group}
-            index={index}
-            panel={layout.panels[id]}
-            id={id}
-            active={group.active === id}
-            focused={layout.focus === id}
-            label={labels[id]}
-            onSelect={() => {
-              focusIntentRef.current = 'user';
-              dispatch({ type: 'focus', panel: id });
-            }}
-          />
+          <Tab key={id} group={group} index={index} id={id} label={labels[id]} />
         ))}
         <TabEnd group={group} />
       </div>
@@ -123,24 +109,20 @@ export function TabGroup({ group }: { group: Group }) {
 function Tab({
   group,
   index,
-  panel,
   id,
-  active,
-  focused,
   label,
-  onSelect,
 }: {
   group: Group;
   index: number;
-  panel: Panel | undefined;
   id: PanelId;
-  active: boolean;
-  focused: boolean;
   label: string | undefined;
-  onSelect: () => void;
 }) {
   const dispatch = useDispatch();
-  const { source } = useServices();
+  const { source, focusIntentRef } = useServices();
+  const layout = useLayout();
+  const panel = layout.panels[id];
+  const active = group.active === id;
+  const focused = layout.focus === id;
   // The negotiated label names the tab; the panel's own title still names
   // it everywhere one tab is described on its own.
   const own = useTitle(panel, id);
@@ -178,7 +160,10 @@ function Tab({
               dragRef(el);
               dropRef(el);
             }}
-            onClick={onSelect}
+            onClick={() => {
+              focusIntentRef.current = 'user';
+              dispatch({ type: 'focus', panel: id });
+            }}
             onAuxClick={(e) => e.button === 1 && close(e)}
             {...dragHandlers}
           />

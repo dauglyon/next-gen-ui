@@ -3,6 +3,11 @@ import { SIDES, groupOf } from '../core';
 import { useDispatch, useLayout, useRun, useServices } from './context';
 import styles from './Workbench.module.css';
 
+const BARS = [
+  ['prompt', 'Prompt bar'],
+  ['status', 'Status bar'],
+] as const;
+
 // Menus are another surface over the same commands the keyboard and the
 // prompt bar reach; nothing here does anything a command cannot.
 export function WorkbenchMenubar() {
@@ -17,9 +22,7 @@ export function WorkbenchMenubar() {
   return (
     <div className={styles.menubar} data-density="compact">
       <span className={styles.brand}>
-        {/* The KBase symbol, as the style guide draws it. It replaces a stand-in
-            built from the Loader's three dots, which read as a spinner at rest
-            and had nothing to do with the mark. */}
+        {/* The KBase symbol, as the style guide draws it. */}
         <KBaseSymbol className={styles.brandMark} aria-hidden="true" />
         <span aria-hidden="true">KBase</span>
         <span className={styles.srOnly}>KBase Workbench</span>
@@ -48,18 +51,15 @@ export function WorkbenchMenubar() {
             >
               Sidebar
             </Menu.CheckboxItem>
-            <Menu.CheckboxItem
-              checked={layout.bars.prompt}
-              onCheckedChange={(v) => dispatch({ type: 'bar', bar: 'prompt', visible: v })}
-            >
-              Prompt bar
-            </Menu.CheckboxItem>
-            <Menu.CheckboxItem
-              checked={layout.bars.status}
-              onCheckedChange={(v) => dispatch({ type: 'bar', bar: 'status', visible: v })}
-            >
-              Status bar
-            </Menu.CheckboxItem>
+            {BARS.map(([bar, label]) => (
+              <Menu.CheckboxItem
+                key={bar}
+                checked={layout.bars[bar]}
+                onCheckedChange={(v) => dispatch({ type: 'bar', bar, visible: v })}
+              >
+                {label}
+              </Menu.CheckboxItem>
+            ))}
             <Menu.Separator />
             {/* The host's own page, reached from the menu that governs the
                 workbench rather than from the list of things installed in it. */}

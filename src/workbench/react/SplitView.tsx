@@ -4,17 +4,6 @@ import type { SplitDir } from '../core';
 import { normalizeSizes } from '../core';
 import styles from './Workbench.module.css';
 
-export interface SplitViewProps {
-  dir: SplitDir;
-  sizes: number[];
-  onSizes: (sizes: number[]) => void;
-  children: ReactNode[];
-  // Children that keep their natural size and take no share (folded blocks).
-  fixed?: boolean[];
-  label?: string;
-  className?: string;
-}
-
 const MIN = 0.1;
 const STEP = 0.05;
 
@@ -29,7 +18,16 @@ export function SplitView({
   fixed = [],
   label,
   className,
-}: SplitViewProps) {
+}: {
+  dir: SplitDir;
+  sizes: number[];
+  onSizes: (sizes: number[]) => void;
+  children: ReactNode[];
+  // Children that keep their natural size and take no share (folded blocks).
+  fixed?: boolean[];
+  label?: string;
+  className?: string;
+}) {
   const container = useRef<HTMLDivElement>(null);
 
   // Moves `delta` of the pair's total from pane index+1 to pane index,
