@@ -70,12 +70,6 @@
 
 /* Base UI measures the panel into --accordion-panel-height and marks the
    first and last frame with data-starting-style and data-ending-style. */
-/* For a stack of headers in a column that is mostly other things — a sidebar,
-   a long settings page — where the default's air is paid once per section. */
-.dense .trigger {
-  padding: var(--s-2) 0;
-}
-
 .panel {
   overflow: hidden;
   height: var(--accordion-panel-height);
