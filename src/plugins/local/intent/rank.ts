@@ -203,21 +203,33 @@ export function rankCommands(
   const pool = [...new Set([...tags.map((t) => t.term), ...terms])];
   const offered = new Map<string, CommandCall>();
   for (const offer of offers) if (!offered.has(offer.command)) offered.set(offer.command, offer);
-  return index.entries
-    .map((entry) => {
-      const offer = offered.get(entry.command);
-      return { entry, offer, score: cosine(query, entry.vector) + (offer ? OFFER_LIFT : 0) };
-    })
-    .filter(({ score }) => score >= FLOOR)
-    .sort((a, b) => b.score - a.score || a.entry.command.localeCompare(b.entry.command))
-    .slice(0, limit)
-    .map(({ entry, offer, score }) => ({
-      plugin: entry.plugin,
-      pluginTitle: entry.pluginTitle,
-      command: entry.command,
-      title: entry.title,
-      label: offer?.label,
-      args: offer ? (offer.args ?? {}) : bind(entry, index, pool),
-      score,
-    }));
+  return (
+    index.entries
+      .map((entry) => {
+        const offer = offered.get(entry.command);
+        return { entry, offer, score: cosine(query, entry.vector) + (offer ? OFFER_LIFT : 0) };
+      })
+      .filter(({ score }) => score >= FLOOR)
+      .map(({ entry, offer, score }) => ({
+        entry,
+        offer,
+        score,
+        args: offer ? (offer.args ?? {}) : bind(entry, index, pool),
+      }))
+      // A row runs when pressed, so a command is offered only with every
+      // required argument filled: "kill the running job" names no job, and a
+      // row for it would open an error, not a job.
+      .filter(({ entry, args }) => entry.args.every((a) => !a.required || a.name in args))
+      .sort((a, b) => b.score - a.score || a.entry.command.localeCompare(b.entry.command))
+      .slice(0, limit)
+      .map(({ entry, offer, score, args }) => ({
+        plugin: entry.plugin,
+        pluginTitle: entry.pluginTitle,
+        command: entry.command,
+        title: entry.title,
+        label: offer?.label,
+        args,
+        score,
+      }))
+  );
 }

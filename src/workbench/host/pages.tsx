@@ -90,7 +90,18 @@ export function hostPlugins(services: () => WorkbenchServices): InstalledPlugin[
         title: 'Home',
         description: 'Everything installed: apps to open, panels to show.',
         icon: 'House',
-        commands: [{ name: 'browse', title: 'Browse everything installed', icon: 'House' }],
+        commands: [
+          {
+            name: 'browse',
+            title: 'Browse everything installed',
+            icon: 'House',
+            semantics: {
+              description:
+                'Browse, list, search or show everything installed: every app, page, panel, tool and plugin.',
+              examples: ['browse', 'show me everything', 'what is installed', 'list the apps'],
+            },
+          },
+        ],
         shortcuts: [{ label: 'Browse', command: 'browse' }],
       }),
       route: page(() => import('./home/Home').then((m) => m.HomeDocument)),

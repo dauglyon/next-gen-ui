@@ -67,8 +67,15 @@ describe('ranking commands against typed text', () => {
   });
 
   it('ranks by the semantics section, which no title carries', () => {
-    const [top] = rank('kill the running job');
+    const [top] = rank('kill the running job', ['job:12']);
     expect(top.command).toBe('jobs:cancel');
+  });
+
+  // A row runs when pressed, so a command with a required argument the text
+  // does not fill is not a row.
+  it('offers a command only with its required arguments filled', () => {
+    expect(rank('kill the running job')).toEqual([]);
+    expect(rank('cancel this job', ['job:12'])[0]?.args).toEqual({ id: '12' });
   });
 
   it('binds a plugin-minted term through its prefix letters', () => {
@@ -97,8 +104,8 @@ describe('ranking commands against typed text', () => {
   // A fragment carries its own n-grams; one buried in "I want a" does not
   // clear the floor until the word is nearly whole.
   it('answers while a word is still being typed', () => {
-    expect(rank('kill the runn')[0]?.command).toBe('jobs:cancel');
-    expect(rank('cancel jo')[0]?.command).toBe('jobs:cancel');
+    expect(rank('kill the runn', ['job:12'])[0]?.command).toBe('jobs:cancel');
+    expect(rank('cancel jo', ['job:12'])[0]?.command).toBe('jobs:cancel');
   });
 
   it('shows at most four rows', () => {

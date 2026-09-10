@@ -267,15 +267,6 @@ export function PromptBar() {
       }));
   };
 
-  // The full-density form of the same search, for when the rows above are
-  // guesses rather than answers.
-  const browseSuggestion = (text: string): BarSuggestion => ({
-    value: text,
-    label: 'Browse everything',
-    icon: iconFor(source.manifest('home')?.icon, source.manifest('home')?.color),
-    run: () => void run('workbench:open', { plugin: 'home' }),
-  });
-
   // Completion follows the text; a stale async result for older text is dropped.
   useEffect(() => {
     let live = true;
@@ -309,19 +300,12 @@ export function PromptBar() {
           : [...shortcutSuggestions(value), ...appSuggestions(value), ...panelSuggestions(value)];
       const alternatives = [...answers, ...guesses];
       // Nothing worth choosing between: no list, and Enter behaves as if
-      // there were none.
-      // Browse only where it adds something: no plugin claimed the text, so
-      // what is on offer is a name match and the full list may do better. With
-      // an offer present it was a fourth row saying "or look somewhere else"
-      // under an answer.
+      // there were none. Browse is not appended as an escape: it is Home's
+      // own command, ranked like any other when the text asks for it.
       const found = list.length
         ? commands
         : alternatives.length
-          ? [
-              ...defaultSuggestion(value),
-              ...alternatives,
-              ...(answers.length ? [] : [browseSuggestion(value)]),
-            ]
+          ? [...defaultSuggestion(value), ...alternatives]
           : [];
       setSuggestions(found);
       // Row zero is always the default action, so it is always selected;
