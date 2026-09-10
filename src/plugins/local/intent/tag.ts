@@ -4,7 +4,7 @@ import shapesJson from './shapes.json';
 // the prefix Bioregistry gives them: `P0AEX9` is `uniprot:P0AEX9` wherever
 // it sits in a sentence, and so is `p0aex9`: the shape is matched in any
 // case and the id minted in the registry's. The shapes are extracted from a pinned Bioregistry
-// release by scripts/build-shapes.mjs, which also says why an entry is
+// release by `npm run build:shapes`, which also says why an entry is
 // tagged only in its prefixed form (`taxon:562`): a bare integer names as
 // many things as there are databases.
 

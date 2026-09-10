@@ -7,7 +7,7 @@
 // the prefixes listed in TAKE are extracted, and an entry whose registry
 // pattern is too loose to trust on a bare token carries its own.
 //
-//   node scripts/build-shapes.mjs
+//   npm run build:shapes
 
 import { writeFile } from 'node:fs/promises';
 
