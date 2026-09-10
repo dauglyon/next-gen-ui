@@ -296,9 +296,8 @@ export default defineBackground({
           </p>
           <File name="src/prompt.ts" language="typescript">{`export default definePrompt({
   handle: async ({ text }, { host, attachments }) => {
-    const current = koros.current();
-    if (current) koros.steer(current, text, attachments);
-    const slug = current ?? koros.start(text, attachments).slug;
+    const slug = koros.current() ?? koros.newArc().slug;
+    koros.steer(slug, text, attachments);
     host.openRoute(\`/\${slug}\`);
   },
   destination: { current: () => koros.destination(), subscribe: koros.subscribe },

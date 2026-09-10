@@ -480,17 +480,24 @@ function AssistantContext({
             <CaretUpDown size={12} aria-hidden="true" />
           </Menu.Trigger>
           <Menu.Popup>
-            {options.map((option) => (
-              <Menu.Item key={option.key} onClick={() => select(option.key)}>
-                <Check
-                  size={14}
-                  weight="bold"
-                  aria-hidden="true"
-                  style={{ visibility: option.label === label ? 'visible' : 'hidden' }}
-                />
-                {option.label}
-              </Menu.Item>
-            ))}
+            {options.map((option) => {
+              const Icon = option.icon ? iconFor(option.icon) : undefined;
+              return (
+                <Menu.Item
+                  key={option.key}
+                  onClick={() => select(option.key, { host: pluginHostFor(services, assistant) })}
+                >
+                  <Check
+                    size={14}
+                    weight="bold"
+                    aria-hidden="true"
+                    style={{ visibility: option.label === label ? 'visible' : 'hidden' }}
+                  />
+                  {Icon && <Icon size={14} aria-hidden="true" />}
+                  {option.label}
+                </Menu.Item>
+              );
+            })}
           </Menu.Popup>
         </Menu.Root>
       ) : (

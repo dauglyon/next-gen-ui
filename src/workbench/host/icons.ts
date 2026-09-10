@@ -3,6 +3,7 @@ import type { ComponentType } from 'react';
 import type { IconProps } from '@phosphor-icons/react';
 import {
   Briefcase,
+  ChatCircle,
   ChatCircleDots,
   Code,
   Database,
@@ -24,9 +25,27 @@ import {
 
 // Manifests name an icon; the host owns the table so a plugin cannot pull
 // the whole icon set into the bundle. Unknown names fall back to a pin.
+// A chat bubble with a plus: a new conversation. Phosphor has no such glyph,
+// so the bubble carries a plus drawn on its 256-unit grid; Phosphor renders
+// children inside its svg.
+const ChatCirclePlus: ComponentType<IconProps> = (props) =>
+  createElement(
+    ChatCircle,
+    props,
+    createElement('path', {
+      d: 'M128 92v72M92 128h72',
+      fill: 'none',
+      stroke: 'currentColor',
+      strokeWidth: 16,
+      strokeLinecap: 'round',
+    }),
+  );
+
 export const ICONS: Readonly<Record<string, ComponentType<IconProps>>> = {
   Briefcase,
+  ChatCircle,
   ChatCircleDots,
+  ChatCirclePlus,
   Code,
   Database,
   Flask,

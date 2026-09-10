@@ -121,7 +121,12 @@ export function createWorkbench({
     store,
     announce: announcer.announce,
     plugins: () => source.plugins().map((p) => p.id),
-    focusPrompt: () => prompt.focus(),
+    // An explicit ask for the prompt bar outranks the focus that follows a
+    // command to the panel it opened, whichever lands first.
+    focusPrompt: () => {
+      focusIntentRef.current = 'user';
+      prompt.focus();
+    },
   }).forEach((c) => registry.register(c));
   registry.register(openCommand(services));
   source.registerCommands(registry, (plugin) => pluginHostFor(services, plugin));

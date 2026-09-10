@@ -79,9 +79,11 @@ export interface Destination {
   label: string;
   // This plugin's route for it; the bar offers a jump there.
   path?: string;
-  // Other places it could land, and how the user picks one.
-  options?: { key: string; label: string }[];
-  select?: (key: string) => void;
+  // Other places it could land, and how the user picks one. An option's
+  // icon is a manifest icon name. `select` may open a page: a new
+  // conversation is a page as well as a destination.
+  options?: { key: string; label: string; icon?: string }[];
+  select?: (key: string, ctx: { host: PluginHost }) => void;
 }
 
 export interface Prompt {

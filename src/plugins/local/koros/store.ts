@@ -86,6 +86,10 @@ const arcs = new Map<string, Arc>([
   ],
 ]);
 
+// An arc that has not been asked yet: New question opened it, and the first
+// message sent to it is its question.
+export const isEmpty = (a: Arc) => a.question === '';
+
 function arc(a: Omit<Arc, 'needsYou' | 'working' | 'turns'> & { needsYou?: boolean }): Arc {
   return {
     ...a,
@@ -99,14 +103,8 @@ function arc(a: Omit<Arc, 'needsYou' | 'working' | 'turns'> & { needsYou?: boole
 // Slugs are lowercase, so case never splits one arc into two panels.
 export const slugOf = (path: string) => path.split(/[?#]/)[0].slice(1).toLowerCase();
 
-// KIND*AI's rule: the arc is named from its question unless the user names it.
-const slugify = (text: string) =>
-  text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 40)
-    .replace(/-$/, '');
+// The destination option that makes a new arc.
+const NEW = '\u0000new';
 
 let currentArc: string | null = 'nitro';
 let version = 0;
@@ -138,61 +136,54 @@ export const koros = {
   working: () => [...arcs.values()].filter((a) => a.working).length,
   needingYou: () => [...arcs.values()].filter((a) => a.needsYou).length,
   // Where the next free-text message lands, for the prompt bar: the current
-  // arc's session, else a new question. Both are switch targets, so the
-  // composer is KIND*AI's New question box and its session composer in one.
+  // arc's session. New is a switch target too, and opens the page it makes,
+  // so the composer is KIND*AI's New question box and its session composer
+  // in one.
   destination() {
     const arc = currentArc ? arcs.get(currentArc) : undefined;
     return {
-      label: arc ? arc.title : 'A new question',
+      label: arc ? arc.title : 'New question',
       path: arc ? `/${arc.slug}` : undefined,
       options: [
-        { key: '', label: 'A new question' },
+        { key: NEW, label: 'New', icon: 'ChatCirclePlus' },
         ...[...arcs.values()].map((a) => ({ key: a.slug, label: a.title })),
       ],
-      select: (key: string) => koros.setCurrent(key || null),
+      select: (key: string, { host }: { host: { openRoute: (path: string) => void } }) => {
+        const slug = key === NEW ? koros.newArc().slug : key;
+        koros.setCurrent(slug);
+        host.openRoute(`/${slug}`);
+      },
     };
   },
-  // Start an arc for a question. Filed under a project if one is named;
-  // otherwise it stands alone, which KIND*AI shows as a project of its own
-  // holding the one arc. It opens at FRAME and, a moment later, asks for the
-  // plan to be approved, which is where a real one first needs you.
-  start(question: string, project?: string, attached: Attached[] = []): Arc {
-    let slug = slugify(question) || 'question';
-    for (let n = 2; arcs.has(slug); n += 1) slug = `${slugify(question)}-${n}`;
-    const title = question.length > 48 ? `${question.slice(0, 47)}…` : question;
-    if (!project) {
-      project = slug;
-      projects.push({ id: slug, title });
+  // New question: an arc with no question yet, its own page, and the place the
+  // next message lands. An empty one already open is that arc; a second would
+  // be a second blank page. Standing alone, it is a project of its own, which
+  // is how KIND*AI files an arc not filed under a project.
+  newArc(): Arc {
+    const empty = [...arcs.values()].find(isEmpty);
+    if (empty) {
+      currentArc = empty.slug;
+      notify();
+      return empty;
     }
+    let n = 1;
+    while (arcs.has(`new-${n}`)) n += 1;
+    const slug = `new-${n}`;
+    projects.push({ id: slug, title: 'New question' });
     const created: Arc = {
       slug,
-      title,
-      project,
-      question,
+      title: 'New question',
+      project: slug,
+      question: '',
       stage: 'FRAME',
-      next: 'check-commons',
+      next: 'your question',
       needsYou: false,
-      working: true,
-      turns: [{ id: `${slug}-0`, by: 'you', text: question, attached }],
+      working: false,
+      turns: [],
     };
     arcs.set(slug, created);
     currentArc = slug;
     notify();
-    window.setTimeout(() => {
-      created.turns = [
-        ...created.turns,
-        {
-          id: `${slug}-1`,
-          by: 'koros',
-          text: 'FRAME: nothing in the commons answers this yet. Here is a plan; approve it to begin.',
-          attached: [],
-        },
-      ];
-      created.next = 'plan-approval';
-      created.needsYou = true;
-      created.working = false;
-      notify();
-    }, 1500);
     return created;
   },
   // Cross the human-only gate: the plan is approved and INVESTIGATE begins.
@@ -214,10 +205,21 @@ export const koros = {
     ];
     notify();
   },
-  // Steer the session: a turn of the user's, answered a moment later.
+  // A message to the session: a turn of the user's, answered a moment later.
+  // To an arc not yet asked it is the question: the arc takes its name from
+  // it, as KIND*AI names an arc from its question, and FRAME begins, which a
+  // moment later needs the plan approved.
   steer(slug: string, text: string, attached: Attached[] = []) {
     const target = arcs.get(slug);
     if (!target) return;
+    const asking = isEmpty(target);
+    if (asking) {
+      target.question = text;
+      target.title = text.length > 48 ? `${text.slice(0, 47)}…` : text;
+      const own = projects.find((p) => p.id === target.project);
+      if (own && own.title === 'New question') own.title = target.title;
+      target.next = 'check-commons';
+    }
     target.turns = [
       ...target.turns,
       { id: `${slug}-${target.turns.length}`, by: 'you', text, attached },
@@ -225,6 +227,24 @@ export const koros = {
     target.working = true;
     target.needsYou = false;
     notify();
+    if (asking) {
+      window.setTimeout(() => {
+        target.turns = [
+          ...target.turns,
+          {
+            id: `${slug}-${target.turns.length}`,
+            by: 'koros',
+            text: 'FRAME: nothing in the commons answers this yet. Here is a plan; approve it to begin.',
+            attached: [],
+          },
+        ];
+        target.next = 'plan-approval';
+        target.needsYou = true;
+        target.working = false;
+        notify();
+      }, 1500);
+      return;
+    }
     window.setTimeout(() => {
       // The mock reply names what it was given, so the cart's round trip is
       // visible end to end rather than only in the composer.

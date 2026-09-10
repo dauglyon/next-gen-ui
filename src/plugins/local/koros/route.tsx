@@ -1,7 +1,7 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { Button, Chip } from '@kbase/design-system';
 import { defineRoute, fromReact, usePanel, usePanelTitle } from '@kbase/plugin-sdk';
-import { STAGES, koros, slugOf } from './store';
+import { STAGES, isEmpty, koros, slugOf } from './store';
 import styles from './koros.module.css';
 
 // An arc as KIND*AI's session view shows it: the question, where it stands
@@ -14,7 +14,7 @@ function ArcPage() {
   const slugAsked = slugOf(path);
   const arc = koros.arc(slugAsked);
   const slug = arc?.slug;
-  usePanelTitle(arc ? `Arc: ${arc.title}` : `Arc: ${slugAsked}`);
+  usePanelTitle(arc ? (isEmpty(arc) ? 'New question' : `Arc: ${arc.title}`) : `Arc: ${slugAsked}`);
   // An effect, not a render-time call: setCurrent notifies subscribers in
   // other components (the prompt bar's destination row), which React
   // forbids during render.
@@ -29,6 +29,19 @@ function ArcPage() {
     );
   }
   const project = koros.projects().find((p) => p.id === arc.project)?.title ?? arc.project;
+  if (isEmpty(arc)) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.head}>
+          <h1 className="h2">New question</h1>
+          <p className="body">
+            Ask KOROS a research question in the prompt bar below. It frames the question first,
+            with what the commons already knows, then a plan for you to approve.
+          </p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className={styles.page}>
       {/* A standalone arc is a project of its own with the same name, so the
