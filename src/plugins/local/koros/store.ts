@@ -10,7 +10,6 @@ export interface Attached {
   id: string;
   name: string;
   subject?: string;
-  path?: string;
 }
 
 export type Stage = 'FRAME' | 'INVESTIGATE' | 'DELIVER' | 'DONE';
@@ -120,7 +119,6 @@ export const koros = {
   projects: () => projects,
   // Newest first, as KIND*AI sorts its rail.
   arcs: () => [...arcs.values()].reverse(),
-  arcsOf: (project: string) => [...arcs.values()].filter((a) => a.project === project),
   project: (id: string) => projects.find((p) => p.id === id),
   arc: (slug: string) => arcs.get(slug),
   current: () => currentArc,

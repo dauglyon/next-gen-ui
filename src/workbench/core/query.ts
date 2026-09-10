@@ -9,7 +9,6 @@ import type { CartItem, CommandCall, Suggestion } from '../../plugins/sdk';
 // and to remember what the user turned down.
 
 export type QuerySource = 'typing' | 'page' | 'cart';
-export const QUERY_SOURCES: readonly QuerySource[] = ['typing', 'page', 'cart'];
 
 export interface Answer {
   plugin: string;

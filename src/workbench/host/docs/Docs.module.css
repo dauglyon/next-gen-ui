@@ -57,7 +57,7 @@
 }
 
 .railTop {
-  font-weight: var(--fw-bold, 700);
+  font-weight: var(--fw-bold);
   color: var(--c-ink);
 }
 
@@ -79,17 +79,8 @@
   gap: var(--s-3);
 }
 
-.lede,
-.para {
-  margin: 0;
-  max-inline-size: 46rem;
-}
-
-.lede {
-  color: var(--c-ink2);
-}
-
-/* The friendly account of a section, at body size. */
+/* .narrative is the friendly account of a section, at body size. */
+.para,
 .narrative {
   margin: 0;
   max-inline-size: 46rem;
@@ -131,7 +122,7 @@
 
 .entryName {
   margin: 0;
-  font-family: var(--font-mono);
+  font-family: var(--f-mono);
   font-size: var(--fs-6);
 }
 
@@ -153,7 +144,7 @@
 
 .exportName {
   margin: 0;
-  font-family: var(--font-mono);
+  font-family: var(--f-mono);
   font-size: var(--fs-5);
 }
 
@@ -164,19 +155,13 @@
 }
 
 .fileName {
-  font-family: var(--font-mono);
+  font-family: var(--f-mono);
   font-size: var(--fs-2);
   color: var(--c-ink3);
 }
 
-/* "The smallest plugin" under A plugin. */
-.subhead {
-  margin: var(--s-3) 0 0;
-  font-size: var(--fs-5);
-}
-
 .inline {
-  font-family: var(--font-mono);
+  font-family: var(--f-mono);
   font-size: var(--fs-3);
   overflow-wrap: anywhere;
 }
@@ -201,6 +186,6 @@
 }
 
 .symptomName code {
-  font-family: var(--font-mono);
+  font-family: var(--f-mono);
   font-size: var(--fs-3);
 }

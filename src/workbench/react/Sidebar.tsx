@@ -205,7 +205,7 @@ function Block({ panel, info }: { panel: Panel; info: PluginInfo | undefined }) 
             <span className={styles.blockIcon} aria-hidden="true">
               <Icon size={14} />
             </span>
-            <span className={styles.blockLabel}>{info?.title ?? title}</span>
+            <span>{info?.title ?? title}</span>
             <CaretDown size={12} className={styles.blockChevron} aria-hidden="true" />
           </button>
         </ContextMenu.Trigger>
