@@ -48,14 +48,21 @@ export function replaceNode(root: Node, id: string, replacement: (node: Node) =>
   return changed ? { ...root, children } : root;
 }
 
+// `item` placed at `index` in a copy of `list` that no longer holds it; no
+// index appends, one out of range lands at the nearer end.
+export function reinsert<T>(list: readonly T[], item: T, index?: number): T[] {
+  const rest = list.filter((t) => t !== item);
+  const at = index === undefined ? rest.length : Math.max(0, Math.min(index, rest.length));
+  rest.splice(at, 0, item);
+  return rest;
+}
+
 export function insertTab(root: Node, group: GroupId, panel: PanelId, index?: number): Node {
-  return replaceNode(root, group, (node) => {
-    if (node.kind !== 'group') return node;
-    const tabs = node.tabs.filter((t) => t !== panel);
-    const at = index === undefined ? tabs.length : Math.max(0, Math.min(index, tabs.length));
-    tabs.splice(at, 0, panel);
-    return { ...node, tabs, active: panel };
-  });
+  return replaceNode(root, group, (node) =>
+    node.kind === 'group'
+      ? { ...node, tabs: reinsert(node.tabs, panel, index), active: panel }
+      : node,
+  );
 }
 
 // Removing the active tab activates its right-hand neighbour, else the new

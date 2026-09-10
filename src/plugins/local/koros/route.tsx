@@ -28,7 +28,7 @@ function ArcPage() {
       </div>
     );
   }
-  const project = koros.projects().find((p) => p.id === arc.project)?.title ?? arc.project;
+  const project = koros.project(arc.project)?.title ?? arc.project;
   if (isEmpty(arc)) {
     return (
       <div className={styles.page}>

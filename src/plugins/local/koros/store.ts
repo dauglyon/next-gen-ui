@@ -1,3 +1,6 @@
+import { createEmitter } from '../../sdk/emitter';
+import { pathParam } from '../../sdk/routes';
+
 // Mock state for the assistant, shaped like KOROS as KIND*AI shows it: a
 // project holds arcs; an arc is one research question walked through the
 // stages FRAME → INVESTIGATE → DELIVER → DONE, with a session the user steers
@@ -98,24 +101,14 @@ function arc(a: Omit<Arc, 'needsYou' | 'working' | 'turns'> & { needsYou?: boole
   };
 }
 
-// The arc named by a path: `/nitro`, with any query or fragment dropped.
-// Slugs are lowercase, so case never splits one arc into two panels.
-export const slugOf = (path: string) => path.split(/[?#]/)[0].slice(1).toLowerCase();
+export const slugOf = (path: string) => pathParam(path, { lower: true });
 
 let currentArc: string | null = 'nitro';
-let version = 0;
-const listeners = new Set<() => void>();
-const notify = () => {
-  version += 1;
-  listeners.forEach((l) => l());
-};
+const { subscribe, version, notify } = createEmitter();
 
 export const koros = {
-  subscribe(listener: () => void) {
-    listeners.add(listener);
-    return () => listeners.delete(listener);
-  },
-  version: () => version,
+  subscribe,
+  version,
   projects: () => projects,
   // Newest first, as KIND*AI sorts its rail.
   arcs: () => [...arcs.values()].reverse(),

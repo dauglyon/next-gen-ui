@@ -1,4 +1,5 @@
 import { defineBackground } from '@kbase/plugin-sdk';
+import { matchInventory } from '../../sdk/routes';
 import { jobStore } from './store';
 
 // Jobs answers from an inventory it already holds, so a term is minted only
@@ -14,12 +15,10 @@ export default defineBackground({
     const jobs = jobStore.all();
     const id = (/\bjob[: #]*(\d{1,6})\b/i.exec(q) ?? /^(\d{1,6})$/.exec(q))?.[1];
     if (id) return jobs.some((j) => j.id === id) ? [`job:${id}`] : [];
-    const needle = q.toLowerCase();
-    if (needle.length < 3) return [];
-    return jobs
-      .filter((j) => `${j.name} ${j.app} ${j.status}`.toLowerCase().includes(needle))
-      .slice(0, 3)
-      .map((j) => `job:${j.id}`);
+    return matchInventory(jobs, q, {
+      fields: (j) => `${j.name} ${j.app} ${j.status}`,
+      term: (j) => `job:${j.id}`,
+    });
   },
   recommend: {
     // Status is part of the label because which run you meant is usually

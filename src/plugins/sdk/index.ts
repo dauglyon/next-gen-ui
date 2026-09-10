@@ -60,6 +60,7 @@ export type { AppFrameProps } from './AppFrame';
 export { FrameLayerContext, useFrameLayer } from './frames';
 export type { FrameLayer, FrameSpec } from './frames';
 export { createEmitter } from './emitter';
+export { matchInventory, pathParam } from './routes';
 export type { Emitter } from './emitter';
 export { useCart, CartItemSchema, CartSourceSchema } from './cart';
 export type { Cart, CartItem, CartSource } from './cart';

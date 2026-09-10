@@ -66,6 +66,14 @@ export function openPane(services: WorkbenchServices, plugin: PluginId): boolean
   return services.dispatch({ type: 'open', panel: makePane(plugin) });
 }
 
+// Show a plugin's pane where it lives, never pin: a pinned plugin is focused
+// in its sidebar block, an unpinned one is previewed the way the sidebar's
+// More menu previews it. Pinning is the catalog's job.
+export function showPane(services: WorkbenchServices, plugin: PluginId): void {
+  if (services.store.get().sidebar.pinned.includes(plugin)) openPane(services, plugin);
+  else services.preview.set(plugin);
+}
+
 function message(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
