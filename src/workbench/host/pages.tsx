@@ -7,13 +7,10 @@ import type { WorkbenchServices } from '../react/services';
 import type { InstalledPlugin } from './installed';
 import { localPlugin } from './local';
 
-// The host's own pages and blocks, installed over the same index as every
-// plugin so they pin, fold, drag, complete and link like one. They reach
-// the host's services directly, which no plugin over the SDK can, so their
-// React trees carry the services context as well as the SDK's two.
-//
-// `services` is a thunk: these are built before the services object exists
-// and the loaders run long after.
+// The host's own pages and blocks. They reach the host's services directly,
+// which no plugin over the SDK can, so their React trees carry the services
+// context as well as the SDK's two. `services` is a thunk: these are built
+// before the services object exists and the loaders run long after.
 
 export function hostPlugins(services: () => WorkbenchServices): InstalledPlugin[] {
   const page = (load: () => Promise<ComponentType>) => async (): Promise<Route> => ({
@@ -110,7 +107,6 @@ export function hostPlugins(services: () => WorkbenchServices): InstalledPlugin[
   ];
 }
 
-// `fromReact` with the host's services in the tree.
 function hostReact(services: () => WorkbenchServices, Component: ComponentType): { mount: Mount } {
   return {
     mount(el, { panel, host }) {
@@ -118,7 +114,7 @@ function hostReact(services: () => WorkbenchServices, Component: ComponentType):
       const draw = () =>
         root.render(
           <ServicesContext value={services()}>
-            <PanelContext value={{ ...panel, path: panel.path, focused: panel.focused }}>
+            <PanelContext value={{ ...panel }}>
               <HostContext value={host}>
                 <Component />
               </HostContext>

@@ -1,4 +1,4 @@
-import type { GroupId, Group, Node, PanelId, Split, SplitDir, SplitId } from './layout';
+import type { GroupId, Group, Node, PanelId, SplitId } from './layout';
 import { emptyGroup } from './layout';
 
 // Pure helpers over the main-area tree. Every mutator returns a new tree and
@@ -24,16 +24,6 @@ export function findNode(node: Node, id: string): Node | undefined {
 
 export function groupOf(node: Node, panel: PanelId): Group | undefined {
   return groups(node).find((g) => g.tabs.includes(panel));
-}
-
-export function parentOf(root: Node, id: string): Split | undefined {
-  if (root.kind !== 'split') return undefined;
-  if (root.children.some((c) => c.id === id)) return root;
-  for (const child of root.children) {
-    const found = parentOf(child, id);
-    if (found) return found;
-  }
-  return undefined;
 }
 
 export function replaceNode(root: Node, id: string, replacement: (node: Node) => Node): Node {
@@ -88,10 +78,6 @@ export function activateTab(root: Node, panel: PanelId): Node {
   );
 }
 
-function dirOf(side: Side): SplitDir {
-  return side === 'left' || side === 'right' ? 'row' : 'col';
-}
-
 // Splits `group` so a new group holding `panel` sits on `side` of it. The
 // two take equal halves of the space the old group had.
 export function splitGroup(
@@ -107,7 +93,7 @@ export function splitGroup(
   return replaceNode(root, group, (node) => ({
     kind: 'split',
     id: newSplitId,
-    dir: dirOf(side),
+    dir: side === 'left' || side === 'right' ? 'row' : 'col',
     sizes: [0.5, 0.5],
     children: before ? [fresh, node] : [node, fresh],
   }));

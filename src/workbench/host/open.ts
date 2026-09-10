@@ -36,7 +36,9 @@ export async function openRoute(
   try {
     normalize = (await source.module(plugin, 'route')).normalize;
   } catch (err) {
-    announcer.announce(`${manifest.title} failed to load: ${message(err)}`);
+    announcer.announce(
+      `${manifest.title} failed to load: ${err instanceof Error ? err.message : String(err)}`,
+    );
     return undefined;
   }
   if (!options.duplicate) {
@@ -72,8 +74,4 @@ export function openPane(services: WorkbenchServices, plugin: PluginId): boolean
 export function showPane(services: WorkbenchServices, plugin: PluginId): void {
   if (services.store.get().sidebar.pinned.includes(plugin)) openPane(services, plugin);
   else services.preview.set(plugin);
-}
-
-function message(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
 }

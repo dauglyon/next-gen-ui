@@ -1,13 +1,9 @@
 import type { CartItem, CommandCall, Suggestion } from '../../plugins/sdk';
 import { createEmitter } from '../../plugins/sdk';
 
-// What every plugin's `recommend` said about each source of terms.
-//
-// Three sources, asked separately because they change at different rates:
-// the text being typed, the front tab's terms, and the cart's. The host
-// carries terms and never reads one; its jobs are to ask each question
-// once per settle, to drop answers to a question no longer being asked,
-// and to remember what the user turned down.
+// What every plugin's `recommend` said about each source of terms. The
+// sources are asked separately because they change at different rates. The
+// host carries terms and never reads one.
 
 export type QuerySource = 'typing' | 'page' | 'cart';
 
@@ -35,7 +31,7 @@ export interface SourceState {
   suggestions?: Suggestion[];
 }
 
-export const EMPTY_SOURCE: SourceState = {
+const EMPTY_SOURCE: SourceState = {
   label: '',
   pool: [],
   answers: [],
@@ -44,12 +40,10 @@ export const EMPTY_SOURCE: SourceState = {
   suggestions: [],
 };
 
-// A dismissed recommendation stays gone whoever offers it next: the key is
-// the item's own id.
-
 export interface QueryStore {
   get: (source: QuerySource) => SourceState;
   set: (source: QuerySource, state: SourceState) => void;
+  // A dismissal stays whoever offers the item next: the key is the item's id.
   dismiss: (key: string) => void;
   dismissed: (key: string) => boolean;
   subscribe: (listener: () => void) => () => void;

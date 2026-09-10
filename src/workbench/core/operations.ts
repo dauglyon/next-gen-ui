@@ -36,10 +36,8 @@ export type Operation =
   | { type: 'bind'; key: string; command: string | null }
   | { type: 'lock'; locked: boolean };
 
-export type OperationType = Operation['type'];
-
 // Structural changes get an undo snapshot; focus, sizing and bindings do not.
-const UNDOABLE: ReadonlySet<OperationType> = new Set<OperationType>([
+const UNDOABLE = new Set<Operation['type']>([
   'open',
   'close',
   'move',

@@ -47,13 +47,6 @@ export interface CommandRegistry {
   onRun(listener: () => void): () => void;
 }
 
-export class DuplicateCommandError extends Error {
-  constructor(name: string) {
-    super(`command /${name} is already registered`);
-    this.name = 'DuplicateCommandError';
-  }
-}
-
 export function createCommandRegistry(): CommandRegistry {
   const commands = new Map<string, Command>();
   const listeners = new Set<() => void>();
@@ -79,7 +72,7 @@ export function createCommandRegistry(): CommandRegistry {
   return {
     register(command) {
       const key = qualifiedName(command);
-      if (commands.has(key)) throw new DuplicateCommandError(key);
+      if (commands.has(key)) throw new Error(`command /${key} is already registered`);
       commands.set(key, command);
       notify();
       return () => {

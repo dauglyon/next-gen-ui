@@ -16,12 +16,8 @@ export interface WorkbenchCommandDeps {
   focusPrompt: () => void;
 }
 
-function focusedPanel(layout: Layout): PanelId | null {
-  return layout.focus;
-}
-
 function tabNeighbour(layout: Layout, offset: 1 | -1): PanelId | null {
-  const focus = focusedPanel(layout);
+  const focus = layout.focus;
   if (!focus) return null;
   const group = groupOf(layout.main, focus);
   if (!group) return null;
@@ -32,11 +28,18 @@ function tabNeighbour(layout: Layout, offset: 1 | -1): PanelId | null {
 function groupNeighbour(layout: Layout, offset: 1 | -1): PanelId | null {
   const all = groups(layout.main).filter((g) => g.active);
   if (all.length === 0) return null;
-  const focus = focusedPanel(layout);
+  const focus = layout.focus;
   const at = focus ? all.findIndex((g) => g.tabs.includes(focus)) : -1;
   const next = all[(at + offset + all.length) % all.length];
   return next.active;
 }
+
+const cmd = (
+  name: string,
+  title: string,
+  run: Command['run'],
+  rest: Partial<Command> = {},
+): Command => ({ source: 'workbench', name, title, run, ...rest });
 
 export function workbenchCommands({
   store,
@@ -50,7 +53,7 @@ export function workbenchCommands({
   };
   const moveFocused = (side: Side) => {
     const layout = store.get();
-    const focus = focusedPanel(layout);
+    const focus = layout.focus;
     if (!focus) return;
     const group = groupOf(layout.main, focus);
     if (!group || group.tabs.length < 2) {
@@ -59,141 +62,94 @@ export function workbenchCommands({
     }
     dispatch({ type: 'move', panel: focus, to: { group: group.id, side } });
   };
-  const base = { source: 'workbench' as const };
 
   return [
-    {
-      ...base,
-      name: 'prompt',
-      title: 'Focus the prompt bar',
-      run: () => focusPrompt(),
-    },
-    {
-      ...base,
-      name: 'close',
-      title: 'Close the focused panel',
-      run: () => {
-        const focus = focusedPanel(store.get());
-        if (focus) dispatch({ type: 'close', panel: focus });
-      },
-    },
-    {
-      ...base,
-      name: 'focus-next-tab',
-      title: 'Focus the next tab',
-      run: () => focusTo(tabNeighbour(store.get(), 1)),
-    },
-    {
-      ...base,
-      name: 'focus-previous-tab',
-      title: 'Focus the previous tab',
-      run: () => focusTo(tabNeighbour(store.get(), -1)),
-    },
-    {
-      ...base,
-      name: 'focus-next-group',
-      title: 'Focus the next group',
-      run: () => focusTo(groupNeighbour(store.get(), 1)),
-    },
-    {
-      ...base,
-      name: 'focus-previous-group',
-      title: 'Focus the previous group',
-      run: () => focusTo(groupNeighbour(store.get(), -1)),
-    },
-    {
-      ...base,
-      name: 'move-left',
-      title: 'Split the panel to the left',
-      run: () => moveFocused('left'),
-    },
-    {
-      ...base,
-      name: 'move-right',
-      title: 'Split the panel to the right',
-      run: () => moveFocused('right'),
-    },
-    { ...base, name: 'move-up', title: 'Split the panel upward', run: () => moveFocused('top') },
-    {
-      ...base,
-      name: 'move-down',
-      title: 'Split the panel downward',
-      run: () => moveFocused('bottom'),
-    },
-    {
-      ...base,
-      name: 'fold',
-      title: 'Fold or unfold the focused sidebar panel',
-      when: (ctx) => ctx.focusKind === 'pane',
-      run: () => {
+    cmd('prompt', 'Focus the prompt bar', () => focusPrompt()),
+    cmd('close', 'Close the focused panel', () => {
+      const focus = store.get().focus;
+      if (focus) dispatch({ type: 'close', panel: focus });
+    }),
+    cmd('focus-next-tab', 'Focus the next tab', () => focusTo(tabNeighbour(store.get(), 1))),
+    cmd('focus-previous-tab', 'Focus the previous tab', () =>
+      focusTo(tabNeighbour(store.get(), -1)),
+    ),
+    cmd('focus-next-group', 'Focus the next group', () => focusTo(groupNeighbour(store.get(), 1))),
+    cmd('focus-previous-group', 'Focus the previous group', () =>
+      focusTo(groupNeighbour(store.get(), -1)),
+    ),
+    cmd('move-left', 'Split the panel to the left', () => moveFocused('left')),
+    cmd('move-right', 'Split the panel to the right', () => moveFocused('right')),
+    cmd('move-up', 'Split the panel upward', () => moveFocused('top')),
+    cmd('move-down', 'Split the panel downward', () => moveFocused('bottom')),
+    cmd(
+      'fold',
+      'Fold or unfold the focused sidebar panel',
+      () => {
         const layout = store.get();
-        const focus = focusedPanel(layout);
+        const focus = layout.focus;
         if (!focus) return;
         const placement = placementOf(layout, focus);
         if (placement.zone !== 'sidebar') return;
         dispatch({ type: 'fold', panel: focus, folded: !placement.folded });
       },
-    },
-    {
-      ...base,
-      name: 'sidebar',
-      title: 'Collapse or expand the sidebar',
-      run: () => dispatch({ type: 'sidebar', collapsed: !store.get().sidebar.collapsed }),
-    },
-    {
-      ...base,
-      name: 'pin',
-      title: 'Pin a plugin to the sidebar',
-      args: [
-        {
-          name: 'plugin',
-          type: 'string',
-          required: true,
-          complete: (p) => plugins().filter((id) => id.startsWith(p)),
-        },
-      ],
-      run: ({ plugin }) => {
+      { when: (ctx) => ctx.focusKind === 'pane' },
+    ),
+    cmd('sidebar', 'Collapse or expand the sidebar', () => {
+      dispatch({ type: 'sidebar', collapsed: !store.get().sidebar.collapsed });
+    }),
+    cmd(
+      'pin',
+      'Pin a plugin to the sidebar',
+      ({ plugin }) => {
         if (!plugins().includes(String(plugin))) {
           announce(`No plugin named ${String(plugin)}`);
           return;
         }
         dispatch({ type: 'pin', plugin: String(plugin) });
       },
-    },
-    {
-      ...base,
-      name: 'unpin',
-      title: 'Remove a plugin from the sidebar',
-      args: [
-        {
-          name: 'plugin',
-          type: 'string',
-          required: true,
-          complete: (p) => store.get().sidebar.pinned.filter((id) => id.startsWith(p)),
-        },
-      ],
-      run: ({ plugin }) => dispatch({ type: 'unpin', plugin: String(plugin) }),
-    },
-    {
-      ...base,
-      name: 'undo',
-      title: 'Undo the last layout change',
-      run: () => announce(store.undo() ? 'Undone' : 'Nothing to undo'),
-    },
-    {
-      ...base,
-      name: 'redo',
-      title: 'Redo the last undone layout change',
-      run: () => announce(store.redo() ? 'Redone' : 'Nothing to redo'),
-    },
-    {
-      ...base,
-      name: 'lock-layout',
-      title: 'Lock or unlock the layout',
-      description: 'A locked layout keeps its arrangement; opening and closing panels stays free',
-      run: () => {
+      {
+        args: [
+          {
+            name: 'plugin',
+            type: 'string',
+            required: true,
+            complete: (p) => plugins().filter((id) => id.startsWith(p)),
+          },
+        ],
+      },
+    ),
+    cmd(
+      'unpin',
+      'Remove a plugin from the sidebar',
+      ({ plugin }) => {
+        dispatch({ type: 'unpin', plugin: String(plugin) });
+      },
+      {
+        args: [
+          {
+            name: 'plugin',
+            type: 'string',
+            required: true,
+            complete: (p) => store.get().sidebar.pinned.filter((id) => id.startsWith(p)),
+          },
+        ],
+      },
+    ),
+    cmd('undo', 'Undo the last layout change', () =>
+      announce(store.undo() ? 'Undone' : 'Nothing to undo'),
+    ),
+    cmd('redo', 'Redo the last undone layout change', () =>
+      announce(store.redo() ? 'Redone' : 'Nothing to redo'),
+    ),
+    cmd(
+      'lock-layout',
+      'Lock or unlock the layout',
+      () => {
         dispatch({ type: 'lock', locked: !store.get().locked });
       },
-    },
+      {
+        description: 'A locked layout keeps its arrangement; opening and closing panels stays free',
+      },
+    ),
   ];
 }

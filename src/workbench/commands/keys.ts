@@ -18,21 +18,23 @@ export interface KeyLike {
   metaKey: boolean;
 }
 
-const MODIFIERS = new Set(['ctrl', 'control', 'shift', 'alt', 'meta', 'cmd', 'mod']);
+const MODIFIERS: Record<string, keyof Omit<Chord, 'key'>> = {
+  ctrl: 'ctrl',
+  control: 'ctrl',
+  mod: 'ctrl',
+  shift: 'shift',
+  alt: 'alt',
+  meta: 'meta',
+  cmd: 'meta',
+};
 
 export function parseChord(text: string): Chord {
   const chord: Chord = { key: '', ctrl: false, shift: false, alt: false, meta: false };
   for (const raw of text.split('+')) {
     const part = raw.trim();
-    const lower = part.toLowerCase();
-    if (MODIFIERS.has(lower)) {
-      if (lower === 'ctrl' || lower === 'control' || lower === 'mod') chord.ctrl = true;
-      else if (lower === 'shift') chord.shift = true;
-      else if (lower === 'alt') chord.alt = true;
-      else chord.meta = true;
-    } else {
-      chord.key = normalizeKey(part);
-    }
+    const modifier = MODIFIERS[part.toLowerCase()];
+    if (modifier) chord[modifier] = true;
+    else chord.key = normalizeKey(part);
   }
   return chord;
 }
@@ -55,16 +57,6 @@ export function chordToString(chord: Chord): string {
   if (chord.meta) parts.push('Meta');
   parts.push(chord.key);
   return parts.join('+');
-}
-
-export function sameChord(a: Chord, b: Chord): boolean {
-  return (
-    a.key === b.key &&
-    a.ctrl === b.ctrl &&
-    a.shift === b.shift &&
-    a.alt === b.alt &&
-    a.meta === b.meta
-  );
 }
 
 // Letters compare case-insensitively (Shift changes `event.key`'s case);
@@ -101,7 +93,7 @@ export function resolveKeybinding(
   const pressed = chordFromEvent(event);
   const table = { ...defaults, ...overrides };
   for (const [text, command] of Object.entries(table)) {
-    if (sameChord(parseChord(text), pressed)) return command || null;
+    if (chordToString(parseChord(text)) === chordToString(pressed)) return command || null;
   }
   return null;
 }

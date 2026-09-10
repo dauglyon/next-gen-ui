@@ -18,12 +18,6 @@ export const CartItemSchema = AdditionSchema.extend({
 
 export type CartItem = z.infer<typeof CartItemSchema>;
 
-// What a plugin passes to the SDK's adder. The host fills in the rest.
-export type CartAddition = Omit<CartItem, 'plugin' | 'addedAt'> & {
-  plugin?: string;
-  addedAt?: number;
-};
-
 export interface CartStore {
   items: () => readonly CartItem[];
   // Idempotent on `id`: adding the same thing twice replaces it, so a plugin
