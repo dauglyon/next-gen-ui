@@ -90,7 +90,8 @@ export function HomeDocument() {
 // The prototype's own instructions, for someone who has never seen it and does
 // not know the vocabulary. A tour, not an explainer: every line is a thing to
 // do and what appears; no mechanism, nothing named after the code. It follows
-// the lists, which are what the page is for.
+// the lists, which are what the page is for. P11558 is the example because
+// all three real apps answer for it.
 function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
   return (
     <section className={styles.tour} aria-labelledby="home-tour">
@@ -109,64 +110,81 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
           <div className={styles.stepBody}>
             <h3 className={styles.stepTitle}>Ask for a protein</h3>
             <p className={styles.stepText}>
-              Type <Key>dossier for p0aex9</Key> in the box at the bottom. Press the Function
-              Junction row. A dossier on the protein opens in the middle.{' '}
+              Click the box at the bottom and type <Key>P11558</Key>. A short list opens above it.
+              The top row sends the text to KOROS; below it, Function Junction offers a dossier.
+              Press the Function Junction row.{' '}
               <button type="button" className={styles.tourLink} onClick={onFocusPrompt}>
                 Put the cursor there
               </button>
             </p>
           </div>
         </li>
-
         <li className={styles.step}>
           <span className={styles.stepNum} aria-hidden="true">
             2
           </span>
           <div className={styles.stepBody}>
-            <h3 className={styles.stepTitle}>Look left</h3>
+            <h3 className={styles.stepTitle}>Read the dossier</h3>
             <p className={styles.stepText}>
-              The Related panel has filled in: other tools offering what they know about this
-              protein. Press one to open it beside the first.
+              A tab opens in the middle. It takes a minute to build, and cards fill in as their
+              evidence arrives: this is methyl-coenzyme M reductase, the enzyme that makes methane,
+              from <i>Methanothermobacter marburgensis</i>.
             </p>
           </div>
         </li>
-
         <li className={styles.step}>
           <span className={styles.stepNum} aria-hidden="true">
             3
           </span>
           <div className={styles.stepBody}>
-            <h3 className={styles.stepTitle}>Keep something</h3>
+            <h3 className={styles.stepTitle}>See what the other tools know</h3>
             <p className={styles.stepText}>
-              Press Add to cart on the report, or on any line in it. It shows up in the cart under
-              the box. Related now offers things for what you kept, too.
+              While the dossier builds, watch the Related panel at the bottom left. Two rows arrive:
+              genKnown, with the organism&apos;s place in the tree of life, and Diaspora, with the
+              environments its family is found in. Press the genKnown row: the organism opens in a
+              second tab beside the dossier. Press Diaspora&apos;s: a third tab opens on the 3,308
+              samples that carry it, mapped.
             </p>
           </div>
         </li>
-
         <li className={styles.step}>
           <span className={styles.stepNum} aria-hidden="true">
             4
           </span>
           <div className={styles.stepBody}>
-            <h3 className={styles.stepTitle}>Ask KOROS</h3>
+            <h3 className={styles.stepTitle}>Keep what matters</h3>
             <p className={styles.stepText}>
-              Press New question in Shortcuts. Type{' '}
-              <Key>which soil isolates fix nitrogen fastest?</Key> and press Enter. KOROS reads what
-              you kept, frames the question, and hands you a plan. Press Approve plan.
+              Every card in the dossier, and every Related row, has an Add to cart button. Press a
+              few. They collect in the cart under the box, and the Related panel starts answering
+              for what you kept as well as for the page you are on.
             </p>
           </div>
         </li>
-
         <li className={styles.step}>
           <span className={styles.stepNum} aria-hidden="true">
             5
           </span>
           <div className={styles.stepBody}>
+            <h3 className={styles.stepTitle}>Send it to KOROS</h3>
+            <p className={styles.stepText}>
+              Press New question in Shortcuts at the top left. A blank page opens and the box now
+              points at it. Type a question and press Enter. What you kept goes with it, and the
+              page shows your question and the items. KOROS here is a mock-up: it answers with a
+              placeholder, marks the arc as needing you, and Approve plan moves it to the next
+              stage. The real KOROS would frame the question, search prior work, and hand you a plan
+              to approve at this point.
+            </p>
+          </div>
+        </li>
+        <li className={styles.step}>
+          <span className={styles.stepNum} aria-hidden="true">
+            6
+          </span>
+          <div className={styles.stepBody}>
             <h3 className={styles.stepTitle}>Come back to it</h3>
             <p className={styles.stepText}>
-              Reload the page. Your tabs, your cart and your arc are where you left them. The KOROS
-              panel on the left shows which arcs are waiting on you.
+              Reload the page. The tabs, the cart and the arc are where you left them, and the KOROS
+              panel on the left lists every arc and marks the ones waiting on you.
             </p>
           </div>
         </li>
@@ -176,18 +194,26 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
         <h3 className={styles.tourMoreTitle}>Also try</h3>
         <ul className={styles.tourMoreList}>
           <li>
-            <Key>cancel job 12</Key> · <Key>browse</Key> · <Key>/</Key> and a command name, Tab to
-            complete it
+            Typing a place instead of a protein: <Key>marine biome</Key>, <Key>soil samples</Key>.
           </li>
-          <li>Dragging a panel from the left into the middle</li>
-          <li>More, at the foot of the left column, to peek at a panel you have not pinned</li>
-          <li>Settings, for which panels you keep and which assistant answers you</li>
+          <li>
+            Typing a taxon: <Key>Escherichia coli</Key>. genKnown offers it; Diaspora answers for
+            it.
+          </li>
+          <li>
+            <Key>/</Key> and a command name. Tab completes it, and the hint under the box shows what
+            it takes.
+          </li>
+          <li>
+            Dragging a panel from the left column into the middle, or a tab next to another tab.
+          </li>
+          <li>Settings, for which panels sit on the left and which assistant answers you.</li>
         </ul>
       </div>
 
       <p className={`caption ${styles.tourNote}`}>
-        KOROS, Jobs and Data are mock-ups. Function Junction and genKnown are the real apps, reading
-        the KBase lakehouse.
+        KOROS, Jobs and Data are mock-ups. Function Junction, genKnown and Diaspora are the real
+        apps, reading the KBase lakehouse.
       </p>
     </section>
   );
