@@ -11,11 +11,17 @@ import { cx } from '../../util/cx';
 
 export interface RootProps extends Omit<BaseAccordion.Root.Props, 'className'> {
   className?: string;
+  /** Tighter headers, for a stack of sections rather than a page of them. */
+  dense?: boolean;
 }
 
-export function Root({ multiple = true, className, ...props }: RootProps) {
+export function Root({ multiple = true, dense, className, ...props }: RootProps) {
   return (
-    <BaseAccordion.Root multiple={multiple} className={cx(styles.root, className)} {...props} />
+    <BaseAccordion.Root
+      multiple={multiple}
+      className={cx(styles.root, dense && styles.dense, className)}
+      {...props}
+    />
   );
 }
 
