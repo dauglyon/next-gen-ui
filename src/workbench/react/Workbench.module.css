@@ -25,7 +25,10 @@
   border-bottom: 1px solid var(--c-border);
 }
 
-/* The masthead's ratios at menubar scale: gap 0.75 T for wordmark size T, one type step above the triggers. */
+/* The design system's masthead RATIOS at menubar scale: per wordmark size
+   T, dots = 1.0 T and the mark→word gap = 0.75 T; the wordmark sits one
+   type step above its surroundings (triggers are --fs-4, so T = --fs-5),
+   bold ink2. */
 .brand {
   display: inline-flex;
   align-items: center;
@@ -51,8 +54,11 @@
 
 /* Sidebar */
 
-/* Width is the one animated layout property; the rail (a fixed-width overlay) and the blocks
-   (full width, cropped by the container) crossfade inside it, so nothing re-lays-out. */
+/* Both states stay mounted; the container's width is the ONE animated
+   layout property, and the rail and the blocks crossfade inside it. The
+   rail is a fixed-width overlay so its icons are never clipped
+   mid-animation; the blocks keep their full width and are cropped by the
+   container, so nothing inside re-lays-out. */
 .sidebar {
   position: relative;
   flex: none;
@@ -111,6 +117,18 @@
     visibility 0s 0s;
 }
 
+/* global.css shortens transition durations under reduced motion but leaves the delay: without
+   this the outgoing layer stays hit-testable for --t-slow after its opacity has dropped. */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .iconColumn,
+  .blocks {
+    transition: none;
+  }
+}
+
+/* The main area's column: panels above, the composer below, together
+   spanning only the width right of the sidebar. */
 .mainColumn {
   flex: 1;
   min-width: 0;
@@ -132,7 +150,8 @@
 }
 
 /* Insertion line where a dropped navigator lands: before this block, or at the end of the pins
-   (the More row's top edge). On the header, not the section: the section's shadow hid behind it. */
+   (the More row's top edge, matching the per-block lines — not a whole-region outline that reads
+   as "into the sidebar"). On the header, not the section: the section's shadow hid behind it. */
 .block[data-over] .blockHeader,
 .blocks[data-over] .moreRow {
   box-shadow: inset 0 3px 0 var(--c-primary);
@@ -173,6 +192,7 @@
   padding: var(--s-1) var(--s-2) var(--s-1) var(--s-3);
 }
 
+/* The title of a navigator block outside the accordion: the preview card and the popout. */
 .previewTitle,
 .popoutTitle {
   font-size: var(--fs-4);
@@ -204,7 +224,8 @@
   display: flex;
   align-items: center;
   gap: var(--s-3);
-  /* Left inset --s-3 centres the icon on x=24 with the rail glyphs; the vertical is the row tier. */
+  /* Left inset --s-3 centres the icon on x=24 with the rail glyphs; the vertical is the row tier,
+     which resolves compact because the sidebar declares itself so, stacking four of these. */
   padding: var(--row-py) var(--ctl-px) var(--row-py) var(--s-3);
   border: none;
   color: var(--c-ink3);
@@ -230,9 +251,7 @@
   color: var(--c-ink);
 }
 
-/* Glyphs are currentColor, so they tint with their control's state. */
-.blockIcon,
-.tabIcon {
+.blockIcon {
   display: inline-flex;
 }
 
@@ -255,6 +274,7 @@
   box-shadow: inset 0 0 0 2px var(--c-focus);
 }
 
+/* The scroller under a header: a sidebar block's body and a main-area tab panel. */
 .blockBody,
 .tabpanel {
   flex: 1;
@@ -262,8 +282,14 @@
   overflow: auto;
 }
 
+/* Guards the rule above: a `display` added to it would unhide every inactive tab panel. */
+.tabpanel[hidden] {
+  display: none;
+}
+
 /* Doubled to outrank Popover.Popup's 320px max-width and padding: this holds a whole navigator
-   panel. Width comes inline from the layout's sidebar width. */
+   panel, and the panel body pads itself like its sidebar twin. Width comes inline from the
+   layout's sidebar width, so the flyout is the sidebar's own size. */
 .popout.popout {
   display: flex;
   background: var(--c-surface);
@@ -344,14 +370,16 @@
 }
 
 .splitRow > .splitChild > .separator {
-  inset-block: 0;
+  top: 0;
+  bottom: 0;
   right: calc(-1 * var(--s-2));
   width: var(--s-2);
   cursor: col-resize;
 }
 
 .splitCol > .splitChild > .separator {
-  inset-inline: 0;
+  left: 0;
+  right: 0;
   bottom: calc(-1 * var(--s-2));
   height: var(--s-2);
   cursor: row-resize;
@@ -478,7 +506,9 @@
 
 /* Bars */
 
-/* The composer, inset to the panels' gutters; the wrapper also anchors the completion popup. */
+/* A floating composer card on the page background, inset to the same gutters as the panels; the
+   wrapper also anchors the completion popup. Lives in the main column, so it spans only the width
+   right of the sidebar. */
 .promptBar {
   position: relative;
   padding: 0 var(--s-3) var(--s-3) 0;
@@ -502,10 +532,8 @@
   color: var(--c-ink4);
 }
 
-/* Marks sit with their label and never shrink. */
-.promptMark,
-.crumbIcon,
-.relatedMark {
+/* The assistant's own mark, ahead of its name, as the first crumb carries it. */
+.promptMark {
   flex: none;
 }
 
@@ -519,7 +547,8 @@
   padding-inline: var(--s-1);
 }
 
-/* The pill's padding is cancelled vertically so it doesn't inflate the footer row. */
+/* The destination switcher and the jump-to-it button. The pill's padding is cancelled vertically
+   so it doesn't inflate the footer row. */
 .promptTarget {
   display: inline-flex;
   align-items: center;
@@ -556,6 +585,11 @@
   pointer-events: none;
 }
 
+/* The plugin's glyph; currentColor, so it tints with the tab's state. */
+.tabIcon {
+  display: inline-flex;
+}
+
 .tab[data-dragging],
 .blockToggle[data-dragging] {
   opacity: 0.4;
@@ -590,31 +624,38 @@
 }
 
 .dropZone_left {
-  inset-block: 0;
+  top: 0;
+  bottom: 0;
   left: 0;
   width: 25%;
 }
 
 .dropZone_right {
-  inset-block: 0;
+  top: 0;
+  bottom: 0;
   right: 0;
   width: 25%;
 }
 
 .dropZone_top {
-  inset-inline: 25%;
+  left: 25%;
+  right: 25%;
   top: 0;
   height: 25%;
 }
 
 .dropZone_bottom {
-  inset-inline: 25%;
+  left: 25%;
+  right: 25%;
   bottom: 0;
   height: 25%;
 }
 
 .dropZone_centre {
-  inset: 25%;
+  top: 25%;
+  right: 25%;
+  bottom: 25%;
+  left: 25%;
 }
 
 .groupBody {
@@ -663,10 +704,6 @@
   cursor: pointer;
 }
 
-.statusItem:hover {
-  color: var(--c-ink);
-}
-
 .tabClose:focus-visible,
 .promptTarget:focus-visible,
 .statusItem:focus-visible {
@@ -689,7 +726,8 @@
   margin: 0 0 var(--s-2);
   padding: var(--s-2);
   list-style: none;
-  /* One tier over the composer's surface, with the border and shadow that say so. */
+  /* One tier over the composer's surface, with the border and shadow that say so: at
+     surface-on-surface with e-3 it was a panel that happened to overlap. */
   background: var(--c-raised);
   border: 1px solid var(--c-border2);
   border-radius: var(--r-lg);
@@ -754,8 +792,7 @@
   display: none;
 }
 
-.lockedNote,
-.cartMeasure {
+.lockedNote {
   display: inline-flex;
   align-items: center;
   gap: var(--s-1);
@@ -815,6 +852,12 @@
   color: inherit;
 }
 
+/* A crumb's own mark, where it names one. Sits with the label rather than apart from it, so the
+   pair reads as one crumb. */
+.crumbIcon {
+  flex: none;
+}
+
 .crumbLink {
   background: none;
   border: none;
@@ -842,7 +885,10 @@
 }
 
 /* Attachments on the next message, in the composer's own attachments slot (see CartTray.tsx).
-   Sideways, never taller: a row that wraps pushes the message being written off the screen. */
+   Tiles rather than pills, which is what Slack, assistant-ui and Claude all settle on for a
+   composer, with the figure in the preview slot where those have a thumbnail. Sideways, never
+   taller: a row that wraps pushes the message being written off the screen, worst when the most
+   has been collected. */
 .cartRow {
   margin: 0;
   display: flex;
@@ -931,6 +977,12 @@
 
 /* An inline SVG rides high on the text baseline; blocked, the flex row centres it. */
 .cartClear svg,
+.cartMeasure {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+}
+
 .cartMeasure svg {
   display: block;
 }
@@ -1030,7 +1082,8 @@
 }
 
 /* Close, where nearly every visit ends, is the filled button on the right; Remove cannot be undone,
-   so it is quiet and at the other end, out of that path. */
+   so it is quiet and at the other end, out of that path. Side by side they were a pair a hand
+   could slip between, and they are not a pair. */
 .cartPreviewFoot {
   display: flex;
   align-items: center;
@@ -1065,7 +1118,8 @@
   padding-block-end: var(--s-2);
 }
 
-/* Keeps a line's height while empty, so the words land without moving the blocks below. */
+/* The pane's empty line, set as Shortcuts sets its own. Keeps a line's height while empty, so the
+   words land without moving the blocks below. */
 .relatedEmpty {
   margin: 0;
   padding: var(--s-3) var(--s-4);
@@ -1121,6 +1175,10 @@
 .relatedOpen:focus-visible {
   outline: none;
   box-shadow: inset 0 0 0 2px var(--c-focus);
+}
+
+.relatedMark {
+  flex: none;
 }
 
 .relatedLabel {

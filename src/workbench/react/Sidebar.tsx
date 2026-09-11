@@ -73,20 +73,9 @@ export function Sidebar() {
           const label = info?.title ?? plugin;
           const Icon = info?.icon ?? PushPin;
           return (
-            <PanePopout
-              key={plugin}
-              plugin={plugin}
-              label={label}
-              trigger={
-                <Toolbar.Button
-                  render={
-                    <NavIcon aria-label={label}>
-                      <Icon size={18} aria-hidden="true" />
-                    </NavIcon>
-                  }
-                />
-              }
-            />
+            <RailPopout key={plugin} plugin={plugin} label={label}>
+              <Icon size={18} aria-hidden="true" />
+            </RailPopout>
           );
         })}
         {unpinned.length > 0 && (
@@ -99,17 +88,11 @@ export function Sidebar() {
       {/* Collapsed, a preview flies out beside the ⋯ icon like the pinned
           popouts; the layout — and the collapsed state — are untouched. */}
       {sidebar.collapsed && previewing && (
-        <PanePopout
+        <PreviewPopout
           plugin={previewing}
-          label={previewTitle}
-          ariaLabel={`${previewTitle} preview`}
+          title={previewTitle}
+          Icon={PreviewGlyph}
           anchor={moreAnchorRef}
-          icon={
-            <span className={styles.blockIcon} aria-hidden="true">
-              <PreviewGlyph size={14} />
-            </span>
-          }
-          actions={<PinButton plugin={previewing} onDone={onDismissPreview} />}
           onDismiss={onDismissPreview}
         />
       )}
@@ -402,62 +385,94 @@ function PinButton({ plugin, onDone }: { plugin: PluginId; onDone: () => void })
   );
 }
 
-// A plugin's navigator in a flyout beside the collapsed rail; the layout is
-// untouched. Two callers: a pinned plugin's rail icon, which is the trigger
-// and stands in for a header glyph, and the collapsed preview, which is
-// anchored to the ⋯ icon, carries its own glyph and offers Pin.
-function PanePopout({
+// The flyout beside the collapsed rail that holds a plugin's navigator; the
+// layout is untouched. Beside the rail with its top at the anchor: the
+// default bottom-centered placement would cover the icons under it.
+function PopoutFrame({
   plugin,
-  label,
-  ariaLabel = label,
-  trigger,
   anchor,
-  icon,
-  actions,
-  onDismiss,
+  label,
+  children,
 }: {
   plugin: PluginId;
-  label: string;
-  ariaLabel?: string;
-  trigger?: React.ReactElement;
   anchor?: RefObject<HTMLElement | null>;
-  icon?: React.ReactNode;
-  actions?: React.ReactNode;
-  onDismiss?: () => void;
+  label: string;
+  children: React.ReactNode;
 }) {
   const width = useLayout().sidebar.width;
   // A content-fit pane's flyout hugs its content too.
   const fit = useServices().source.loaded(plugin, 'pane')?.fit;
   return (
-    <Popover.Root
-      open={onDismiss ? true : undefined}
-      onOpenChange={onDismiss && ((open) => !open && onDismiss())}
+    <Popover.Popup
+      anchor={anchor}
+      side="right"
+      sideOffset={8}
+      align="start"
+      alignOffset={6}
+      className={styles.popout}
+      style={{ width, height: fit === 'content' ? 'auto' : undefined }}
+      aria-label={label}
     >
-      {trigger && <Popover.Trigger render={trigger} />}
-      {/* Beside the rail with its top at the icon: the default bottom-
-          centered placement would cover the icons under the clicked one. */}
-      <Popover.Popup
-        anchor={anchor}
-        side="right"
-        sideOffset={8}
-        align="start"
-        alignOffset={6}
-        className={styles.popout}
-        style={{ width, height: fit === 'content' ? 'auto' : undefined }}
-        aria-label={ariaLabel}
-      >
-        <div className={styles.popoutBody}>
-          <div className={styles.popoutHeader}>
-            {icon}
-            <span className={styles.popoutTitle}>{label}</span>
-            {actions && <div className={styles.spacer} />}
-            {actions}
-          </div>
-          <div className={styles.blockBody}>
-            <PanelHost panel={makePane(plugin)} />
-          </div>
+      <div className={styles.popoutBody}>
+        <div className={styles.popoutHeader}>{children}</div>
+        <div className={styles.blockBody}>
+          <PanelHost panel={makePane(plugin)} />
         </div>
-      </Popover.Popup>
+      </div>
+    </Popover.Popup>
+  );
+}
+
+// A pinned plugin's icon while the sidebar is collapsed: its navigator pops
+// out beside the icon. No leading glyph in the header: the rail icon this
+// flew out from is right beside it and already is one.
+function RailPopout({
+  plugin,
+  label,
+  children,
+}: {
+  plugin: PluginId;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Popover.Root>
+      <Popover.Trigger
+        render={<Toolbar.Button render={<NavIcon aria-label={label}>{children}</NavIcon>} />}
+      />
+      <PopoutFrame plugin={plugin} label={label}>
+        <span className={styles.popoutTitle}>{label}</span>
+      </PopoutFrame>
+    </Popover.Root>
+  );
+}
+
+// The collapsed form of the preview: the chosen navigator in a flyout
+// anchored to the ⋯ icon, with its own glyph and the same Pin offer the
+// preview block makes.
+function PreviewPopout({
+  plugin,
+  title,
+  Icon,
+  anchor,
+  onDismiss,
+}: {
+  plugin: PluginId;
+  title: string;
+  Icon: PluginInfo['icon'];
+  anchor: RefObject<HTMLElement | null>;
+  onDismiss: () => void;
+}) {
+  return (
+    <Popover.Root open onOpenChange={(open) => !open && onDismiss()}>
+      <PopoutFrame plugin={plugin} anchor={anchor} label={`${title} preview`}>
+        <span className={styles.blockIcon} aria-hidden="true">
+          <Icon size={14} />
+        </span>
+        <span className={styles.popoutTitle}>{title}</span>
+        <div className={styles.spacer} />
+        <PinButton plugin={plugin} onDone={onDismiss} />
+      </PopoutFrame>
     </Popover.Root>
   );
 }

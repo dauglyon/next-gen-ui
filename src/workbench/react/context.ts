@@ -8,7 +8,7 @@ export const ServicesContext = createContext<WorkbenchServices | null>(null);
 
 export function useServices(): WorkbenchServices {
   const services = useContext(ServicesContext);
-  if (!services) throw new Error('workbench components need a WorkbenchProvider');
+  if (!services) throw new Error('workbench components need a ServicesContext value');
   return services;
 }
 

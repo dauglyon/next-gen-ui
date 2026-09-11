@@ -1,3 +1,4 @@
+import type { PanelId } from '../core';
 import { useDispatch, useLayout, useServices } from './context';
 
 // Handlers that make a panel the workbench focus when the user acts inside
@@ -7,7 +8,7 @@ export function useClaimFocus() {
   const layout = useLayout();
   const dispatch = useDispatch();
   const { focusIntentRef } = useServices();
-  return (panel: string) => {
+  return (panel: PanelId) => {
     const claim = () => {
       if (layout.focus !== panel) {
         focusIntentRef.current = 'user';

@@ -2,6 +2,7 @@ import { configure, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { localPlugins } from '../../plugins/local';
+import { openJob } from '../../test/workbench';
 import { createWorkbench } from '../host';
 import { ServicesContext } from './context';
 import { Workbench } from './Workbench';
@@ -40,12 +41,6 @@ function mount(storage: Storage | null = null) {
 }
 
 const status = () => screen.getByRole('status', { name: 'Workbench announcements' });
-const openJob = async (user: ReturnType<typeof userEvent.setup>, name: RegExp) => {
-  const sidebar = screen.getByRole('region', { name: 'Sidebar' });
-  // The Tree's click handler sits on the row inside the treeitem.
-  const item = await within(sidebar).findByRole('treeitem', { name });
-  await user.click(item.firstElementChild as HTMLElement);
-};
 
 describe('Workbench', () => {
   it('shows the pinned panes and opens a page from one', async () => {

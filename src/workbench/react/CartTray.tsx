@@ -70,6 +70,7 @@ export function CartTray() {
         </AlertDialog.Root>
       </p>
 
+      {/* Sideways, never taller: the composer's height is fixed (see .cartRow). */}
       <ul className={styles.cartRow} aria-label={`Cart, ${items.length} items`}>
         {items.map((item) => {
           // Always the plugin's own logo, never the item's. In a tray of six

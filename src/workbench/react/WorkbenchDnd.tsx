@@ -83,14 +83,15 @@ export function GroupDropZones({ group }: { group: string }) {
   return (
     <div className={styles.dropZones}>
       {(['left', 'right', 'top', 'bottom'] as Side[]).map((side) => (
-        <Zone key={side} at={side} data={{ type: 'edge', group, side }} />
+        <Zone key={side} data={{ type: 'edge', group, side }} />
       ))}
-      <Zone at="centre" data={{ type: 'group', group }} />
+      <Zone data={{ type: 'group', group }} />
     </div>
   );
 }
 
-function Zone({ at, data }: { at: Side | 'centre'; data: DropData }) {
+function Zone({ data }: { data: DropData }) {
+  const at = data.type === 'edge' ? data.side : 'centre';
   const { dropRef, isOver } = useDropTarget(data);
   return (
     <div

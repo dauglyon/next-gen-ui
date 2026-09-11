@@ -129,14 +129,11 @@ export function PromptBar() {
     }
   };
 
-  // A row wearing the plugin's mark, the shape every source below produces.
-  const row = (
-    text: string,
-    label: string,
-    detail: string | undefined,
-    m: Manifest | undefined,
-    run: () => void,
-  ): BarSuggestion => ({ value: text, label, detail, icon: iconFor(m?.icon, m?.color), run });
+  // A row wearing its plugin's mark.
+  const withMark = (m: Manifest | undefined, s: BarSuggestion): BarSuggestion => ({
+    ...s,
+    icon: iconFor(m?.icon, m?.color),
+  });
 
   // What plugins recommended for this text, ahead of name matches: a
   // plugin recognising its own data is a better answer than a plugin
@@ -150,7 +147,12 @@ export function PromptBar() {
           const m = source.manifest(answer.plugin);
           const command = qualifyCommand(call.command, answer.plugin);
           // The call says where you land; the plugin is who takes you.
-          return row(text, call.label, m?.title, m, () => void run(command, call.args));
+          return withMark(m, {
+            value: text,
+            label: call.label,
+            detail: m?.title,
+            run: () => void run(command, call.args),
+          });
         }),
       )
       .slice(0, 4);
@@ -163,7 +165,12 @@ export function PromptBar() {
   const suggested = (text: string): BarSuggestion[] =>
     (query.get('typing').suggestions ?? []).slice(0, 4).map(({ call, detail }) => {
       const m = source.manifest(call.command.split(':')[0]);
-      return row(text, call.label, detail ?? m?.title, m, () => void run(call.command, call.args));
+      return withMark(m, {
+        value: text,
+        label: call.label,
+        detail: detail ?? m?.title,
+        run: () => void run(call.command, call.args),
+      });
     });
 
   // Every term must appear somewhere in a plugin's name, id or
@@ -192,13 +199,12 @@ export function PromptBar() {
   // its manifest has a launcher, and the row runs that launcher.
   const appSuggestions = (text: string): BarSuggestion[] =>
     nameHits(text, (m) => Boolean(m.launcher)).map((m) =>
-      row(
-        text,
-        `Open ${m.title}`,
-        m.description,
-        m,
-        () => void run(qualifyCommand(m.launcher!.command, m.id), m.launcher!.args),
-      ),
+      withMark(m, {
+        value: text,
+        label: `Open ${m.title}`,
+        detail: m.description,
+        run: () => void run(qualifyCommand(m.launcher!.command, m.id), m.launcher!.args),
+      }),
     );
 
   // Panels are reached the way Home reaches them: a pinned navigator is
@@ -206,13 +212,12 @@ export function PromptBar() {
   // bar never changes the layout to show you something.
   const panelSuggestions = (text: string): BarSuggestion[] =>
     nameHits(text, (m) => source.has(m.id, 'pane')).map((m) =>
-      row(
-        text,
-        `Show ${m.title}`,
-        layout.sidebar.pinned.includes(m.id) ? 'In the sidebar' : m.description,
-        m,
-        () => showPane(services, m.id),
-      ),
+      withMark(m, {
+        value: text,
+        label: `Show ${m.title}`,
+        detail: layout.sidebar.pinned.includes(m.id) ? 'In the sidebar' : m.description,
+        run: () => showPane(services, m.id),
+      }),
     );
 
   // The buttons plugins put on the Shortcuts block, reachable by name as
@@ -270,15 +275,13 @@ export function PromptBar() {
       // worth choosing between: no list, and Enter behaves as if there were
       // none. Browse is not appended as an escape: it is Home's own command,
       // ranked like any other when the text asks for it.
-      const send =
-        assistant &&
-        row(
-          value,
-          `Send to ${assistantTitle ?? assistant}`,
-          undefined,
-          source.manifest(assistant),
-          () => void submit(value),
-        );
+      const send = assistant
+        ? withMark(source.manifest(assistant), {
+            value,
+            label: `Send to ${assistantTitle ?? assistant}`,
+            run: () => void submit(value),
+          })
+        : null;
       const found = list.length
         ? commands
         : !alternatives.length
@@ -442,6 +445,7 @@ function PromptDestination() {
   );
 }
 
+// New, in the host's own glyph rather than the assistant's mark.
 const NewIcon = iconFor('ChatCirclePlus');
 
 // The destination control: a menu with New, which every assistant has,
