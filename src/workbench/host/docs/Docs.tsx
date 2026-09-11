@@ -487,7 +487,7 @@ function definePluginManifest(m: Manifest): Manifest;`}</Sig>
   status?: () => StatusItem[];
 }): Background;`}</Sig>
             <Entry
-              level={4}
+              heading="h4"
               id="r-terms"
               name="terms"
               when="Called on every keystroke with the text, then once more with all terms found so far. Also called with the open page's terms and the cart's terms when they change. Synchronous."
@@ -500,10 +500,10 @@ function definePluginManifest(m: Manifest): Manifest;`}</Sig>
             </Entry>
 
             <Entry
-              level={4}
+              heading="h4"
               id="r-recommend"
               name="recommend"
-              when="commands: on every keystroke, with the typed text's terms, and 250 ms after the open page's terms or the cart last changed. cartItems: 250 ms after the page's terms or the cart changed, never for typed text. Each plugin's answer replaces its own section as it arrives; the previous answer stays, dimmed, until then. The signal aborts when the source changes again. After 2 s the pane stops saying it is asking, but a later answer still lands. A page or cart pool that only grew is asked about the new terms, and the answers join the sections already shown."
+              when="commands: on every keystroke, with the typed text's terms, and 250 ms after the open page's terms or the cart last changed. cartItems: 250 ms after the page's terms or the cart changed, never for typed text. Each plugin's answer replaces its own section as it arrives; the previous answer stays until then. The signal aborts when the source changes again. After 2 s the pane stops saying it is asking, but a later answer still lands. A page or cart pool that only grew is asked about the new terms, and the answers join the sections already shown."
             >
               <Sig>{`interface CartItem {
   id: string;                    // unique across plugins; prefix with the plugin id
@@ -521,7 +521,7 @@ function definePluginManifest(m: Manifest): Manifest;`}</Sig>
             </Entry>
 
             <Entry
-              level={4}
+              heading="h4"
               id="r-status"
               name="status"
               when="Called at startup, after any module loads, and after every command. The result is shown until the next call."
@@ -805,22 +805,21 @@ function Part({ id, title, children }: { id: string; title: string; children: Re
   );
 }
 
-// A module (level 3) or one member of a module whose default export holds several (level 4).
+// A module (h3) or one member of a module whose default export holds several (h4).
 function Entry({
   id,
   name,
   when,
-  level = 3,
+  heading: Heading = 'h3',
   children,
 }: {
   id: string;
   name: string;
   when: string;
-  level?: 3 | 4;
+  heading?: 'h3' | 'h4';
   children: ReactNode;
 }) {
-  const Heading = `h${level}` as const;
-  const nested = level === 4;
+  const nested = Heading === 'h4';
   return (
     <section className={nested ? styles.export : styles.entry} id={id} aria-labelledby={`${id}-h`}>
       <div className={styles.entryHead}>

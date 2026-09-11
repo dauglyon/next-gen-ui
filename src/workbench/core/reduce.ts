@@ -1,6 +1,7 @@
-import type { Layout, PanelId } from './layout';
+import type { GroupId, Layout, PanelId } from './layout';
 import { makePane, paneId } from './layout';
 import type { Operation, MainTarget } from './operations';
+import { reinsert } from './list';
 import { placementOf } from './placement';
 import {
   activateTab,
@@ -8,7 +9,6 @@ import {
   groups,
   insertTab,
   normalize,
-  reinsert,
   removeTab,
   setSizes,
   splitGroup,
@@ -73,15 +73,19 @@ export function reduce(layout: Layout, op: Operation, ctx: ReduceContext = defau
   }
 }
 
+// The group a new tab lands in when the caller names none: the focused
+// panel's group, else the first group in reading order.
+function defaultGroup(layout: Layout): GroupId {
+  const focused = layout.focus ? groupOf(layout.main, layout.focus) : undefined;
+  return (focused ?? groups(layout.main)[0]).id;
+}
+
 function place(layout: Layout, panel: PanelId, target: MainTarget | undefined, ctx: ReduceContext) {
   let main = removeTab(layout.main, panel);
   if (target && 'side' in target) {
     main = splitGroup(main, target.group, target.side, panel, ctx.newId(), ctx.newId());
   } else {
-    // No group named: the focused panel's, else the first in reading order.
-    const group =
-      target?.group ??
-      ((layout.focus && groupOf(layout.main, layout.focus)) || groups(layout.main)[0]).id;
+    const group = target?.group ?? defaultGroup(layout);
     let index = target?.index;
     // A same-group move gives its index in pre-removal terms.
     const from = groupOf(layout.main, panel);
@@ -176,10 +180,10 @@ function move(
     const main = removed === layout.main ? layout.main : normalize(removed, layout.main.id);
     const before = layout.sidebar.pinned;
     const from = before.indexOf(panel.plugin);
-    // No index: a pinned plugin keeps its place, a new one appends. A given
-    // index is in pre-removal terms, like a same-group tab move.
+    // No index: a pinned plugin keeps its place, a new one appends.
     let at = op.to.index ?? (from === -1 ? undefined : from);
-    if (at !== undefined && from !== -1 && from < at) at -= 1;
+    // A given index is in pre-removal terms, like a same-group tab move.
+    if (op.to.index !== undefined && from !== -1 && from < op.to.index) at = op.to.index - 1;
     const pinned = reinsert(before, panel.plugin, at);
     const unchanged = main === layout.main && pinned.every((p, i) => p === before[i]);
     if (unchanged) return focus(layout, panel.id);

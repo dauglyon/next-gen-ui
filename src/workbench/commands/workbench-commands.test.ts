@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createWorkbenchStore, defaultLayout, groups, makeRoute } from '../core';
 import { createCommandRegistry } from './registry';
-import { workbenchCommands } from './workbench-commands';
+import { announcingDispatch, workbenchCommands } from './workbench-commands';
 
 const arc = makeRoute('koros', '/nitro', 'a');
 const job = makeRoute('jobs', '/12', 'b');
@@ -13,11 +13,7 @@ function setup() {
   const announce = (t: string) => announced.push(t);
   workbenchCommands({
     store,
-    dispatch: (op) => {
-      const result = store.dispatch(op);
-      if (result.changed) announce(result.announcement);
-      return result.changed;
-    },
+    dispatch: announcingDispatch(store, announce),
     announce,
     plugins: () => ['koros', 'data', 'jobs'],
     focusPrompt: () => announced.push('<prompt>'),

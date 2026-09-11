@@ -1,9 +1,13 @@
 import type { CartItem, CommandCall, Suggestion } from '../../plugins/sdk';
 import { createEmitter } from '../../plugins/sdk';
 
-// What every plugin's `recommend` said about each source of terms. The
-// sources are asked separately because they change at different rates. The
-// host carries terms and never reads one.
+// What every plugin's `recommend` said about each source of terms.
+//
+// Three sources, asked separately because they change at different rates:
+// the text being typed, the front tab's terms, and the cart's. The host
+// carries terms and never reads one; its jobs are to ask each question
+// once per settle, to drop answers to a question no longer being asked,
+// and to remember what the user turned down.
 
 export type QuerySource = 'typing' | 'page' | 'cart';
 

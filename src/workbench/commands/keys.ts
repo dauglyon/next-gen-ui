@@ -49,6 +49,16 @@ export function chordFromEvent(event: KeyLike): Chord {
   };
 }
 
+export function sameChord(a: Chord, b: Chord): boolean {
+  return (
+    a.key === b.key &&
+    a.ctrl === b.ctrl &&
+    a.shift === b.shift &&
+    a.alt === b.alt &&
+    a.meta === b.meta
+  );
+}
+
 export function chordToString(chord: Chord): string {
   const parts: string[] = [];
   if (chord.ctrl) parts.push('Ctrl');
@@ -93,7 +103,7 @@ export function resolveKeybinding(
   const pressed = chordFromEvent(event);
   const table = { ...defaults, ...overrides };
   for (const [text, command] of Object.entries(table)) {
-    if (chordToString(parseChord(text)) === chordToString(pressed)) return command || null;
+    if (sameChord(parseChord(text), pressed)) return command || null;
   }
   return null;
 }

@@ -83,7 +83,8 @@ export async function complete(
   const parsed = parse(input);
   if (parsed.kind !== 'command') return [];
 
-  if (parsed.tokens.length === 0 && !parsed.trailingSpace) {
+  const namingCommand = parsed.tokens.length === 0 && !parsed.trailingSpace;
+  if (namingCommand) {
     // A prefix of the bare name reaches a contested command too, shown in
     // the qualified form the user will have to type.
     return registry
