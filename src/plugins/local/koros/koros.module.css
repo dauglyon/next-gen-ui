@@ -34,6 +34,8 @@
 }
 
 .stages {
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -42,6 +44,8 @@
 }
 
 .turns {
+  margin: 0;
+  padding: 0;
   display: grid;
   gap: var(--s-4);
   list-style: none;
@@ -59,6 +63,7 @@
 }
 
 .by {
+  margin: 0;
   font-size: var(--fs-3);
   font-weight: var(--fw-bold);
   text-transform: uppercase;
@@ -67,6 +72,8 @@
 }
 
 .attached {
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-wrap: wrap;
   gap: var(--s-2);
@@ -78,4 +85,8 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--s-3);
+}
+
+.head h1 {
+  margin: 0;
 }

@@ -24,6 +24,8 @@
 }
 
 .grid {
+  margin: 0;
+  padding: 0;
   list-style: none;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -78,6 +80,7 @@
 }
 
 .cardDesc {
+  margin: 0;
   grid-column: 2;
 }
 
@@ -93,6 +96,8 @@
 
 /* The marker sits outside the text so the headlines line up as a column a reader can skim. */
 .journey {
+  margin: 0;
+  padding: 0;
   display: grid;
   gap: var(--s-5);
   list-style: none;
@@ -129,6 +134,7 @@
 }
 
 .stepText {
+  margin: 0;
   color: var(--c-ink2);
 }
 
@@ -142,6 +148,7 @@
 }
 
 .tourMoreTitle {
+  margin: 0;
   font-size: var(--fs-3);
   font-weight: var(--fw-bold);
   text-transform: uppercase;
@@ -150,6 +157,8 @@
 }
 
 .tourMoreList {
+  margin: 0;
+  padding: 0;
   display: grid;
   gap: var(--s-2);
   list-style: none;
@@ -168,6 +177,7 @@
 }
 
 .tourLink {
+  padding: 0;
   background: none;
   border: none;
   color: var(--c-primary);
@@ -183,5 +193,17 @@
 }
 
 .tourNote {
+  margin: 0;
   max-width: 78ch;
+}
+
+.tourHead h2 {
+  margin: 0;
+}
+
+.stepTitle {
+  margin: 0;
+  font-size: var(--fs-5);
+  font-weight: var(--fw-bold);
+  color: var(--c-ink);
 }

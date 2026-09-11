@@ -13,6 +13,8 @@
 }
 
 .list {
+  margin: 0;
+  padding: 0;
   list-style: none;
   display: grid;
   gap: var(--s-4);
@@ -42,6 +44,7 @@
 }
 
 .rowDesc {
+  margin: 0;
   grid-column: 2 / -1;
 }
 

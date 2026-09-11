@@ -160,7 +160,7 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
               {i + 1}
             </span>
             <div className={styles.stepBody}>
-              <h3 className="h4">{title}</h3>
+              <h3 className={styles.stepTitle}>{title}</h3>
               <p className={styles.stepText}>{text}</p>
             </div>
           </li>

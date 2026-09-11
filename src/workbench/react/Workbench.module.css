@@ -486,6 +486,7 @@
 
 /* Lives inside the composer's footer row. */
 .promptContext {
+  margin: 0;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -843,6 +844,7 @@
 /* Attachments on the next message, in the composer's own attachments slot (see CartTray.tsx).
    Sideways, never taller: a row that wraps pushes the message being written off the screen. */
 .cartRow {
+  margin: 0;
   display: flex;
   gap: var(--s-2);
   /* Room for the tiles' overhanging remove controls, which the scroller would clip. */
@@ -943,6 +945,7 @@
 
 /* The cart's own line: the label left, the one control over all of it at the far right. */
 .cartCaption {
+  margin: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -971,6 +974,7 @@
 }
 
 .cartPreviewSummary {
+  margin: 0;
   font-size: var(--fs-4);
   color: var(--c-ink2);
 }
@@ -983,6 +987,7 @@
 }
 
 .cartPreviewHeading {
+  margin: 0;
   font-size: var(--fs-3);
   font-weight: var(--fw-bold);
   text-transform: uppercase;
@@ -1005,6 +1010,7 @@
 }
 
 .cartPreviewSource {
+  margin: 0;
   font-size: var(--fs-3);
   color: var(--c-ink4);
 }
@@ -1061,12 +1067,14 @@
 
 /* Keeps a line's height while empty, so the words land without moving the blocks below. */
 .relatedEmpty {
+  margin: 0;
   padding: var(--s-3) var(--s-4);
   min-block-size: 1lh;
 }
 
 /* What the list was computed from; both sections take the same weight, differing in order not rank. */
 .relatedFrom {
+  margin: 0;
   display: flex;
   align-items: center;
   gap: var(--s-2);
@@ -1078,6 +1086,8 @@
 }
 
 .relatedList {
+  margin: 0;
+  padding: 0;
   list-style: none;
 }
 
