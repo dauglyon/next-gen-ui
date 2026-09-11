@@ -86,14 +86,8 @@
     visibility 0s 0s;
 }
 
-.sidebar:not([data-collapsed]) .iconColumn {
-  opacity: 0;
-  visibility: hidden;
-  transition:
-    opacity var(--t-slow) ease,
-    visibility 0s var(--t-slow);
-}
-
+/* The layer on its way out: fades, then leaves the hit-test tree. */
+.sidebar:not([data-collapsed]) .iconColumn,
 .sidebar[data-collapsed] .blocks {
   opacity: 0;
   visibility: hidden;
