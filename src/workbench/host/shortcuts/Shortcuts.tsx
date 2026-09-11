@@ -22,8 +22,8 @@ export function ShortcutsNavigator() {
   return (
     <Tooltip.Provider delay={300}>
       <Toolbar.Root className={styles.list} aria-label="Shortcuts">
-        {shortcuts.map(({ key, detail, ...s }) => (
-          <Shortcut key={key} title={detail ?? s.call.label} {...s} />
+        {shortcuts.map(({ key, declaredTitle, ...s }) => (
+          <Shortcut key={key} title={declaredTitle ?? s.call.label} {...s} />
         ))}
       </Toolbar.Root>
     </Tooltip.Provider>

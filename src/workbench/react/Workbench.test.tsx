@@ -1,9 +1,7 @@
 import { configure, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { localPlugins } from '../../plugins/local';
-import { openJob } from '../../test/workbench';
-import { createWorkbench } from '../host';
+import { openJob, testWorkbench } from '../../test/workbench';
 import { ServicesContext } from './context';
 import { Workbench } from './Workbench';
 
@@ -26,12 +24,7 @@ function memoryStorage(): Storage {
 }
 
 function mount(storage: Storage | null = null) {
-  const services = createWorkbench({
-    installed: localPlugins,
-    storage,
-    defaultPinned: ['koros', 'data', 'jobs'],
-    defaultAssistant: 'koros',
-  });
+  const services = testWorkbench({ storage, defaultIntent: null });
   render(
     <ServicesContext value={services}>
       <Workbench />

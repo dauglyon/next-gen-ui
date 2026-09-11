@@ -1,8 +1,7 @@
 import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { localPlugins } from '../../plugins/local';
-import { createWorkbench } from '../host';
+import { testWorkbench } from '../../test/workbench';
 import { ServicesContext } from './context';
 import { PromptBar } from './PromptBar';
 import { CartTray } from './CartTray';
@@ -17,12 +16,7 @@ function mount(
     context?: Record<string, unknown>;
   }[],
 ) {
-  const services = createWorkbench({
-    installed: localPlugins,
-    storage: null,
-    defaultPinned: ['koros', 'data', 'jobs'],
-    defaultAssistant: 'koros',
-  });
+  const services = testWorkbench({ defaultIntent: null });
   items.forEach((i, n) => services.cart.add({ ...i, addedAt: n }));
   render(
     <ServicesContext value={services}>
@@ -126,12 +120,7 @@ describe('the cart tray', () => {
   // An empty cart is no cart: the composer's attachments row is a bordered,
   // padded strip, and opening it around nothing is worse than not having it.
   it('leaves no trace in the composer when it is empty', () => {
-    const services = createWorkbench({
-      installed: localPlugins,
-      storage: null,
-      defaultPinned: ['koros', 'data', 'jobs'],
-      defaultAssistant: 'koros',
-    });
+    const services = testWorkbench({ defaultIntent: null });
     const { container } = render(
       <ServicesContext value={services}>
         <PromptBar />

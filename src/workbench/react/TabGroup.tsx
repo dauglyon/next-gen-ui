@@ -3,6 +3,7 @@ import { House, X } from '@phosphor-icons/react';
 import { Button, ContextMenu, EmptyState, Tabs } from '@kbase/design-system';
 import type { Group, PanelId } from '../core';
 import { SIDES } from '../core';
+import { SPLIT_LABELS } from './labels';
 import { openRoute } from '../host/open';
 import { useDispatch, useLayout, useServices, useTitle } from './context';
 import { Breadcrumbs } from './Breadcrumbs';
@@ -182,13 +183,13 @@ function Tab({
       <ContextMenu.Popup aria-label={`${title} actions`}>
         <ContextMenu.Item onClick={() => close()}>Close</ContextMenu.Item>
         <ContextMenu.Separator />
-        {SIDES.map(([side, label]) => (
+        {SIDES.map((side) => (
           <ContextMenu.Item
             key={side}
             disabled={alone}
             onClick={() => dispatch({ type: 'move', panel: id, to: { group: group.id, side } })}
           >
-            {label}
+            {SPLIT_LABELS[side]}
           </ContextMenu.Item>
         ))}
         {panel?.kind === 'pane' && (

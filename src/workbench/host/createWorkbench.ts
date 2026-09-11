@@ -5,8 +5,10 @@ import type { PluginId } from '../core';
 import {
   CART_STORAGE_KEY,
   createCartStore,
+  createCrumbStore,
   createQueryStore,
   createTermStore,
+  createTitleStore,
   createWorkbenchStore,
   defaultLayout,
   deserialize,
@@ -21,7 +23,7 @@ import {
   createRunStore,
   workbenchCommands,
 } from '../commands';
-import { createAnnouncer, createCrumbStore, createTitleStore } from '../react';
+import { createAnnouncer } from '../react';
 import type { WorkbenchServices } from '../react';
 import { fallbackTitle } from '../react/context';
 import { createPreviewHandle, createPromptHandle } from '../react/services';

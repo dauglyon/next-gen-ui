@@ -1,5 +1,13 @@
 import type { Crumb } from '../../plugins/sdk';
-import type { PanelId } from '../core';
+import type { PanelId, Side } from '../core';
+
+// What the split menus call each side.
+export const SPLIT_LABELS: Record<Side, string> = {
+  left: 'Split left',
+  right: 'Split right',
+  top: 'Split up',
+  bottom: 'Split down',
+};
 
 // What each tab in one group is called. A tab names the thing you would
 // switch to, so it stays as short as the plugin wrote it until two tabs in

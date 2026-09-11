@@ -15,7 +15,7 @@ export function allShortcuts(source: HostIndex, registry: CommandRegistry) {
         name,
         call,
         // What the command declares about itself, once its plugin has registered.
-        detail: declared?.title,
+        declaredTitle: declared?.title,
         // A command without its own icon wears its plugin's: provenance.
         Icon: iconFor(m.commands?.find((c) => c.name === declared?.name)?.icon ?? m.icon, m.color),
       };

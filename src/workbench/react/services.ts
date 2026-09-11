@@ -6,6 +6,8 @@ import type {
   PluginId,
   QueryStore,
   TermStore,
+  TitleStore,
+  CrumbStore,
   WorkbenchStore,
 } from '../core';
 import type { CommandRegistry, RunStore } from '../commands';
@@ -14,8 +16,6 @@ import type { QueryRunner } from '../host/query/runner';
 import type { SettingsStore } from '../host/settings';
 import type { StatusStore } from '../host/status';
 import type { Announcer } from './announcer';
-import type { TitleStore } from './titles';
-import type { CrumbStore } from './crumbs';
 
 export interface PromptHandle {
   register: (focus: () => void) => () => void;

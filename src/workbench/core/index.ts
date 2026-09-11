@@ -11,7 +11,9 @@ export { createCartStore, readCart, CartItemSchema, CART_STORAGE_KEY } from './c
 export type { CartItem, CartStore } from './cart';
 export { createWorkbenchStore } from './store';
 export type { WorkbenchStore, StoreOptions, DispatchResult } from './store';
+export * from './keyed';
 export * from './terms';
+export * from './titles';
 export * from './query';
 export { mergeRecommendations } from './recommendations';
 export type { Offer, Recommendation } from './recommendations';

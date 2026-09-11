@@ -1,5 +1,6 @@
 import type { Layout, Operation, PanelId, Side, WorkbenchStore } from '../core';
 import { groupOf, groups, placementOf } from '../core';
+import type { ArgSpec } from './args';
 import type { Command } from './registry';
 
 // The workbench's own commands. They speak to the store like any plugin
@@ -46,6 +47,14 @@ function groupNeighbour(layout: Layout, offset: 1 | -1): PanelId | null {
   const next = all[(at + offset + all.length) % all.length];
   return next.active;
 }
+
+// The one required argument of pin and unpin; only what completes it differs.
+const pluginArg = (complete: (prefix: string) => string[]): ArgSpec => ({
+  name: 'plugin',
+  type: 'string',
+  required: true,
+  complete,
+});
 
 const cmd = (c: Omit<Command, 'source'>): Command => ({ source: 'workbench', ...c });
 
@@ -136,14 +145,7 @@ export function workbenchCommands({
     cmd({
       name: 'pin',
       title: 'Pin a plugin to the sidebar',
-      args: [
-        {
-          name: 'plugin',
-          type: 'string',
-          required: true,
-          complete: (p) => plugins().filter((id) => id.startsWith(p)),
-        },
-      ],
+      args: [pluginArg((p) => plugins().filter((id) => id.startsWith(p)))],
       run: ({ plugin }) => {
         if (!plugins().includes(String(plugin))) {
           announce(`No plugin named ${String(plugin)}`);
@@ -155,14 +157,7 @@ export function workbenchCommands({
     cmd({
       name: 'unpin',
       title: 'Remove a plugin from the sidebar',
-      args: [
-        {
-          name: 'plugin',
-          type: 'string',
-          required: true,
-          complete: (p) => store.get().sidebar.pinned.filter((id) => id.startsWith(p)),
-        },
-      ],
+      args: [pluginArg((p) => store.get().sidebar.pinned.filter((id) => id.startsWith(p)))],
       run: ({ plugin }) => {
         dispatch({ type: 'unpin', plugin: String(plugin) });
       },

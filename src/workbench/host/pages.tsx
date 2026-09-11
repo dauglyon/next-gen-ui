@@ -1,6 +1,5 @@
 import type { ComponentType } from 'react';
-import { createRoot } from 'react-dom/client';
-import { HostContext, PanelContext, definePluginManifest } from '../../plugins/sdk';
+import { definePluginManifest, fromReact } from '../../plugins/sdk';
 import type { Mount, Pane, Route } from '../../plugins/sdk';
 import { ServicesContext } from '../react/context';
 import type { WorkbenchServices } from '../react/services';
@@ -107,29 +106,12 @@ export function hostPlugins(services: () => WorkbenchServices): InstalledPlugin[
   ];
 }
 
+// The SDK's mount, with the services context inside it: a host page is a
+// plugin whose component may also reach the host.
 function hostReact(services: () => WorkbenchServices, Component: ComponentType): { mount: Mount } {
-  return {
-    mount(el, { panel, host }) {
-      const root = createRoot(el);
-      const draw = () =>
-        root.render(
-          <ServicesContext value={services()}>
-            <PanelContext value={{ ...panel }}>
-              <HostContext value={host}>
-                <Component />
-              </HostContext>
-            </PanelContext>
-          </ServicesContext>,
-        );
-      draw();
-      const stop = panel.subscribe(draw);
-      return () => {
-        stop();
-        // The host tears panels down from its own commit phase, and a root
-        // cannot be unmounted while another is mid-render; the next tick is
-        // after that commit.
-        setTimeout(() => root.unmount(), 0);
-      };
-    },
-  };
+  return fromReact(() => (
+    <ServicesContext value={services()}>
+      <Component />
+    </ServicesContext>
+  ));
 }

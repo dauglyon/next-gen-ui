@@ -2,16 +2,19 @@ import { screen, within } from '@testing-library/react';
 import type { UserEvent } from '@testing-library/user-event';
 import { localPlugins } from '../plugins/local';
 import { createWorkbench } from '../workbench/host';
+import type { CreateWorkbenchOptions } from '../workbench/host';
 import type { WorkbenchServices } from '../workbench/react';
 
-// Router context for tests: the bundled plugins and no persistence.
-export function testWorkbench(): WorkbenchServices {
+// A workbench for tests: the bundled plugins and no persistence unless a
+// test supplies storage.
+export function testWorkbench(overrides: Partial<CreateWorkbenchOptions> = {}): WorkbenchServices {
   return createWorkbench({
     installed: localPlugins,
     storage: null,
     defaultPinned: ['koros', 'data', 'jobs'],
     defaultAssistant: 'koros',
     defaultIntent: 'intent',
+    ...overrides,
   });
 }
 

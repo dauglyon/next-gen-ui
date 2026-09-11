@@ -227,14 +227,14 @@ export function PromptBar() {
     const query = text.trim().toLowerCase();
     if (query.length < 2) return [];
     return allShortcuts(source, registry)
-      .filter(({ call, detail }) =>
-        `${call.label} ${detail ?? ''} ${call.command}`.toLowerCase().includes(query),
+      .filter(({ call, declaredTitle }) =>
+        `${call.label} ${declaredTitle ?? ''} ${call.command}`.toLowerCase().includes(query),
       )
       .slice(0, 3)
-      .map(({ call, name, detail, Icon }) => ({
+      .map(({ call, name, declaredTitle, Icon }) => ({
         value: text,
         label: call.label,
-        detail,
+        detail: declaredTitle,
         icon: Icon,
         run: () => void run(name, call.args),
       }));
