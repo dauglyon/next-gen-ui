@@ -25,7 +25,9 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const DIST = join(ROOT, 'dist');
 const PORT = Number(process.argv[2] ?? 8931);
 
-// `<prefix>=<origin>`, comma-separated — the same spelling vite.config reads.
+// `<prefix>=<origin>`, comma-separated — the same VITE_DEV_SERVICE_PROXY the
+// dev server reads, so a plugin backend is registered by running it, not by
+// editing this file.
 function serviceProxies(spec) {
   const out = {};
   for (const entry of (spec ?? '').split(',')) {
@@ -139,7 +141,8 @@ server.on('upgrade', (req, socket, head) => {
   const t = target(prefix);
   const up = netConnect(t.port, t.hostname, () => {
     let raw = `${req.method} ${req.url} HTTP/1.1\r\n`;
-    for (let i = 0; i < req.rawHeaders.length; i += 2) raw += `${req.rawHeaders[i]}: ${req.rawHeaders[i + 1]}\r\n`;
+    for (let i = 0; i < req.rawHeaders.length; i += 2)
+      raw += `${req.rawHeaders[i]}: ${req.rawHeaders[i + 1]}\r\n`;
     up.write(raw + '\r\n');
     if (head.length) up.write(head);
     socket.pipe(up).pipe(socket);
@@ -150,5 +153,10 @@ server.on('upgrade', (req, socket, head) => {
 
 server.listen(PORT, () => {
   console.log(`serving dist on http://127.0.0.1:${PORT}`);
-  console.log('proxying', Object.entries(proxies).map(([p, o]) => `${p} → ${o}`).join(', ') || '(nothing)');
+  console.log(
+    'proxying',
+    Object.entries(proxies)
+      .map(([p, o]) => `${p} → ${o}`)
+      .join(', ') || '(nothing)',
+  );
 });

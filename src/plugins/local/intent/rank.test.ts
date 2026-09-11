@@ -59,19 +59,50 @@ const offer = {
 };
 
 describe('ranking commands against typed text', () => {
-  // In order: an accession read as what it is fills the argument; the
-  // identifier decides between two dossiers; the semantics section ranks
-  // what no title carries; a plugin-minted term binds through its prefix
-  // letters; two terms fill two arguments in order; an argument is left
-  // empty rather than guessed.
   it.each([
-    ['I want a dossier for P0AEX9', [], 'function-junction:open', { q: 'P0AEX9' }],
-    ['dossier for taxon:562', [], 'genknown:open', { q: '562' }],
-    ['kill the running job', ['job:12'], 'jobs:cancel', { id: '12' }],
-    ['cancel this job', ['job:12'], 'jobs:cancel', { id: '12' }],
-    ['compare taxon:562 with taxon:1423', [], 'genknown:compare', { a: '562', b: '1423' }],
-    ['protein dossier for job:12', ['job:12'], 'function-junction:open', {}],
-  ])('%s', (text, terms, command, args) => {
+    [
+      'reads an accession as what it is and fills the argument',
+      'I want a dossier for P0AEX9',
+      [],
+      'function-junction:open',
+      { q: 'P0AEX9' },
+    ],
+    [
+      'lets the identifier decide between two dossiers',
+      'dossier for taxon:562',
+      [],
+      'genknown:open',
+      { q: '562' },
+    ],
+    [
+      'ranks by the semantics section, which no title carries',
+      'kill the running job',
+      ['job:12'],
+      'jobs:cancel',
+      { id: '12' },
+    ],
+    [
+      'binds a plugin-minted term through its prefix letters',
+      'cancel this job',
+      ['job:12'],
+      'jobs:cancel',
+      { id: '12' },
+    ],
+    [
+      'fills two arguments from two terms, in order',
+      'compare taxon:562 with taxon:1423',
+      [],
+      'genknown:compare',
+      { a: '562', b: '1423' },
+    ],
+    [
+      'leaves an argument empty rather than guess it',
+      'protein dossier for job:12',
+      ['job:12'],
+      'function-junction:open',
+      {},
+    ],
+  ])('%s', (_property, text, terms, command, args) => {
     const [top] = rank(text, terms);
     expect(top.command).toBe(command);
     expect(top.args).toEqual(args);

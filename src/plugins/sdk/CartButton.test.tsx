@@ -5,24 +5,31 @@ import { CartButton } from './CartButton';
 import { HostContext } from './host';
 import type { PluginHost } from './host';
 import type { CartItem } from './cart';
+import { createEmitter } from './emitter';
 
-// A host whose cart is a map: enough for the binding.
+// A host whose cart is a map: enough for the binding, which reads `has`,
+// calls `add` and `remove`, and re-renders on `subscribe`.
 function host(): PluginHost {
   const items = new Map<string, CartItem>();
-  const listeners = new Set<() => void>();
-  const notify = () => listeners.forEach((l) => l());
+  const { subscribe, notify } = createEmitter();
   return {
     openRoute: () => {},
     execute: async () => {},
     hasCommand: () => false,
     notify: () => {},
     cart: {
-      add: (item) => void (items.set(item.id, item), notify()),
-      remove: (id) => void (items.delete(id), notify()),
+      add: (item) => {
+        items.set(item.id, item);
+        notify();
+      },
+      remove: (id) => {
+        items.delete(id);
+        notify();
+      },
       items: () => [...items.values()],
       has: (id) => items.has(id),
       count: () => items.size,
-      subscribe: (l) => (listeners.add(l), () => void listeners.delete(l)),
+      subscribe,
     },
   };
 }

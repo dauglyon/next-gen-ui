@@ -19,4 +19,15 @@ describe('the bundled intent', () => {
     expect(row.call.label).toBe('WP_000123456.1');
     expect(row.detail).toBe('Open the evidence dossier for a protein · Function Junction');
   });
+
+  it("keeps a plugin's offer in the plugin's words", async () => {
+    const offer = {
+      label: 'Dossier for P0AEX9',
+      command: 'function-junction:open',
+      args: { q: 'P0AEX9' },
+    };
+    const [row] = await intent.suggest({ text: 'P0AEX9', terms: [], offers: [offer], signal });
+    expect(row.call.label).toBe('Dossier for P0AEX9');
+    expect(row.detail).toBeUndefined();
+  });
 });

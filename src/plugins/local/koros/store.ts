@@ -39,10 +39,10 @@ export interface Arc {
 }
 
 // Project id → title.
-const projects: Record<string, string> = {
-  'soil-isolates': 'Soil isolates',
-  'phage-hunt': 'Phage hunt',
-};
+const projects = new Map([
+  ['soil-isolates', 'Soil isolates'],
+  ['phage-hunt', 'Phage hunt'],
+]);
 
 const say = (a: Arc, by: Turn['by'], text: string, attached: Attached[] = []) => {
   a.turns = [...a.turns, { id: `${a.slug}-${a.turns.length}`, by, text, attached }];
@@ -51,14 +51,14 @@ const say = (a: Arc, by: Turn['by'], text: string, attached: Attached[] = []) =>
 // A seeded arc's question is its first turn.
 function arc(
   a: Omit<Arc, 'needsYou' | 'working' | 'turns'> & { needsYou?: boolean; question: string },
-) {
+): Arc {
   const { question, ...rest } = a;
   const made: Arc = { ...rest, needsYou: a.needsYou ?? false, working: false, turns: [] };
   say(made, 'you', question);
-  return [a.slug, made] as const;
+  return made;
 }
 
-const arcs = new Map<string, Arc>([
+const seeded: Arc[] = [
   arc({
     slug: 'nitro',
     title: 'Nitrogenase in isolate 12',
@@ -84,13 +84,16 @@ const arcs = new Map<string, Arc>([
     stage: 'DONE',
     next: 'none',
   }),
-]);
+];
+const arcs = new Map(seeded.map((a) => [a.slug, a]));
 
 // An arc that has not been asked yet: New question opened it, and the first
 // message sent to it is its question.
 export const isEmpty = (a: Arc) => a.turns.length === 0;
 
-export const slugOf = (path: string) => pathParam(path, { lower: true });
+// The arc named by a path: `/nitro`. Slugs are lowercase, so case never
+// splits one arc into two panels.
+export const slugOf = (path: string) => pathParam(path).toLowerCase();
 
 let currentArc: string | null = 'nitro';
 const { subscribe, version, notify } = createEmitter();
@@ -100,7 +103,7 @@ export const koros = {
   version,
   // Newest first, as KIND*AI sorts its rail.
   arcs: () => [...arcs.values()].reverse(),
-  project: (id: string) => projects[id],
+  project: (id: string) => projects.get(id),
   arc: (slug: string) => arcs.get(slug),
   current: () => currentArc,
   // The arc free text goes to; null means the next message is a new question.
@@ -132,7 +135,7 @@ export const koros = {
       let n = 1;
       while (arcs.has(`new-${n}`)) n += 1;
       const slug = `new-${n}`;
-      projects[slug] = 'New question';
+      projects.set(slug, 'New question');
       empty = {
         slug,
         title: 'New question',
@@ -170,7 +173,8 @@ export const koros = {
     const asking = isEmpty(target);
     if (asking) {
       target.title = text.length > 48 ? `${text.slice(0, 47)}…` : text;
-      if (projects[target.project] === 'New question') projects[target.project] = target.title;
+      if (projects.get(target.project) === 'New question')
+        projects.set(target.project, target.title);
       target.next = 'check-commons';
     }
     say(target, 'you', text, attached);

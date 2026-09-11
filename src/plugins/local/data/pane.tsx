@@ -10,7 +10,7 @@ function DataHome() {
   for (const d of datasets.filter((d) => d.source === 'kbase-1.0')) {
     byNarrative.set(d.narrative!, [...(byNarrative.get(d.narrative!) ?? []), d]);
   }
-  const leaf = (d: (typeof datasets)[number]) => ({
+  const leaf = (d: Dataset) => ({
     id: `ref:${d.ref}`,
     label: d.name,
     suffix: <span className="caption">{d.type}</span>,

@@ -2,7 +2,6 @@ import { createHash } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { loadEnv } from 'vite';
-import type { ProxyOptions } from 'vite';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { tanstackRouter } from '@tanstack/router-plugin/vite';
@@ -41,31 +40,6 @@ export default defineConfig(({ mode }) => {
   // default; loadEnv brings them into the config too so allowedHosts
   // honors VITE_DEV_ALLOWED_HOSTS from .env.development.local.
   const env = loadEnv(mode, process.cwd(), '');
-  const authProxy: Record<string, ProxyOptions> = env.VITE_DEV_AUTH_PROXY
-    ? {
-        '/services/auth': {
-          target: env.VITE_DEV_AUTH_PROXY,
-          changeOrigin: true,
-          secure: true,
-          configure: (proxy) => {
-            proxy.on('proxyReq', (proxyReq) => {
-              // Strip the locally-set kbase_session cookie (it
-              // was set on the dev origin; the auth service
-              // wouldn't recognize it anyway — Authorization
-              // header carries the bearer).
-              proxyReq.removeHeader('cookie');
-              proxyReq.setHeader('Origin', env.VITE_DEV_AUTH_PROXY);
-              proxyReq.setHeader('Referer', env.VITE_DEV_AUTH_PROXY + '/');
-              // Cloudflare's bot manager challenges browser UAs
-              // without a __cf_bm cookie; that cookie can't
-              // round-trip through this proxy (Domain mismatch).
-              // A non-browser UA is on the API allowlist.
-              proxyReq.setHeader('User-Agent', 'kbase-frontend-dev-proxy');
-            });
-          },
-        },
-      }
-    : {};
   return {
     plugins: [
       // Remotes are registered at runtime from the registry, so none are
@@ -175,7 +149,31 @@ export default defineConfig(({ mode }) => {
         // its remote entry is same-origin and `script-src 'self'` covers it.
         // The built image does not proxy this prefix; a deployment fronts it.
         ...serviceProxies(env.VITE_DEV_SERVICE_PROXY),
-        ...authProxy,
+        ...(env.VITE_DEV_AUTH_PROXY
+          ? {
+              '/services/auth': {
+                target: env.VITE_DEV_AUTH_PROXY,
+                changeOrigin: true,
+                secure: true,
+                configure: (proxy) => {
+                  proxy.on('proxyReq', (proxyReq) => {
+                    // Strip the locally-set kbase_session cookie (it
+                    // was set on the dev origin; the auth service
+                    // wouldn't recognize it anyway — Authorization
+                    // header carries the bearer).
+                    proxyReq.removeHeader('cookie');
+                    proxyReq.setHeader('Origin', env.VITE_DEV_AUTH_PROXY);
+                    proxyReq.setHeader('Referer', env.VITE_DEV_AUTH_PROXY + '/');
+                    // Cloudflare's bot manager challenges browser UAs
+                    // without a __cf_bm cookie; that cookie can't
+                    // round-trip through this proxy (Domain mismatch).
+                    // A non-browser UA is on the API allowlist.
+                    proxyReq.setHeader('User-Agent', 'kbase-frontend-dev-proxy');
+                  });
+                },
+              },
+            }
+          : {}),
       },
     },
     test: {

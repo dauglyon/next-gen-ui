@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CartItemSchema as AdditionSchema, createEmitter } from '../../plugins/sdk';
+import { CartAdditionSchema, createEmitter } from '../../plugins/sdk';
 
 // Things the user has set aside to work with. What an item is, and why it
 // carries no data, is documented where plugins build one: the SDK's cart.ts.
@@ -9,7 +9,7 @@ import { CartItemSchema as AdditionSchema, createEmitter } from '../../plugins/s
 // the same reason it is host-owned: it is written to storage now and may be
 // synced to an account later, and neither is possible if an item can hold a
 // function, a DOM node, or a class instance.
-export const CartItemSchema = AdditionSchema.extend({
+export const CartItemSchema = CartAdditionSchema.extend({
   // The plugin that added it. Its manifest supplies the icon and colour if the
   // item names none, so items from one tool look like each other.
   plugin: z.string().min(1),

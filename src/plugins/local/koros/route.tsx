@@ -19,20 +19,23 @@ function ArcPage() {
   useEffect(() => {
     if (focused && slug) koros.setCurrent(slug);
   }, [focused, slug]);
-  if (!arc || isEmpty(arc)) {
+  if (!arc) {
     return (
       <div className={styles.page}>
-        {arc ? (
-          <div className={styles.head}>
-            <h1 className="h2">New question</h1>
-            <p className="body">
-              Ask KOROS a research question in the prompt bar below. It frames the question first,
-              with what the commons already knows, then a plan for you to approve.
-            </p>
-          </div>
-        ) : (
-          <p className="body">No arc is called “{slugAsked}”.</p>
-        )}
+        <p className="body">No arc is called “{slugAsked}”.</p>
+      </div>
+    );
+  }
+  if (isEmpty(arc)) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.head}>
+          <h1 className="h2">New question</h1>
+          <p className="body">
+            Ask KOROS a research question in the prompt bar below. It frames the question first,
+            with what the commons already knows, then a plan for you to approve.
+          </p>
+        </div>
       </div>
     );
   }

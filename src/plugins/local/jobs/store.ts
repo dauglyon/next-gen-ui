@@ -30,12 +30,11 @@ const jobs: Job[] = [
 ];
 
 const emitter = createEmitter();
-let subscribers = 0;
 
 // Running jobs creep forward while any listener is attached.
 let timer: ReturnType<typeof setInterval> | null = null;
 function ensureTicking() {
-  if (timer || subscribers === 0) return;
+  if (timer || emitter.size() === 0) return;
   timer = setInterval(() => {
     let changed = false;
     for (const job of jobs) {
@@ -50,7 +49,7 @@ function ensureTicking() {
       changed = true;
     }
     if (changed) emitter.notify();
-    if (subscribers === 0 && timer) {
+    if (emitter.size() === 0 && timer) {
       clearInterval(timer);
       timer = null;
     }
@@ -59,13 +58,9 @@ function ensureTicking() {
 
 export const jobStore = {
   subscribe(listener: () => void) {
-    subscribers += 1;
-    ensureTicking();
     const off = emitter.subscribe(listener);
-    return () => {
-      subscribers -= 1;
-      off();
-    };
+    ensureTicking();
+    return off;
   },
   version: emitter.version,
   all: () => jobs,

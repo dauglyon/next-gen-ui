@@ -19,10 +19,12 @@ export const CartSourceSchema = z.union([
 ]);
 export type CartSource = z.infer<typeof CartSourceSchema>;
 
-// What the host validates a stored item against, extended with what it
-// stamps on (the adding plugin, the time).
-export const CartItemSchema = z.object({
+// What a plugin adds; the host extends it with what it stamps on (the adding
+// plugin, the time: core/cart.ts).
+export const CartAdditionSchema = z.object({
   id: z.string().min(1),
+  // What the user would call it, not an accession, if you have both: it is
+  // what the tray's tooltip shows.
   name: z.string().min(1),
   subject: z.string().optional(),
   summary: z.string().optional(),
@@ -34,7 +36,7 @@ export const CartItemSchema = z.object({
   source: CartSourceSchema.optional(),
   context: z.record(z.string(), z.unknown()).optional(),
 });
-export type CartItem = z.infer<typeof CartItemSchema>;
+export type CartItem = z.infer<typeof CartAdditionSchema>;
 
 // The slice of the host's cart a plugin can see. It cannot read other
 // plugins' items: what is in the cart is the user's business and the
