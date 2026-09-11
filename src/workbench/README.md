@@ -63,13 +63,24 @@ not layout (`assistant`) live under `workbench.settings.v1`; the cart under
 
 ## Sidebar (provisional)
 
-Pinned plugins' panes stack as blocks that split the height; a block folds to its header and
-leaves only by unpinning. Collapsing the sidebar _is_ the icon column: the same pinned list, each
-icon popping its pane out beside it without changing the layout. Unpinned plugins live under
-**More**; choosing one shows its pane as an ephemeral dashed _preview block_ at the bottom of the
-stack, forgotten on reload. Pin drops it at the end; dragging the preview by its header onto a
-block pins it at that slot. Home offers the same preview through `services.preview`, which holds
-the one ephemeral preview the sidebar shows. Any pane can be dragged into the main area as a
+A host **Shortcuts** plugin (like Settings and Home, installed over the same index) shows every
+plugin's manifest `shortcuts` as buttons; being an ordinary pane, it pins,
+folds, drags and pops out of the rail like any block.
+
+Pinned plugins' panes stack vertically as blocks, splitting the height with dividers; each
+scrolls inside itself and the sidebar never scrolls. A block's header carries its plugin's icon
+and title (the accordion pattern) and click-toggles the fold; a block folds to its header and is
+never hidden; a plugin leaves the sidebar only by unpinning. There is no separate icon rail:
+collapsing the sidebar _is_ the icon column — the same pinned list, one icon per plugin in pin
+order, each popping its pane out beside it without changing the layout. Unpinned plugins
+live under **More** (in the footer strip expanded, among the icons collapsed): a menu naming
+them, and choosing one shows its pane as an ephemeral dashed _preview block_ at the bottom
+of the stack — two clicks to look at a plugin without pinning it; Pin or dismiss from the
+preview's header, and a reload forgets it. Pin drops it at the end of the stack; dragging the
+preview by its header onto a block pins it at that block's slot instead. It is painted at the
+bottom of the stack wherever it would land — where it sits now is not a claim about the layout
+it has not joined. Home offers the same preview for an unpinned panel,
+over the one ephemeral preview the sidebar shows (`services.preview`). Any pane can be dragged into the main area as a
 tab; closing it there returns it to the sidebar if its plugin is still pinned.
 
 ## Breadcrumbs and tab labels
@@ -109,7 +120,7 @@ to `path`.
 What the bar suggests comes from the **background** modules, fetched from every plugin at
 startup. Each keystroke goes to every `terms(q)`; the strings that come back are pooled, expanded
 once, and after a 250 ms settle handed to every `recommend`. Each plugin's answer replaces its
-own section as it arrives, the previous one staying dimmed until then; after 2 s the pane stops
+own section as it arrives, the previous one staying until then; after 2 s the pane stops
 saying it is asking, and a later answer still lands. A pool that only grew is asked about the
 new terms alone and the answers merge. The `commands` it returns are the
 rows under the field — each a `CommandCall` the plugin filled in — and the `cartItems` are rows
@@ -153,11 +164,63 @@ events during a drag.
 
 ## Registry API — host side
 
-The endpoint, the service mount, the manifest fields and the id rules are in the plugin developer
-documentation (`host/docs/`, the Deploying section); the failures and what the host does on each
-are its Troubleshooting section. What an error boundary does **not** contain: a hang in a
-synchronous render, memory leaks, mutation of globals (window, document, prototypes), CSS that
-escapes the panel, and network activity. Those need isolation the contract does not yet provide.
+This is what the host expects of a registry. The registry service itself is not in this repo.
+
+### Endpoint
+
+`GET /plugin-registry/plugins` → `200` with a JSON array of manifests. The path is same-origin,
+which is what lets `script-src 'self'` cover remote entries. In dev a Vite middleware answers it
+by fetching `<prefix>/manifest.json` from each service named in `VITE_DEV_SERVICE_PROXY` on every
+request, so a plugin is listed while its server answers. The built image answers nothing at the
+path — its fallback page comes back as HTML — so a deployment either fronts `/plugin-registry/`
+and `/services/` with something that does, or runs the bundled plugins alone. The host fetches
+once at startup; a non-2xx, a non-JSON, a non-array, or a network failure logs a warning and the
+bundled plugins run alone.
+
+### Where the code is
+
+The manifest does not say. A plugin's service is mounted at `/services/<id>/`: it serves the
+built `manifest.json` there and the bundle under `/services/<id>/plugin/`, and the host fetches
+`<id>/<module>` from `/services/<id>/plugin/remoteEntry.js` for each module the manifest lists.
+In dev the Vite proxy maps the prefix to the service's origin; the built image does not proxy
+it, any more than it proxies the registry.
+
+### Manifest fields the host reads
+
+Schema: `src/plugins/sdk/contract.ts` (`ManifestSchema`). Invalid entries are skipped
+individually with a console warning; one bad manifest does not take the list down.
+
+| field                                   | use                                                                                                                                        |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `id`                                    | plugin id; federation remote name; URL segment; service mount                                                                              |
+| `title`, `description`, `icon`, `color` | catalog, sidebar icon (both are names from `host/icons.ts`; an unknown icon falls back to a pin, an unknown colour to the surrounding ink) |
+| `sdkVersion`                            | must be one of `ACCEPTED_SDK_VERSIONS`; written by the build from the SDK package version it ran with                                      |
+| `modules`                               | which of `background`, `route`, `pane`, `commands`, `prompt` the bundle exposes; written by the build from what `vite.config.ts` named     |
+| `commands[]`                            | `{ name, title, description?, args[], icon? }`; registered as `<id>:<name>` before code loads                                              |
+| `shortcuts[]`, `launcher`               | `CommandCall`s: buttons on the Shortcuts block and on Browse                                                                               |
+
+### Id rules
+
+`^[a-z][a-z0-9-]{1,40}$`. An id is URL-visible (`/p/<id>/…`), the service mount, and the key of
+saved layouts, so it never changes once published; a rename is a new plugin plus a registry-side
+redirect from the old id. A registry entry whose id matches a bundled plugin is ignored: bundled
+code wins.
+
+### Host behaviour per failure
+
+| failure                                     | behaviour                                                                                                                                           |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| registry unreachable / non-array            | warning; bundled plugins only                                                                                                                       |
+| manifest invalid                            | skipped; others load                                                                                                                                |
+| remote entry or a module fails to load      | the panel shows the error inside its boundary; retry re-imports; other panels unaffected; commands of that plugin reject with the error, as a toast |
+| a listed module lacks what it should export | `route`/`pane` without `mount`: error inside the panel; `commands` without a declared name: error on run                                            |
+| `background` fails to load                  | warning; the plugin makes no terms, recommendations or status                                                                                       |
+| plugin removed from the registry            | its panels become ghosts (slot kept, body explains, Close offered); reinstalling brings them back where they were                                   |
+| panel throws while rendering                | caught by the panel's own fence (`fromReact`) or the host's boundary; the tab, its group and the chrome keep working                                |
+
+What an error boundary does **not** contain: a hang in a synchronous render, memory leaks,
+mutation of globals (window, document, prototypes), CSS that escapes the panel, and network
+activity. Those need isolation the contract does not yet provide (see Deferred).
 
 ### Deferred
 

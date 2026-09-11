@@ -1,5 +1,6 @@
 import type { GroupId, Group, Node, PanelId, SplitId } from './layout';
 import { emptyGroup } from './layout';
+import { reinsert } from './list';
 
 // Pure helpers over the main-area tree. Every mutator returns a new tree and
 // leaves the input untouched; callers run `normalize` once after editing.
@@ -36,15 +37,6 @@ export function replaceNode(root: Node, id: string, replacement: (node: Node) =>
     return next;
   });
   return changed ? { ...root, children } : root;
-}
-
-// `item` placed at `index` in a copy of `list` that no longer holds it; no
-// index appends, one out of range lands at the nearer end.
-export function reinsert<T>(list: readonly T[], item: T, index?: number): T[] {
-  const rest = list.filter((t) => t !== item);
-  const at = index === undefined ? rest.length : Math.max(0, Math.min(index, rest.length));
-  rest.splice(at, 0, item);
-  return rest;
 }
 
 export function insertTab(root: Node, group: GroupId, panel: PanelId, index?: number): Node {

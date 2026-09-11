@@ -27,7 +27,13 @@ function slowPlugin(answer: CommandCall[]) {
   const background: Background = {
     recommend: { commands: () => new Promise((resolve) => (release = () => resolve(answer))) },
   };
-  return { background, release: () => release?.() };
+  return {
+    background,
+    release: () => {
+      if (!release) throw new Error('slowPlugin was never asked');
+      release();
+    },
+  };
 }
 
 const fj: Background = {

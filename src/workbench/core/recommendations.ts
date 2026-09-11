@@ -45,10 +45,14 @@ export function mergeRecommendations(
   const kept: Recommendation[] = [];
   const seen = new Set<string>();
   for (const prev of previous) {
-    const keep =
-      offered.get(prev.id) ?? (prev.offeredBy.some((o) => open.has(o.source)) ? prev : null);
-    if (!keep) continue;
-    kept.push(keep);
+    const now = offered.get(prev.id);
+    if (now) {
+      kept.push(now);
+    } else if (prev.offeredBy.some((o) => open.has(o.source))) {
+      kept.push(prev);
+    } else {
+      continue;
+    }
     seen.add(prev.id);
   }
   for (const row of offered.values()) if (!seen.has(row.id)) kept.push(row);

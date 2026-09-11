@@ -88,61 +88,73 @@ export function HomeDocument() {
 // the lists, which are what the page is for. P11558 is the example because
 // all three real apps answer for it.
 function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
-  const STEPS: [string, ReactNode][] = [
-    [
-      'Ask for a protein',
-      <>
-        Click the box at the bottom and type <Key>P11558</Key>. A short list opens above it. The top
-        row sends the text to KOROS; below it, Function Junction offers a dossier. Press the
-        Function Junction row.{' '}
-        <button type="button" className={styles.tourLink} onClick={onFocusPrompt}>
-          Put the cursor there
-        </button>
-      </>,
-    ],
-    [
-      'Read the dossier',
-      <>
-        A tab opens in the middle. It takes a minute to build, and cards fill in as their evidence
-        arrives: this is methyl-coenzyme M reductase, the enzyme that makes methane, from{' '}
-        <i>Methanothermobacter marburgensis</i>.
-      </>,
-    ],
-    [
-      'See what the other tools know',
-      <>
-        While the dossier builds, watch the Related panel at the bottom left. Two rows arrive:
-        genKnown, with the organism&apos;s place in the tree of life, and Diaspora, with the
-        environments its family is found in. Press the genKnown row: the organism opens in a second
-        tab beside the dossier. Press Diaspora&apos;s: a third tab opens on the 3,308 samples that
-        carry it, mapped.
-      </>,
-    ],
-    [
-      'Keep what matters',
-      <>
-        Every card in the dossier, and every Related row, has an Add to cart button. Press a few.
-        They collect in the cart under the box, and the Related panel starts answering for what you
-        kept as well as for the page you are on.
-      </>,
-    ],
-    [
-      'Send it to KOROS',
-      <>
-        Press New question in Shortcuts at the top left. A blank page opens and the box now points
-        at it. Type a question and press Enter. What you kept goes with it, and the page shows your
-        question and the items. KOROS here is a mock-up: it answers with a placeholder, marks the
-        arc as needing you, and Approve plan moves it to the next stage. The real KOROS would frame
-        the question, search prior work, and hand you a plan to approve at this point.
-      </>,
-    ],
-    [
-      'Come back to it',
-      <>
-        Reload the page. The tabs, the cart and the arc are where you left them, and the KOROS panel
-        on the left lists every arc and marks the ones waiting on you.
-      </>,
-    ],
+  const steps: { title: string; body: ReactNode }[] = [
+    {
+      title: 'Ask for a protein',
+      body: (
+        <>
+          Click the box at the bottom and type <Key>P11558</Key>. A short list opens above it. The
+          top row sends the text to KOROS; below it, Function Junction offers a dossier. Press the
+          Function Junction row.{' '}
+          <button type="button" className={styles.tourLink} onClick={onFocusPrompt}>
+            Put the cursor there
+          </button>
+        </>
+      ),
+    },
+    {
+      title: 'Read the dossier',
+      body: (
+        <>
+          A tab opens in the middle. It takes a minute to build, and cards fill in as their evidence
+          arrives: this is methyl-coenzyme M reductase, the enzyme that makes methane, from{' '}
+          <i>Methanothermobacter marburgensis</i>.
+        </>
+      ),
+    },
+    {
+      title: 'See what the other tools know',
+      body: (
+        <>
+          While the dossier builds, watch the Related panel at the bottom left. Two rows arrive:
+          genKnown, with the organism&apos;s place in the tree of life, and Diaspora, with the
+          environments its family is found in. Press the genKnown row: the organism opens in a
+          second tab beside the dossier. Press Diaspora&apos;s: a third tab opens on the 3,308
+          samples that carry it, mapped.
+        </>
+      ),
+    },
+    {
+      title: 'Keep what matters',
+      body: (
+        <>
+          Every card in the dossier, and every Related row, has an Add to cart button. Press a few.
+          They collect in the cart under the box, and the Related panel starts answering for what
+          you kept as well as for the page you are on.
+        </>
+      ),
+    },
+    {
+      title: 'Send it to KOROS',
+      body: (
+        <>
+          Press New question in Shortcuts at the top left. A blank page opens and the box now points
+          at it. Type a question and press Enter. What you kept goes with it, and the page shows
+          your question and the items. KOROS here is a mock-up: it answers with a placeholder, marks
+          the arc as needing you, and Approve plan moves it to the next stage. The real KOROS would
+          frame the question, search prior work, and hand you a plan to approve at this point.
+        </>
+      ),
+    },
+    {
+      title: 'Come back to it',
+      body: (
+        <>
+          Reload the page. The tabs, the cart and the arc are where you left them, and the KOROS
+          panel on the left lists every arc and marks the ones waiting on you.
+        </>
+      ),
+    },
   ];
   return (
     <section className={styles.tour} aria-labelledby="home-tour">
@@ -154,14 +166,14 @@ function Tour({ onFocusPrompt }: { onFocusPrompt: () => void }) {
       </header>
 
       <ol className={styles.journey}>
-        {STEPS.map(([title, text], i) => (
+        {steps.map(({ title, body }, i) => (
           <li key={title} className={styles.step}>
             <span className={styles.stepNum} aria-hidden="true">
               {i + 1}
             </span>
             <div className={styles.stepBody}>
               <h3 className={styles.stepTitle}>{title}</h3>
-              <p className={styles.stepText}>{text}</p>
+              <p className={styles.stepText}>{body}</p>
             </div>
           </li>
         ))}

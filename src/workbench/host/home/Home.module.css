@@ -5,9 +5,9 @@
   align-content: start;
 }
 
-/* The search row and the tour's header share one shape. */
-.find,
-.tourHead {
+/* The search and the way out of it: one looks for a tool, the other goes to
+   the page that governs all of them. */
+.find {
   display: flex;
   align-items: center;
   gap: var(--s-3);
@@ -94,7 +94,19 @@
   border-radius: var(--r-lg);
 }
 
-/* The marker sits outside the text so the headlines line up as a column a reader can skim. */
+.tourHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.tourHead h2 {
+  margin: 0;
+}
+
+/* The path a first visit takes. Numbered because the steps are in order and
+   the reader is meant to walk them, but the marker is set outside the text so
+   the headlines line up as a column a reader can skim on their own. */
 .journey {
   margin: 0;
   padding: 0;
@@ -131,6 +143,15 @@
   display: grid;
   gap: var(--s-1);
   min-inline-size: 0;
+}
+
+/* Skimmable on its own: a reader who reads only these four lines has the
+   journey, and the sentence under each is the part they can skip. */
+.stepTitle {
+  margin: 0;
+  font-size: var(--fs-5);
+  font-weight: var(--fw-bold);
+  color: var(--c-ink);
 }
 
 .stepText {
@@ -195,15 +216,4 @@
 .tourNote {
   margin: 0;
   max-width: 78ch;
-}
-
-.tourHead h2 {
-  margin: 0;
-}
-
-.stepTitle {
-  margin: 0;
-  font-size: var(--fs-5);
-  font-weight: var(--fw-bold);
-  color: var(--c-ink);
 }

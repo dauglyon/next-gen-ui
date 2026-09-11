@@ -9,11 +9,18 @@ export function readStorage(storage: Storage | null, key: string): string | null
   }
 }
 
-export function writeStorage(storage: Storage | null, key: string, value: string | null): void {
+export function writeStorage(storage: Storage | null, key: string, value: string): void {
   try {
-    if (value === null) storage?.removeItem(key);
-    else storage?.setItem(key, value);
+    storage?.setItem(key, value);
   } catch {
     // Quota or privacy mode.
+  }
+}
+
+export function removeStorage(storage: Storage | null, key: string): void {
+  try {
+    storage?.removeItem(key);
+  } catch {
+    // Privacy mode; there is nothing there to retire.
   }
 }

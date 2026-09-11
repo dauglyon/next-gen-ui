@@ -4,6 +4,7 @@ import type {
   CommandCall,
   Intent,
   Query,
+  Recommendation,
   Suggestion,
 } from '../../../plugins/sdk';
 import { qualifyCommand } from '../../../plugins/sdk';
@@ -11,7 +12,16 @@ import type { Answer, QuerySource, QueryStore } from '../../core';
 import type { HostIndex } from '../installed';
 
 // Asking every plugin about a source of terms, and the chosen intent about
-// the text. Each source has its own clock; an answer that arrives for a
+// the text.
+//
+// Each source has its own clock. Setting one runs every `terms` at once —
+// they are synchronous and cheap — pools what comes back with the terms
+// given, and lets each plugin expand the pool once. The page and cart
+// sources then wait for the settle and call every `recommend` with the
+// pool; a source set again before the settle restarts it. The typing source
+// waits for nothing: every `recommend.commands` is asked on the keystroke,
+// and the intent is asked with the offers that came back at once, then
+// again as a slower plugin's offer lands. An answer that arrives for a
 // question no longer being asked is dropped.
 //
 // What the reader sees follows the omnibox rule rather than the clear-and-
@@ -131,16 +141,18 @@ export function createQueryRunner(
     }
   };
 
-  // What both rounds set up before asking: a controller that ends the
-  // previous round, the plugins in registry order, the answers carried over
-  // from the last round, and a publish that writes them in that order until
-  // the question moves on.
-  const round = (
+  // A round begins by ending the previous one for the source: the abort
+  // comes first, so answers still in flight for the old question are
+  // dropped, and only then are the last round's answers read to be carried
+  // over. `plugins` are the ones that can answer, in registry order; `publish`
+  // writes the answers in that order until the question moves on; `settle`
+  // is the last publish, with `loading` off.
+  const startRound = <R extends Recommendation>(
     source: QuerySource,
     input: QueryInput,
     terms: string[],
     fullPool: string[],
-    asks: (background: Background) => unknown,
+    asks: (background: Background) => background is Background & { recommend: R },
     carry: (previous: Answer) => Answer,
   ) => {
     inflight.get(source)?.abort();
@@ -150,7 +162,8 @@ export function createQueryRunner(
     const label = input.label ?? input.text ?? '';
     const plugins = index
       .backgrounds()
-      .filter(({ plugin, background }) => asks(background) && plugin !== input.owner);
+      .filter(({ plugin }) => plugin !== input.owner)
+      .flatMap(({ plugin, background }) => (asks(background) ? [{ plugin, background }] : []));
     const order = new Map(plugins.map(({ plugin }, i) => [plugin, i]));
     const answers = new Map<string, Answer>();
     for (const a of store.get(source).answers) {
@@ -181,12 +194,13 @@ export function createQueryRunner(
   // answered with commands only: the prompt bar shows them, and the Related
   // pane, which shows items, does not read this source.
   const askTyping = (input: QueryInput, terms: string[]) => {
-    const { controller, query, plugins, answers, pending, publish, settle } = round(
+    const { controller, query, plugins, answers, pending, publish, settle } = startRound(
       'typing',
       input,
       terms,
       terms,
-      (b) => b.recommend?.commands,
+      (b): b is Background & { recommend: Required<Pick<Recommendation, 'commands'>> } =>
+        b.recommend?.commands !== undefined,
       (a) => ({ ...a, stale: true }),
     );
     // The offers in hand for this text: a stale answer is for the last text.
@@ -205,7 +219,7 @@ export function createQueryRunner(
     for (const { plugin, background } of plugins) {
       let result: CommandCall[] | Promise<CommandCall[]>;
       try {
-        result = background.recommend!.commands!(query);
+        result = background.recommend.commands(query);
       } catch (err) {
         console.warn(`plugin ${plugin}: its recommend() threw; ignoring it`, err);
         land(plugin, []);
@@ -255,12 +269,12 @@ export function createQueryRunner(
   ) => {
     // Previous answers stay, stale, until each plugin's new one replaces
     // them; for a pool that grew they stay as they are.
-    const { controller, query, plugins, answers, pending, publish, settle } = round(
+    const { controller, query, plugins, answers, pending, publish, settle } = startRound(
       source,
       input,
       terms,
       fullPool,
-      (b) => b.recommend,
+      (b): b is Background & { recommend: Recommendation } => b.recommend !== undefined,
       (a) => (grow ? a : { ...a, stale: true }),
     );
     publish();
@@ -268,7 +282,7 @@ export function createQueryRunner(
 
     await Promise.all(
       plugins.map(async ({ plugin, background }) => {
-        const recommend = background.recommend!;
+        const recommend = background.recommend;
         const call = async <T>(fn: ((q: Query) => T[] | Promise<T[]>) | undefined) => {
           if (!fn) return [] as T[];
           try {

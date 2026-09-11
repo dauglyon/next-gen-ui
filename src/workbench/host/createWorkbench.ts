@@ -15,7 +15,12 @@ import {
   serialize,
 } from '../core';
 import type { Command } from '../commands';
-import { createCommandRegistry, createRunStore, workbenchCommands } from '../commands';
+import {
+  announcingDispatch,
+  createCommandRegistry,
+  createRunStore,
+  workbenchCommands,
+} from '../commands';
 import { createAnnouncer, createCrumbStore, createTitleStore } from '../react';
 import type { WorkbenchServices } from '../react';
 import { fallbackTitle } from '../react/context';
@@ -26,7 +31,7 @@ import { openPane, openRoute } from './open';
 import { hostPlugins } from './pages';
 import { createQueryRunner } from './query/runner';
 import { createSettingsStore } from './settings';
-import { readStorage, writeStorage } from './storage';
+import { readStorage, removeStorage, writeStorage } from './storage';
 import { createStatusStore } from './status';
 
 export const LAYOUT_STORAGE_KEY = 'workbench.layout.v2';
@@ -68,7 +73,7 @@ export function createWorkbench({
     assistant: defaultAssistant,
     intent: defaultIntent,
   });
-  for (const key of RETIRED_STORAGE_KEYS) writeStorage(storage, key, null);
+  for (const key of RETIRED_STORAGE_KEYS) removeStorage(storage, key);
   // The cart is host state, not layout: it survives a layout reset, and it is
   // the thing most likely to move to the account later.
   const cart = createCartStore(readCart(readStorage(storage, CART_STORAGE_KEY)));
@@ -87,11 +92,7 @@ export function createWorkbench({
   const registry = createCommandRegistry();
   const runs = createRunStore();
   const toasts = createToastManager();
-  const dispatch: WorkbenchServices['dispatch'] = (op) => {
-    const result = store.dispatch(op);
-    if (result.changed) announcer.announce(result.announcement);
-    return result.changed;
-  };
+  const dispatch = announcingDispatch(store, announcer.announce);
   const query = createQueryStore();
   const terms = createTermStore();
   const status = createStatusStore(source);
@@ -158,7 +159,8 @@ export function createWorkbench({
     // Written now, not on the next change: the record of which blocks have
     // been offered is part of the layout, and if nothing else happens to save
     // it the same block is introduced again on every load — which looks like
-    // the workbench re-pinning something the user just removed.
+    // the workbench re-pinning something the user just removed. A refused
+    // write here means the introduction simply repeats next time.
     if (initial !== saved) saveLayout();
     store.subscribe(saveLayout);
     // Written separately from the layout: a cart outlives an arrangement, and

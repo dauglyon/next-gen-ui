@@ -10,7 +10,7 @@ import type {
   PluginHost,
 } from '../../plugins/sdk';
 import type { PluginId } from '../core';
-import type { Command, CommandRegistry } from '../commands';
+import type { ArgSpec, Command, CommandRegistry } from '../commands';
 import { createEmitter } from '../../plugins/sdk';
 import { iconFor } from './icons';
 
@@ -157,7 +157,14 @@ export function createHostIndex(installed: InstalledPlugin[]): HostIndex {
             source: manifest.id,
             // Typed by the handler once it runs; the bar only needs the
             // count and which are required.
-            args: (decl.args ?? []).map((a) => ({ ...a, type: 'string' as const })),
+            args: (decl.args ?? []).map(
+              (a): ArgSpec => ({
+                name: a.name,
+                description: a.description,
+                required: a.required,
+                type: 'string',
+              }),
+            ),
             run: async (values, caller) => {
               const commands = await module(manifest.id, 'commands');
               const fn = commands[decl.name];
