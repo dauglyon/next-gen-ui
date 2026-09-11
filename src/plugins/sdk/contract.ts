@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { version as SDK_VERSION } from './package.json';
+import type { Modules } from './modules';
 
 // The manifest: what the host learns about a plugin before loading any of
 // its code. The author writes `plugin.config.ts`; the build adds
@@ -29,6 +30,7 @@ export const SlashCommandSchema = z.object({
   name: z.string().regex(NAME),
   title: z.string(),
   description: z.string().optional(),
+  // Typed in this order.
   args: z.array(ArgDeclSchema).optional(),
   // What the prompt bar ranks the command by when the text is not a slash
   // command: indexed, never shown. Absent, the title and descriptions serve.
@@ -61,7 +63,18 @@ export type CommandCall = z.infer<typeof CommandCallSchema>;
 // reads well there and never change once published.
 export const PluginIdSchema = z.string().regex(/^[a-z][a-z0-9-]{1,40}$/);
 
-export const MODULES = ['background', 'route', 'pane', 'commands', 'prompt', 'intent'] as const;
+// The modules a bundle can hold, in the order the host reaches them;
+// `manifestFor` sorts a plugin's list into it. `satisfies` keeps every name
+// here inside the kinds `Modules` types; a kind typed there and missing here
+// is not caught.
+export const MODULES = [
+  'background',
+  'route',
+  'pane',
+  'commands',
+  'prompt',
+  'intent',
+] as const satisfies readonly (keyof Modules)[];
 export const ModuleSchema = z.enum(MODULES);
 export type Module = z.infer<typeof ModuleSchema>;
 

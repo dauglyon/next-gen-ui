@@ -33,7 +33,6 @@ export interface RankedCall {
 interface Entry {
   decl: DeclaredCommand;
   command: string;
-  args: ArgDecl[];
   vector: Map<string, number>;
   // Each argument's description as a vector, for binding.
   argVectors: Map<string, number>[];
@@ -54,9 +53,12 @@ export const FLOOR = 0.2;
 // Below this an argument's description does not say it takes the term.
 export const BIND_FLOOR = 0.15;
 // Added to a command a plugin offered for a term in the text: the plugin
-// recognising its own identifier is evidence the command applies. The lift
-// is not a judgement of the sentence; an offer for an identifier that is a
-// coincidence in context still scores by the letters around it.
+// recognising its own identifier is evidence the command applies, and the
+// row keeps the plugin's label and arguments. The lift is not a judgement of
+// the sentence: an offer for an identifier that is a coincidence in context
+// scores by the letters around it like anything else, and with this scorer
+// that is usually above the floor. Dropping it needs a scorer that reads
+// context.
 export const OFFER_LIFT = 0.1;
 
 const N_MIN = 2;
@@ -104,9 +106,16 @@ function cosine(a: Map<string, number>, b: Map<string, number>): number {
 const argText = (arg: ArgDecl) => `${arg.name} ${arg.description ?? ''}`;
 
 const docOf = (d: DeclaredCommand) =>
-  [d.plugin, d.pluginTitle, d.name, d.title, d.description ?? '', d.semantics?.description ?? '']
-    .concat(d.semantics?.examples ?? [], (d.args ?? []).map(argText))
-    .join(' ');
+  [
+    d.plugin,
+    d.pluginTitle,
+    d.name,
+    d.title,
+    d.description ?? '',
+    d.semantics?.description ?? '',
+    ...(d.semantics?.examples ?? []),
+    ...(d.args ?? []).map(argText),
+  ].join(' ');
 
 export function buildCommandIndex(commands: DeclaredCommand[]): CommandIndex {
   const docs = commands.map((decl) => ({ decl, text: docOf(decl) }));
@@ -120,7 +129,6 @@ export function buildCommandIndex(commands: DeclaredCommand[]): CommandIndex {
   const entries = docs.map(({ decl, text }) => ({
     decl,
     command: qualifyCommand(decl.name, decl.plugin),
-    args: decl.args ?? [],
     vector: vectorize(text, idf, unseen),
     argVectors: (decl.args ?? []).map((a) => vectorize(argText(a), idf, unseen)),
   }));
@@ -144,6 +152,7 @@ function reading(text: string, tags: Tag[]): string {
 // takes fills nothing.
 function bind(entry: Entry, index: CommandIndex, terms: string[]): Record<string, string> {
   const args: Record<string, string> = {};
+  const argDecls = entry.decl.args ?? [];
   for (const term of terms) {
     const ns = namespaceOf(term);
     if (!ns) continue;
@@ -152,12 +161,12 @@ function bind(entry: Entry, index: CommandIndex, terms: string[]): Record<string
     let bestScore = -Infinity;
     entry.argVectors.forEach((v, i) => {
       const score = cosine(query, v);
-      if (!(entry.args[i].name in args) && score >= BIND_FLOOR && score > bestScore) {
+      if (!(argDecls[i].name in args) && score >= BIND_FLOOR && score > bestScore) {
         best = i;
         bestScore = score;
       }
     });
-    if (best >= 0) args[entry.args[best].name] = ns.id;
+    if (best >= 0) args[argDecls[best].name] = ns.id;
   }
   return args;
 }
@@ -192,7 +201,9 @@ export function rankCommands(
       // A row runs when pressed, so a command is offered only with every
       // required argument filled: "kill the running job" names no job, and a
       // row for it would open an error, not a job.
-      .filter(({ entry, args }) => entry.args.every((a) => !a.required || a.name in args))
+      .filter(({ entry, args }) =>
+        (entry.decl.args ?? []).every((a) => !a.required || a.name in args),
+      )
       .sort((a, b) => b.score - a.score || a.entry.command.localeCompare(b.entry.command))
       .slice(0, limit)
       .map(({ entry: { decl, command }, offer, score, args }) => ({

@@ -5,6 +5,9 @@ export interface Emitter {
   subscribe: (listener: () => void) => () => void;
   version: () => number;
   notify: () => void;
+  // How many listeners are attached, for a store that runs a timer only
+  // while something is watching.
+  size: () => number;
 }
 
 export function createEmitter(): Emitter {
@@ -13,9 +16,12 @@ export function createEmitter(): Emitter {
   return {
     subscribe(listener) {
       listeners.add(listener);
-      return () => void listeners.delete(listener);
+      return () => {
+        listeners.delete(listener);
+      };
     },
     version: () => version,
+    size: () => listeners.size,
     notify() {
       version += 1;
       listeners.forEach((l) => l());

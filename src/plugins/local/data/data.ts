@@ -68,4 +68,4 @@ export const dataset = (ref: string) => datasets.find((d) => d.ref === ref);
 
 // A workspace ref has slashes of its own — `/74501/3/1` — so the whole
 // remainder is the ref, not its first segment.
-export const refOf = (path: string) => pathParam(path, { decode: true });
+export const refOf = (path: string) => decodeURIComponent(pathParam(path));

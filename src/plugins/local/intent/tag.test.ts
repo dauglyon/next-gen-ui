@@ -15,32 +15,39 @@ describe('tagging identifiers in typed text', () => {
     });
   });
 
-  // A typed prefix is read by any of its registry aliases; a shape matches
-  // in any case and mints the id in the registry's; no bare integer is
-  // minted, since 767 registry patterns match one; K00001 is also a
-  // well-formed INSDC nucleotide accession, so both are minted.
+  const alias = 'reads a typed prefix by any of its registry aliases';
+  const anyCase = 'matches a shape in any case and mints the id in the registry case';
+  // 767 registry patterns match a bare integer; none of them is minted.
+  const bare = 'tags no bare integer';
+  const minted = 'knows the shapes the plugins already mint';
+  const shaped = 'tags the accession-shaped and not the word-shaped';
   it.each([
-    ['taxon:562', ['ncbitaxon:562']],
-    ['taxid:562 and ncbi:562', ['ncbitaxon:562', 'ncbitaxon:562']],
-    ['GO:0008150', ['go:0008150']],
-    ['CHEBI:15377', ['chebi:15377']],
-    ['PMID:16333295', ['pubmed:16333295']],
-    ['dossier for p0aex9', ['uniprot:P0AEX9']],
-    ['562', []],
-    ['0008150', []],
-    ['what is 9606', []],
-    ['GCF_000005845.2', ['insdc.gcf:GCF_000005845.2']],
-    ['RS_GCF_000005845.2', ['gtdb.genome:RS_GCF_000005845.2']],
-    ['12345/6/7', ['upa:12345/6/7']],
-    ['WP_000123456.1', ['refseq:WP_000123456.1']],
-    ['d__Bacteria;p__Pseudomonadota', ['gtdb:d__Bacteria;p__Pseudomonadota']],
-    ['K00001 in K12', ['insdc:K00001', 'kegg.orthology:K00001']],
-    ['EC 1.1.1.1', ['ec:1.1.1.1']],
-    ['1abc but not 2024', ['pdb:1abc']],
-    ['malE recA Escherichia coli', []],
-    ['PF00001 IPR000001', ['pfam:PF00001', 'interpro:IPR000001']],
-    ['(P0AEX9), "Q9X0E6"?', ['uniprot:P0AEX9', 'uniprot:Q9X0E6']],
-  ])('%s → %j', (text, expected) => {
+    [alias, 'taxon:562', ['ncbitaxon:562']],
+    [alias, 'taxid:562 and ncbi:562', ['ncbitaxon:562', 'ncbitaxon:562']],
+    [alias, 'GO:0008150', ['go:0008150']],
+    [alias, 'CHEBI:15377', ['chebi:15377']],
+    [alias, 'PMID:16333295', ['pubmed:16333295']],
+    [anyCase, 'dossier for p0aex9', ['uniprot:P0AEX9']],
+    [bare, '562', []],
+    [bare, '0008150', []],
+    [bare, 'what is 9606', []],
+    [minted, 'GCF_000005845.2', ['insdc.gcf:GCF_000005845.2']],
+    [minted, 'RS_GCF_000005845.2', ['gtdb.genome:RS_GCF_000005845.2']],
+    [minted, '12345/6/7', ['upa:12345/6/7']],
+    [minted, 'WP_000123456.1', ['refseq:WP_000123456.1']],
+    [minted, 'd__Bacteria;p__Pseudomonadota', ['gtdb:d__Bacteria;p__Pseudomonadota']],
+    // K00001 is also a well-formed INSDC nucleotide accession; both are minted.
+    [shaped, 'K00001 in K12', ['insdc:K00001', 'kegg.orthology:K00001']],
+    [shaped, 'EC 1.1.1.1', ['ec:1.1.1.1']],
+    [shaped, '1abc but not 2024', ['pdb:1abc']],
+    [shaped, 'malE recA Escherichia coli', []],
+    [shaped, 'PF00001 IPR000001', ['pfam:PF00001', 'interpro:IPR000001']],
+    [
+      'strips the punctuation around a token',
+      '(P0AEX9), "Q9X0E6"?',
+      ['uniprot:P0AEX9', 'uniprot:Q9X0E6'],
+    ],
+  ])('%s: %s', (_property, text, expected) => {
     expect(terms(text)).toEqual(expected);
   });
 

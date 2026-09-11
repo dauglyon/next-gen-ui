@@ -20,11 +20,17 @@ export default defineIntent({
     // identifier is what the reader is looking for, and a title written for
     // the command list is long.
     return rankCommands(index, text, tagText(text), terms ?? [], offers ?? []).map((r) => {
-      const filled = Object.values(r.args).map(String).join(', ');
-      const own = r.label === undefined && filled;
+      if (r.label !== undefined) {
+        return { call: { label: r.label, command: r.command, args: r.args }, score: r.score };
+      }
+      const filled = Object.values(r.args).map(String);
       return {
-        call: { label: r.label ?? (filled || r.title), command: r.command, args: r.args },
-        detail: own ? `${r.title} · ${r.pluginTitle}` : undefined,
+        call: {
+          label: filled.length ? filled.join(', ') : r.title,
+          command: r.command,
+          args: r.args,
+        },
+        detail: filled.length ? `${r.title} · ${r.pluginTitle}` : undefined,
         score: r.score,
       };
     });

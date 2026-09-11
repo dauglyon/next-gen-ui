@@ -1,7 +1,5 @@
 import { z } from 'zod';
-// The SDK's schema is what a plugin adds; its name there is the plugin's
-// view of it. `CartAddition` is the host's name for the same thing.
-import { CartItemSchema as CartAdditionSchema, createEmitter } from '../../plugins/sdk';
+import { CartAdditionSchema, createEmitter } from '../../plugins/sdk';
 
 // Things the user has set aside to work with. What an item is, and why it
 // carries no data, is documented where plugins build one: the SDK's cart.ts.

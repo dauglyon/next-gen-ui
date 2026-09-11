@@ -43,7 +43,10 @@ export function pluginFederation({ config, ...paths }: PluginFederationOptions):
 
 function declaredDependencies(): Set<string> {
   try {
-    const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as Record<string, object>;
+    const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as Record<
+      'dependencies' | 'devDependencies' | 'peerDependencies',
+      Record<string, string> | undefined
+    >;
     return new Set(
       Object.keys({ ...pkg.dependencies, ...pkg.devDependencies, ...pkg.peerDependencies }),
     );

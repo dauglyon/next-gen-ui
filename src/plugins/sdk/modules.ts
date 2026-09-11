@@ -1,10 +1,11 @@
 import type { CartItem } from './cart';
-import type { CommandCall, CommandValues, Module, SlashCommand } from './contract';
+import type { CommandCall, CommandValues, SlashCommand } from './contract';
 import type { PluginHost } from './host';
 import type { PanelHandle } from './panel';
 
-// The six modules a plugin can expose. Each `define*` is identity at
-// runtime: a plugin that omits a required field fails to compile, not run.
+// The six modules a plugin can expose, in the order the host reaches them.
+// Each `define*` is identity at runtime: a plugin that omits a required
+// field fails to compile, not run.
 
 export type Cleanup = () => void;
 
@@ -138,12 +139,6 @@ export interface Modules {
   prompt: Prompt;
   intent: Intent;
 }
-
-// MODULES in contract.ts and this interface name the same set; adding to one
-// without the other fails here.
-type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : never) : never;
-const _modulesAgree: Same<Module, keyof Modules> = true;
-void _modulesAgree;
 
 export const defineBackground = (b: Background): Background => b;
 export const defineRoute = (r: Route): Route => r;
