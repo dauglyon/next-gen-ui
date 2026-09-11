@@ -8,7 +8,9 @@ import { PanelContext } from './panel';
 
 // React is the plugin's choice, not the host's: the host hands over an
 // element and a handle, and this puts a root in the element with the SDK
-// contexts around the component.
+// contexts around the component. The tree is drawn again whenever the
+// handle reports a change — the path, the focus — so `usePanel()` reads the
+// current value on every render.
 export function fromReact(Component: ComponentType): { mount: Mount } {
   return {
     mount(el, { panel, host }) {

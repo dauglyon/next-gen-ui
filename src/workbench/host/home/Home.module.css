@@ -24,15 +24,15 @@
 }
 
 .grid {
+  list-style: none;
   margin: 0;
   padding: 0;
-  list-style: none;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: var(--s-4);
 }
 
-/* The whole card is the control. */
+/* icon | title over description; the whole card is the control. */
 .card {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -108,10 +108,10 @@
    the reader is meant to walk them, but the marker is set outside the text so
    the headlines line up as a column a reader can skim on their own. */
 .journey {
-  margin: 0;
-  padding: 0;
   display: grid;
   gap: var(--s-5);
+  margin: 0;
+  padding: 0;
   list-style: none;
   max-width: 72ch;
   counter-reset: step;
@@ -159,7 +159,8 @@
   color: var(--c-ink2);
 }
 
-/* Set apart and smaller, so it does not read as more steps. */
+/* Everything the workbench can do that is not on the path. Set apart and
+   smaller, so it does not read as more steps. */
 .tourMore {
   display: grid;
   gap: var(--s-2);
@@ -178,10 +179,10 @@
 }
 
 .tourMoreList {
-  margin: 0;
-  padding: 0;
   display: grid;
   gap: var(--s-2);
+  margin: 0;
+  padding: 0;
   list-style: none;
   font-size: var(--fs-4);
   color: var(--c-ink3);

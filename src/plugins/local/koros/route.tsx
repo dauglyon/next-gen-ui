@@ -4,8 +4,10 @@ import { defineRoute, fromReact, usePanel, usePanelTitle } from '@kbase/plugin-s
 import { STAGES, isEmpty, koros, slugOf } from './store';
 import styles from './koros.module.css';
 
-// An arc as KIND*AI's session view shows it. Gates, drift and deliverables
-// are not in the mock.
+// An arc as KIND*AI's session view shows it: the question, where it stands
+// in the stages, what needs you, and the turns so far. Gates, drift and
+// deliverables are not in the mock. A new question is not a page: it is the
+// prompt bar with its destination set to one.
 function ArcPage() {
   const { path, focused } = usePanel();
   useSyncExternalStore(koros.subscribe, koros.version, koros.version);

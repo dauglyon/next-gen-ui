@@ -12,12 +12,18 @@ import styles from '../../react/Workbench.module.css';
 // Every plugin's `recommend.cartItems` for the open page and for the cart.
 // What is being typed is not here: its answers are the prompt bar's offers.
 //
-// Inside a group the rows hold still: a row keeps its place from the moment
-// it appears until nothing offers it any more; a new answer adds rows at the
-// end and takes rows away, and never re-sorts. What is still being asked is
-// one line under the group's rows, never a row. Rows enter and leave without
-// animation: a view transition here snapshots the whole document, and iPhone
-// Safari drew a blank frame at each snapshot.
+// Two groups in a fixed order, one per source. A group exists while it has
+// rows or an answer on the way, and never moves. Inside a group the rows
+// hold still: a row keeps its place from the moment it appears until nothing
+// offers it any more; a new answer adds rows at the end and takes rows away,
+// and never re-sorts. What is still being asked is one line under the
+// group's rows, never a row. Rows enter and leave without animation: a view
+// transition here snapshots the whole document, and iPhone Safari drew a
+// blank frame at each snapshot.
+//
+// A row is a link and an offer: pressing it opens the item's `source` in the
+// answering plugin; the `+` puts the item in the cart. An item already in the
+// cart is not shown: the reader has it.
 
 // The sources this pane reads, in group order.
 const SOURCES = ['page', 'cart'] as const satisfies readonly QuerySource[];

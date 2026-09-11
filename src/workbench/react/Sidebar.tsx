@@ -48,9 +48,6 @@ export function Sidebar() {
   const onDismissPreview = () => previewHandle.set(null);
   // Anchors the collapsed preview flyout to the ⋯ icon that opened it.
   const moreAnchorRef = useRef<HTMLSpanElement>(null);
-  const previewInfo = previewing ? infoOf(previewing) : undefined;
-  const previewTitle = previewInfo?.title ?? previewing ?? '';
-  const PreviewGlyph = previewInfo?.icon ?? PushPin;
 
   // Both states stay mounted. One width animates — the container's — and
   // the two layers crossfade: the rail is a fixed-width overlay (its icons
@@ -90,8 +87,7 @@ export function Sidebar() {
       {sidebar.collapsed && previewing && (
         <PreviewPopout
           plugin={previewing}
-          title={previewTitle}
-          Icon={PreviewGlyph}
+          info={infoOf(previewing)}
           anchor={moreAnchorRef}
           onDismiss={onDismissPreview}
         />
@@ -452,17 +448,17 @@ function RailPopout({
 // preview block makes.
 function PreviewPopout({
   plugin,
-  title,
-  Icon,
+  info,
   anchor,
   onDismiss,
 }: {
   plugin: PluginId;
-  title: string;
-  Icon: PluginInfo['icon'];
+  info: PluginInfo | undefined;
   anchor: RefObject<HTMLElement | null>;
   onDismiss: () => void;
 }) {
+  const title = info?.title ?? plugin;
+  const Icon = info?.icon ?? PushPin;
   return (
     <Popover.Root open onOpenChange={(open) => !open && onDismiss()}>
       <PopoutFrame plugin={plugin} anchor={anchor} label={`${title} preview`}>

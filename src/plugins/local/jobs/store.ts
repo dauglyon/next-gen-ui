@@ -4,6 +4,7 @@ import { pathParam } from '../../sdk/routes';
 
 export type JobStatus = 'queued' | 'running' | 'done' | 'cancelled' | 'failed';
 
+// The job named by a path: `/12`.
 export const idOf = (path: string) => pathParam(path);
 
 export const COLORS: Record<JobStatus, ChipColor> = {
